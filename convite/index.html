@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Você toparia sair comigo hoje?</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fff5f8;
+      color: #333;
+    }
+
+    header {
+      text-align: center;
+      padding: 50px 20px 20px;
+    }
+
+    h1 {
+      font-family: 'Brush Script MT', cursive;
+      font-size: 2.5em;
+      color: #d16ba5;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2em;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 10px 20px 30px;
+      line-height: 1.6;
+    }
+
+    .carousel {
+      width: 500px;
+      height: auto;
+      overflow: hidden;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .carousel-inner {
+      display: flex;
+      width: 200%; /* Duas imagens */
+      transition: transform 1s ease;
+    }
+
+    .carousel-inner img {
+      width: 50%; /* Cada imagem ocupa metade */
+      object-fit: cover;
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: #d16ba5;
+      color: white;
+      padding: 15px 30px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 1.2em;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #c04a91;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      padding: 20px;
+      font-style: italic;
+      color: #888;
+    }
+
+    @keyframes floatHearts {
+      0% { transform: translateY(0); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-100vh); opacity: 0; }
+    }
+
+    .hearts {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      animation: floatHearts 6s infinite ease-in;
+      background: url('https://img.icons8.com/emoji/48/000000/red-heart.png') no-repeat center;
+      background-size: contain;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Você toparia sair comigo hoje?</h1>
+    <p>
+      Eu sei que estamos passando por um momento difícil. Mas antes que o tempo leve a chance de te ver sorrir de novo ao meu lado, queria te convidar para sair hoje.  
+      Sem pressões, sem expectativas... só nós dois e a possibilidade de recomeçar, não sei como estão seus pensamentos, mas nem que seja só por uma noite.
+    </p>
+  </header>
+
+  <div class="carousel">
+    <div class="carousel-inner" id="carouselInner">
+      <img src="imagem/WhatsApp Image 2025-06-12 at 11.55.42.jpeg" alt="Imagem 1">
+      <img src="imagem/WhatsApp Image 2025-06-12 at 11.55.42 (2).jpeg" alt="Imagem 2">
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top: 30px;">
+    <a href="https://wa.me/5583996675179" target="_blank" class="btn">Sim, eu topo ❤️</a>
+  </div>
+
+  <footer>
+    Com carinho, do cara que ainda acredita na gente.
+  </footer>
+
+  <div class="hearts" style="left: 30%; animation-delay: 0s;"></div>
+  <div class="hearts" style="left: 60%; animation-delay: 1s;"></div>
+  <div class="hearts" style="left: 45%; animation-delay: 2s;"></div>
+
+  <script>
+    const carouselInner = document.getElementById('carouselInner');
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % 2;
+      carouselInner.style.transform = `translateX(-${index * 50}%)`;
+    }, 3000);
+  </script>
+
+</body>
+</html>
