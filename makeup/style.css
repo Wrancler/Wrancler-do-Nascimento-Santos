@@ -1,0 +1,69 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #1e1e1e;
+  color: #f1f1f1;
+}
+
+header {
+  background: #1f1010;
+  color: #f1f1f1;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+header p {
+  margin-top: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.imagem-capa img {
+  width: 100%;
+  display: block;
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.descricao, .preco {
+  padding: 2rem;
+  max-width: 700px;
+  margin: auto;
+}
+
+.descricao ul {
+  list-style: none;
+  padding: 0;
+}
+
+.descricao li::before {
+  content: "\1F484 ";
+}
+
+.preco h2 span {
+  color: #ff4081;
+}
+
+.botao {
+  display: inline-block;
+  padding: 1rem 2rem;
+  margin-top: 1rem;
+  background: #ff4081;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+footer {
+  text-align: center;
+  background: #2c2c2c;
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #aaa;
+}
