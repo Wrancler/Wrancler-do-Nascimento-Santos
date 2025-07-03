@@ -7,7 +7,7 @@ body {
 }
 
 header {
-  background: #1f1010;
+  background: #1e1e1e;
   color: #f1f1f1;
   text-align: center;
   padding: 2rem 1rem;
@@ -124,6 +124,6 @@ footer {
 
 .lista-conteudo li::before {
   content: "💄";
-  
+  margin-right: 0.5rem;
   color: #50ff40;
 }
