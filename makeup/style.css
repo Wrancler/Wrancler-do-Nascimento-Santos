@@ -2,14 +2,14 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #c4bebe, #141414, #1a1a1a);
+  background: linear-gradient(135deg, #686666, #131212, #807d7d);
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
 
 
 header {
-  background: linear-gradient(135deg, #c4bebe, #141414, #1a1a1a);
+  background: linear-gradient(135deg, #313131, #141414, #747171);
 
   color: #f1f1f1;
   text-align: center;
