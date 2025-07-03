@@ -124,6 +124,6 @@ footer {
 
 .lista-conteudo li::before {
   content: "💄";
-  margin-right: 0.5rem;
+  
   color: #50ff40;
 }
