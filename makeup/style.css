@@ -3,9 +3,10 @@ body {
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, #1e1e1e, #141414, #1a1a1a);
-
   color: #f1f1f1;
+  overflow-x: hidden; /* previne rolagem horizontal */
 }
+
 
 header {
   background: linear-gradient(135deg, #1e1e1e, #141414, #1a1a1a);
@@ -137,4 +138,20 @@ footer {
   content: "💄";
   margin-right: 0.5rem;
   color: #50ff40;
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px #50ff4088;
+  }
+
+  header p {
+    font-size: 1rem;
+  }
+
+  body {
+    overflow-x: hidden; /* força a remover rolagem lateral */
+  }
 }
