@@ -106,3 +106,24 @@ footer {
   height: 100%;
   border: none;
 }
+
+.lista-conteudo {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  color: #ccc; /* cor mais escura */
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.lista-conteudo li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.lista-conteudo li::before {
+  content: "💄";
+  margin-right: 0.5rem;
+  color: #50ff40;
+}
