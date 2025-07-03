@@ -46,14 +46,14 @@ header p {
 }
 
 .preco h2 span {
-  color: #ff4081;
+  color: #50ff40;
 }
 
 .botao {
   display: inline-block;
   padding: 1rem 2rem;
   margin-top: 1rem;
-  background: #ff4081;
+  background: #1f1010;
   color: #fff;
   text-decoration: none;
   border-radius: 8px;
