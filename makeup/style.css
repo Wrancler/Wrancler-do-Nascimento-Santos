@@ -39,7 +39,7 @@ header p {
   font-style: italic;
   letter-spacing: 0.5px;
 }
-
+/*
 nav a {
   background-color: rgba(255, 255, 255, 0.274);
   color: rgb(255, 255, 255);
@@ -60,7 +60,7 @@ nav {
 
 nav a:hover {
   background-color: black;
-}
+} */
 
 /*.imagem-capa img {
   width: 100%;
@@ -202,5 +202,36 @@ footer {
   flex: 0 0 auto;
 }
 
+nav.redes-sociais {
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background-color: #1f1f1f;
+  box-shadow: 2px 2px 3px #505350;
+}
+
+nav.redes-sociais a {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.3s;
+}
+
+nav.redes-sociais a:hover {
+  background-color: #fcfcfc;
+  color: #000;
+}
+
+nav.redes-sociais i {
+  font-size: 1.2rem;
+}
 
  
