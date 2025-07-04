@@ -24,14 +24,18 @@
     </nav>
  
 
-  <section class="imagem-capa" id="rolagem">
+  <section class="galeria-container">
+  <span class="seta esquerda">◀</span>
 
-    <img src="imagens/studiojeni.jpeg" alt="imagem 1"/>
-    <img src="imagens/jeni02.jpeg" alt="Imagem 2"/>
-    <img src="imagens/studio2.jpeg" alt="Imagem 3"/>
-    
-   
-  </section>
+  <div class="imagem-capa" id="rolagem">
+    <img src="imagens/studiojeni.jpeg" alt="Imagem 1" />
+    <img src="imagens/jeni02.jpeg" alt="Imagem 2" />
+    <img src="imagens/studio2.jpeg" alt="Imagem 3" />
+  </div>
+
+  <span class="seta direita">▶</span>
+</section>
+
 
   
 
@@ -88,27 +92,20 @@
     <p>© 2025 - <strong>Jenifer Lima</strong>. Todos os direitos reservados.</p>
   </footer>
 
+ 
   <script>
-  window.addEventListener("load", function () {
-    const rolagem = document.getElementById("rolagem");
-    if (!rolagem) return;
+  const galeria = document.getElementById("rolagem");
+  const esquerda = document.querySelector(".seta.esquerda");
+  const direita = document.querySelector(".seta.direita");
 
-    let scrollStep = 2;
-    let direction = 1;
+  esquerda.addEventListener("click", () => {
+    galeria.scrollBy({ left: -300, behavior: "smooth" });
+  });
 
-    function autoScroll() {
-      if (rolagem.scrollLeft + rolagem.clientWidth >= rolagem.scrollWidth - 1 || rolagem.scrollLeft <= 0) {
-        direction *= -1;
-      }
-      rolagem.scrollLeft += scrollStep * direction;
-    }
-
-    setInterval(autoScroll, 15); // mais fluidez e visibilidade
+  direita.addEventListener("click", () => {
+    galeria.scrollBy({ left: 300, behavior: "smooth" });
   });
 </script>
-
-
-
 
 
 </body>

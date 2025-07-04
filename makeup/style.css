@@ -195,7 +195,7 @@ footer {
 }
 
 .imagem-capa img {
-  width: 300px;
+  width: 100%;
   flex-shrink: 0;
   display: block;
   object-fit: cover;
@@ -203,6 +203,13 @@ footer {
   border-radius: 8px;
   scroll-snap-align: center;
 }
+
+/*.imagem-capa img {
+  width: 100%;
+  display: block;         
+  max-height: 400px;
+  object-fit: cover;
+} */
 
 
 nav.redes-sociais {
@@ -237,4 +244,31 @@ nav.redes-sociais i {
   font-size: 1.2rem;
 }
 
- 
+ .galeria-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 10px;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.seta {
+  font-size: 2rem;
+  color: #ffffff2c;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 10px;
+  transition: color 0.3s;
+}
+
+.seta:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 600px) {
+  .seta {
+    font-size: 1.6rem;
+  }
+}
