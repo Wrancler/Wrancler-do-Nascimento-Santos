@@ -24,9 +24,10 @@
     </nav>
  
 
-  <section class="imagem-capa">
-    <img src="imagens/studiojeni.jpeg" alt="Imagem do curso" />
-    <img src="imagens/jeni02.jpeg" alt="Imagem 1">
+  <section class="imagem-capa" id="rolagem">
+    <img src="imagens/studiojeni.jpeg" alt="imagem 1">
+    <img src="imagens/jeni02.jpeg" alt="Imagem 2">
+    <img src="imagens/jeni02.jpeg" alt="Imagem 3">
    
   </section>
 
@@ -86,3 +87,18 @@
   </footer>
 </body>
 </html>
+
+<script>
+  const galeria = document.getElementById("rolagem");
+  let scrollStep = 1;
+  let direction = 1;
+
+  function autoScroll() {
+    if (rolagem.scrollLeft + rolagem.clientWidth >= rolagem.scrollWidth || rolagem.scrollLeft <= 0) {
+      direction *= -1;
+    }
+    rolagem.scrollLeft += scrollStep * direction;
+  }
+
+  let scrollInterval = setInterval(autoScroll, 20);
+</script>
