@@ -40,6 +40,28 @@ header p {
   letter-spacing: 0.5px;
 }
 
+nav a {
+  background-color: rgba(255, 255, 255, 0.274);
+  color: rgb(255, 255, 255);
+  padding: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-weight: bold;
+  text-decoration: none;
+  transition-duration: 1s;
+  border-radius: 5px;
+}
+
+nav {
+  
+  padding: 10px;
+  box-shadow: 2px 2px 3px white;
+}
+
+nav a:hover {
+  background-color: black;
+}
+
 .imagem-capa img {
   width: 100%;
   display: block;
