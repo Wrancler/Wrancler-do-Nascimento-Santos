@@ -87,21 +87,25 @@
   </footer>
 
   <script>
-  const rolagem = document.getElementById("rolagem");
-  let scrollStep = 1;
-  let direction = 1;
+  document.addEventListener("DOMContentLoaded", function () {
+    const rolagem = document.getElementById("rolagem");
+    let scrollStep = 1;
+    let direction = 1;
 
-  function autoScroll() {
-    if (!rolagem) return;
+    function autoScroll() {
+      if (!rolagem) return;
 
-    if (rolagem.scrollLeft + rolagem.clientWidth >= rolagem.scrollWidth || rolagem.scrollLeft <= 0) {
-      direction *= -1;
+      if (rolagem.scrollLeft + rolagem.clientWidth >= rolagem.scrollWidth || rolagem.scrollLeft <= 0) {
+        direction *= -1;
+      }
+
+      rolagem.scrollLeft += scrollStep * direction;
     }
-    rolagem.scrollLeft += scrollStep * direction;
-  }
 
-  const scrollInterval = setInterval(autoScroll, 20);
+    setInterval(autoScroll, 20);
+  });
 </script>
+
 
 
 

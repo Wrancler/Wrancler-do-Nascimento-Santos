@@ -9,11 +9,11 @@ body {
 
 
 header {
-  background: linear-gradient(135deg, #000000, #000000, #000000);
-
+ background-color: #1f1f1f;
   color: #f1f1f1;
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 2.5rem 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
 header h1 {
@@ -33,11 +33,12 @@ header h1 {
 }
 
 header p {
-   margin-top: 0.5rem;
-  font-size: 1.1rem;
+  margin-top: 0.5rem;
+  font-size: 1.2rem;
   color: #ccc;
   font-style: italic;
   letter-spacing: 0.5px;
+  opacity: 0.85;
 }
 /*
 nav a {
@@ -190,6 +191,7 @@ footer {
   padding: 1rem;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .imagem-capa img {
