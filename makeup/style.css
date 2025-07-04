@@ -9,7 +9,7 @@ body {
 
 
 header {
- background-color: #1f1f1f;
+ background-color: #1f1f1fb7;
   color: #f1f1f1;
   text-align: center;
   padding: 2.5rem 1rem;
@@ -22,7 +22,7 @@ header h1 {
   color: #f6fcf5;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px #50ff4088;
+  text-shadow: 0 0 6px #00000088;
   font-weight: 700;
   margin: 0;
   padding: 0 1rem;
@@ -195,7 +195,8 @@ footer {
 }
 
 .imagem-capa img {
-  width: 100%;
+  width: 300px;
+  max-width: 90%;
   display: block;
   max-height: 400px;
   object-fit: cover;
