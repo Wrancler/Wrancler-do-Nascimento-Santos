@@ -187,20 +187,21 @@ footer {
 .imagem-capa {
   display: flex;
   overflow-x: auto;
-  gap: 1rem;
-  padding: 1rem;
+ 
+ 
   scroll-snap-type: x mandatory;
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 .imagem-capa img {
-  width: 100%;
+  width: 100vw;
+  height: auto;
   flex-shrink: 0;
   display: block;
   object-fit: cover;
   max-height: 400px;
-  border-radius: 8px;
+  border-radius: 0px;
   scroll-snap-align: center;
 }
 
