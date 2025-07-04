@@ -2,14 +2,16 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #000000, #000000, #000000);
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+              url('imagens/img.jpeg') center/cover no-repeat;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
 
 
 header {
- background-color: #1f1f1fb7;
+  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+              url('imagens/jeniferheader.jpeg') center/cover no-repeat;
   color: #f1f1f1;
   text-align: center;
   padding: 2.5rem 1rem;
@@ -273,3 +275,4 @@ nav.redes-sociais i {
     font-size: 1.6rem;
   }
 }
+
