@@ -190,20 +190,20 @@ footer {
   gap: 1rem;
   padding: 1rem;
   scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .imagem-capa img {
   width: 300px;
-  max-width: 90%;
+  flex-shrink: 0;
   display: block;
-  max-height: 400px;
   object-fit: cover;
+  max-height: 400px;
   border-radius: 8px;
   scroll-snap-align: center;
-  flex: 0 0 auto;
 }
+
 
 nav.redes-sociais {
   padding: 10px;
