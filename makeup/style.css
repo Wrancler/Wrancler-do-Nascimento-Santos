@@ -62,12 +62,12 @@ nav a:hover {
   background-color: black;
 }
 
-.imagem-capa img {
+/*.imagem-capa img {
   width: 100%;
-  display: block;
+  display: block;         
   max-height: 400px;
   object-fit: cover;
-}
+} */
 
 .descricao, .preco {
   padding: 2rem;
@@ -182,3 +182,25 @@ footer {
     overflow-x: hidden; /* força a remover rolagem lateral */
   }
 }
+
+.imagem-capa {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+}
+
+.imagem-capa img {
+  width: 100%;
+  display: block;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  scroll-snap-align: center;
+  flex: 0 0 auto;
+}
+
+
+ 
