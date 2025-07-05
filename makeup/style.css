@@ -3,7 +3,7 @@ body {
   margin: 0;
   padding: 0;
     background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url('imagens/jeni02.jpeg') center/cover no-repeat;
+              url('imagens/jeni01.jpeg') center/cover no-repeat;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
@@ -315,7 +315,7 @@ nav.redes-sociais i {
 }
 
 .feature-item {
-    background-color: #ffffff1a;
+    background-color: #ffffff18;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -335,14 +335,11 @@ nav.redes-sociais i {
 }
 
 .feature-item p {
-    font-size: 20px;
+    font-size: 18px;
     color: #ccc4c4;
     line-height: 1.6;
 }
 
-.section-padding {
-  background-image: ;
-}
 
 
 
