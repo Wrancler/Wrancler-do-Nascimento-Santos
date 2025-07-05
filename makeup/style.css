@@ -24,7 +24,7 @@ header h1 {
   color: #f6fcf5;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px #00000088;
+  text-shadow: 0 0 6px #ff69b4ad; #ff69b4ad
   font-weight: 700;
   margin: 0;
   padding: 0 1rem;
@@ -100,6 +100,15 @@ nav a:hover {
   text-decoration: none;
   border-radius: 8px;
   font-weight: bold;
+
+   box-shadow: 0 0 10px #f7f7f7;
+   transition: all 0.3s ease;
+}
+
+.botao:hover {
+  transform: scale(1.05);
+  background: #ffffff;
+  color: #000;
 }
 
 footer {
@@ -246,6 +255,12 @@ nav.redes-sociais a:hover {
 nav.redes-sociais i {
   font-size: 1.2rem;
 }
+
+  .container h2 {
+    color: white;
+    text-align: center;
+    border-radius: ;
+  }
 
  .galeria-container {
   display: flex;
