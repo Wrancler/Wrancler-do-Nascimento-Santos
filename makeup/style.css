@@ -276,3 +276,45 @@ nav.redes-sociais i {
   }
 }
 
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 30px; /* Espaçamento entre os itens */
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .grid-2-cols {
+        grid-template-columns: 1fr; /* Uma coluna em telas menores */
+    }
+}
+
+.feature-item {
+    background-color: #ffffff1a;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.feature-item .feature-icon {
+    font-size: 48px;
+    color: #ff69b4ad; /* Cor rosa, combine com sua paleta */
+    margin-bottom: 15px;
+}
+
+.feature-item h3 {
+    font-size: 22px;
+    color: #e9e8e8;
+    margin-bottom: 10px;
+}
+
+.feature-item p {
+    font-size: 16px;
+    color: #ccc4c4;
+    line-height: 1.6;
+}
+
+
+
+
