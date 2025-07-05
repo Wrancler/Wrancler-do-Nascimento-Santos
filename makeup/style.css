@@ -20,7 +20,7 @@ header {
 
 header h1 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2rem;
+  font-size: 1.7em;
   color: #f6fcf5;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -36,7 +36,7 @@ header h1 {
 
 header p {
   margin-top: 0.5rem;
-  font-size: 1.2rem;
+  font-size: 1em;
   color: #ccc;
   font-style: italic;
   letter-spacing: 0.5px;
