@@ -3,7 +3,7 @@ body {
   margin: 0;
   padding: 0;
     background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url('imagens/navimg.jpeg') center/cover no-repeat;
+              url('imagens/jeni02.jpeg') center/cover no-repeat;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
@@ -24,7 +24,7 @@ header h1 {
   color: #f6fcf5;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px #ff69b4ad; #ff69b4ad
+  text-shadow: 0 0 6px #ff69b4ad; 
   font-weight: 700;
   margin: 0;
   padding: 0 1rem;
@@ -259,7 +259,17 @@ nav.redes-sociais i {
   .container h2 {
     color: white;
     text-align: center;
-    border-radius: ;
+    text-shadow: 0 0 6px #000000ad; 
+    
+    
+    padding: 1rem 2rem;
+    margin-top: 1rem;
+    
+    color: #fdfdfdfd;
+    text-decoration: none;
+    border-radius: 15px;
+    font-weight: bold;
+
   }
 
  .galeria-container {
@@ -325,9 +335,13 @@ nav.redes-sociais i {
 }
 
 .feature-item p {
-    font-size: 16px;
+    font-size: 20px;
     color: #ccc4c4;
     line-height: 1.6;
+}
+
+.section-padding {
+  background-image: ;
 }
 
 
