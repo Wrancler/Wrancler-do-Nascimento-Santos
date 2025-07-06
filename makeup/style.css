@@ -129,9 +129,12 @@ footer {
 }
 
 .video-aula h2 {
+  text-align: center;
   margin-bottom: 0.5rem;
   color: #f6f8f3;
   font-size: 1.5rem;
+  font-family: 'Times New Roman', Times, serif;
+  text-shadow: 2px 2px 2px pink;
 }
 
 .video-aula p {
