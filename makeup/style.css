@@ -174,7 +174,7 @@ footer {
 }
 
 .lista-conteudo li::before {
-  content: "💄";
+  content: "✅";
   margin-right: 0.5rem;
   color: #50ff40;
 }
@@ -324,7 +324,7 @@ nav.redes-sociais i {
 
 .feature-item .feature-icon {
     font-size: 48px;
-    color: #ff69b4ad; /* Cor rosa, combine com sua paleta */
+    color: #fafafa71; /* Cor rosa, combine com sua paleta */
     margin-bottom: 15px;
 }
 
