@@ -262,7 +262,7 @@ nav.redes-sociais i {
   .container h2 {
     color: white;
     text-align: center;
-    text-shadow: 0 0 6px #000000ad; 
+    text-shadow: 0 0 6px #000000ad;  
     
     
     padding: 1rem 2rem;
@@ -320,6 +320,7 @@ nav.redes-sociais i {
 .feature-item {
     background-color: #ffffff18;
     padding: 30px;
+    
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     text-align: center;
