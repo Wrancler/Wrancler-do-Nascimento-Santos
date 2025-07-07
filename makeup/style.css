@@ -10,8 +10,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url("imagens/pequenojeni.jpeg") center/cover no-repeat;
+ background-color: black;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
