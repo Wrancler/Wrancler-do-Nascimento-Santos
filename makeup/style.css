@@ -435,7 +435,7 @@ nav.redes-sociais i {
 .botao:hover {
   transform: scale(1.05);
   background: #3dd60e7c;
-  color: #000000;
+  color: rgb(243, 243, 243);
 }
 
 /* ========================================
