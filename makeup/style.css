@@ -419,10 +419,11 @@ nav.redes-sociais i {
    ======================================== */
 
 .botao {
+  
   display: inline-block;
-  padding: 1rem 2rem;
+  padding: 1rem 1rem;
   margin-top: 1rem;
-  background: #141414;
+  background: #08e40842;
   color: #fdfdfdfd;
   text-decoration: none;
   border-radius: 8px;
@@ -433,8 +434,8 @@ nav.redes-sociais i {
 
 .botao:hover {
   transform: scale(1.05);
-  background: #ffffff;
-  color: #000;
+  background: #3dd60e7c;
+  color: #000000;
 }
 
 /* ========================================
