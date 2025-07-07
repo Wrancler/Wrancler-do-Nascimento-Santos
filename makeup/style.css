@@ -1,17 +1,28 @@
+/* ========================================
+   CONFIGURAÇÕES GLOBAIS E BODY
+   ======================================== 
+  
+   */
+
+
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url('imagens/jeni01.jpeg') center/cover no-repeat;
+  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+              url("imagens/jeni01.jpeg") center/cover no-repeat;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
 
+/* ========================================
+   CABEÇALHO (HEADER)
+   ======================================== */
 
 header {
   background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url('imagens/jeniferheader.jpeg') center/cover no-repeat;
+              url("imagens/jeniferheader.jpeg") center/cover no-repeat;
   color: #f1f1f1;
   text-align: center;
   padding: 2.5rem 1rem;
@@ -42,6 +53,11 @@ header p {
   letter-spacing: 0.5px;
   opacity: 0.85;
 }
+
+/* ========================================
+   NAVEGAÇÃO (NAV) - COMENTADO NO ORIGINAL
+   ======================================== */
+
 /*
 nav a {
   background-color: rgba(255, 255, 255, 0.274);
@@ -65,12 +81,9 @@ nav a:hover {
   background-color: black;
 } */
 
-/*.imagem-capa img {
-  width: 100%;
-  display: block;         
-  max-height: 400px;
-  object-fit: cover;
-} */
+/* ========================================
+   SEÇÃO DE DESCRIÇÃO E PREÇO
+   ======================================== */
 
 .descricao, .preco {
   padding: 2rem;
@@ -91,6 +104,10 @@ nav a:hover {
   color: #50ff40;
 }
 
+/* ========================================
+   BOTÃO
+   ======================================== */
+
 .botao {
   display: inline-block;
   padding: 1rem 2rem;
@@ -100,9 +117,8 @@ nav a:hover {
   text-decoration: none;
   border-radius: 8px;
   font-weight: bold;
-
-   box-shadow: 0 0 10px #f7f7f7;
-   transition: all 0.3s ease;
+  box-shadow: 0 0 10px #f7f7f7;
+  transition: all 0.3s ease;
 }
 
 .botao:hover {
@@ -111,6 +127,10 @@ nav a:hover {
   color: #000;
 }
 
+/* ========================================
+   RODAPÉ (FOOTER)
+   ======================================== */
+
 footer {
   text-align: center;
   background: #2c2c2c;
@@ -118,6 +138,10 @@ footer {
   font-size: 0.9rem;
   color: #aaa;
 }
+
+/* ========================================
+   SEÇÃO DE VÍDEO AULA
+   ======================================== */
 
 .video-aula {
   padding: 2rem;
@@ -161,6 +185,10 @@ footer {
   border: none;
 }
 
+/* ========================================
+   LISTA DE CONTEÚDO
+   ======================================== */
+
 .lista-conteudo {
   list-style: none;
   padding: 0;
@@ -182,27 +210,13 @@ footer {
   color: #50ff40;
 }
 
-@media (max-width: 480px) {
-  header h1 {
-    font-size: 1.6rem;
-    letter-spacing: 1px;
-    text-shadow: 0 0 6px #50ff4088;
-  }
-
-  header p {
-    font-size: 1rem;
-  }
-
-  body {
-    overflow-x: hidden; /* força a remover rolagem lateral */
-  }
-}
+/* ========================================
+   IMAGEM DE CAPA / CARROSSEL
+   ======================================== */
 
 .imagem-capa {
   display: flex;
   overflow-x: auto;
- 
- 
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
@@ -219,13 +233,17 @@ footer {
   scroll-snap-align: center;
 }
 
-/*.imagem-capa img {
+/* Comentado no original: 
+.imagem-capa img {
   width: 100%;
   display: block;         
   max-height: 400px;
   object-fit: cover;
 } */
 
+/* ========================================
+   REDES SOCIAIS
+   ======================================== */
 
 nav.redes-sociais {
   padding: 10px;
@@ -233,7 +251,6 @@ nav.redes-sociais {
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
-  
   box-shadow: 2px 2px 3px #505350;
 }
 
@@ -259,23 +276,11 @@ nav.redes-sociais i {
   font-size: 1.2rem;
 }
 
-  .container h2 {
-    color: white;
-    text-align: center;
-    text-shadow: 0 0 6px #000000ad;  
-    
-    
-    padding: 1rem 2rem;
-    margin-top: 1rem;
-    
-    color: #fdfdfdfd;
-    text-decoration: none;
-    border-radius: 15px;
-    font-weight: bold;
+/* ========================================
+   GALERIA E SETAS
+   ======================================== */
 
-  }
-
- .galeria-container {
+.galeria-container {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,11 +303,9 @@ nav.redes-sociais i {
   color: #ffffff;
 }
 
-@media (max-width: 600px) {
-  .seta {
-    font-size: 1.6rem;
-  }
-}
+/* ========================================
+   LAYOUT DE COLUNAS (GRID)
+   ======================================== */
 
 .grid-2-cols {
     display: grid;
@@ -311,16 +314,9 @@ nav.redes-sociais i {
     margin-top: 30px;
 }
 
-@media (max-width: 768px) {
-    .grid-2-cols {
-        grid-template-columns: 1fr; /* Uma coluna em telas menores */
-    }
-}
-
 .feature-item {
     background-color: #ffffff18;
     padding: 30px;
-    
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     text-align: center;
@@ -343,6 +339,96 @@ nav.redes-sociais i {
     color: #ccc4c4;
     line-height: 1.6;
 }
+
+/* ========================================
+   RESPONSIVIDADE (MEDIA QUERIES)
+   ======================================== */
+
+@media (max-width: 768px) {
+    .grid-2-cols {
+        grid-template-columns: 1fr; /* Uma coluna em telas menores */
+    }
+}
+
+@media (max-width: 600px) {
+  .seta {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px #50ff4088;
+  }
+
+  header p {
+    font-size: 1rem;
+  }
+
+  body {
+    overflow-x: hidden; /* força a remover rolagem lateral */
+  }
+}
+
+/* ========================================
+   OUTROS ESTILOS (VERIFICAR USO)
+   ======================================== */
+
+.container h2 {
+    color: white;
+    text-align: center;
+    text-shadow: 0 0 6px #000000ad;  
+    padding: 1rem 2rem;
+    margin-top: 1rem;
+    color: #fdfdfdfd;
+    text-decoration: none;
+    border-radius: 15px;
+    font-weight: bold;
+}
+
+
+/* Seção bônus */
+.bonus {
+  padding: 2rem;
+  max-width: 700px;
+  margin: 2rem auto;
+  background: #2c2c2c;
+  border-radius: 12px;
+  color: #f1f1f1;
+  text-align: center;
+}
+
+.bonus h2 {
+  font-size: 1.6rem;
+  text-shadow: 0 0 6px #ff69b4a1;
+  margin-bottom: 0.5rem;
+}
+
+.bonus p {
+  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: #ccc;
+}
+
+/* Selo visual */
+.selo-certificado {
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: bold;
+  color: #50ff40;
+}
+
+.selo-certificado img {
+  width: 40px;
+  height: auto;
+}
+
 
 
 
