@@ -394,7 +394,7 @@ nav.redes-sociais i {
   padding: 2rem;
   max-width: 700px;
   margin: 2rem auto;
-  background: linear-gradient(rgba(0, 0, 0, 0.856), rgba(0, 0, 0, 0.747)),
+  background: linear-gradient(rgba(0, 0, 0, 0.719), rgba(0, 0, 0, 0.808)),
               url("imagens/certificadojeni.png") center/cover no-repeat;
   border-radius: 12px;
   color: #f1f1f1;
@@ -412,6 +412,8 @@ nav.redes-sociais i {
   font-size: 1rem;
   margin-bottom: 1rem;
   color: #ccc;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 /* Selo visual */
@@ -422,7 +424,7 @@ nav.redes-sociais i {
   justify-content: center;
   gap: 10px;
   font-weight: bold;
-  color: #50ff40;
+  color: #eff1ef;
 }
 
 .selo-certificado img {
