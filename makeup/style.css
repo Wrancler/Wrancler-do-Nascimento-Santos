@@ -11,7 +11,7 @@ body {
   margin: 0;
   padding: 0;
   background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-              url("imagens/jeni01.jpeg") center/cover no-repeat;
+              url("imagens/whtats.jpeg") center/cover no-repeat;
   color: #f1f1f1;
   overflow-x: hidden; /* previne rolagem horizontal */
 }
@@ -89,6 +89,14 @@ nav a:hover {
   padding: 2rem;
   max-width: 700px;
   margin: auto;
+  
+}
+
+.descricao > h2 {
+  text-shadow: 0 0 6px #ff69b4a1;
+  color: white;
+  text-align: center;
+  
 }
 
 .descricao ul {
@@ -104,40 +112,7 @@ nav a:hover {
   color: #50ff40;
 }
 
-/* ========================================
-   BOTÃO
-   ======================================== */
 
-.botao {
-  display: inline-block;
-  padding: 1rem 2rem;
-  margin-top: 1rem;
-  background: #1f1010;
-  color: #fdfdfdfd;
-  text-decoration: none;
-  border-radius: 8px;
-  font-weight: bold;
-  box-shadow: 0 0 10px #f7f7f7;
-  transition: all 0.3s ease;
-}
-
-.botao:hover {
-  transform: scale(1.05);
-  background: #ffffff;
-  color: #000;
-}
-
-/* ========================================
-   RODAPÉ (FOOTER)
-   ======================================== */
-
-footer {
-  text-align: center;
-  background: #2c2c2c;
-  padding: 1rem;
-  font-size: 0.9rem;
-  color: #aaa;
-}
 
 /* ========================================
    SEÇÃO DE VÍDEO AULA
@@ -411,9 +386,15 @@ nav.redes-sociais i {
   text-align: center;
   font-size: 1rem;
   margin-bottom: 1rem;
-  color: #ccc;
+  color: #fcf6f6;
   font-weight: bold;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.lista-conteudo {
+  text-align: center;
+  color: white;
+  box-shadow: 0px 4px 15px black;
 }
 
 /* Selo visual */
@@ -424,7 +405,7 @@ nav.redes-sociais i {
   justify-content: center;
   gap: 10px;
   font-weight: bold;
-  color: #eff1ef;
+  color: #f6f7f6;
 }
 
 .selo-certificado img {
@@ -433,6 +414,40 @@ nav.redes-sociais i {
 }
 
 
+/* ========================================
+   BOTÃO
+   ======================================== */
+
+.botao {
+  display: inline-block;
+  padding: 1rem 2rem;
+  margin-top: 1rem;
+  background: #141414;
+  color: #fdfdfdfd;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 0 10px #f7f7f7;
+  transition: all 0.3s ease;
+}
+
+.botao:hover {
+  transform: scale(1.05);
+  background: #ffffff;
+  color: #000;
+}
+
+/* ========================================
+   RODAPÉ (FOOTER)
+   ======================================== */
+
+footer {
+  text-align: center;
+  background: #2c2c2c;
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #aaa;
+}
 
 
 
