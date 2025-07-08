@@ -317,8 +317,8 @@ header {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-.bonusli li {
-  background-color: black;
+.bonusli {
+  background-color: rgba(7, 7, 7, 0.103);
   border-radius: 10px;
   color: white;
 }
