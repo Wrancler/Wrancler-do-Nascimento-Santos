@@ -318,6 +318,7 @@ header {
 }
 
 .bonusli {
+  text-align: center;
   background-color: rgba(7, 7, 7, 0.103);
   border-radius: 10px;
   color: white;
