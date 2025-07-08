@@ -292,10 +292,10 @@ header {
 
 /* Seção bônus */
 .bonus {
-  padding: 2rem;
+  padding: 4.5rem;
   max-width: 700px;
   margin: 2rem auto;
-  background: linear-gradient(rgba(0, 0, 0, 0.719), rgba(0, 0, 0, 0.808)),
+  background: linear-gradient(rgba(63, 62, 62, 0.904), rgb(0, 0, 0)),
               url("imagens/certificadojeni.png") center/cover no-repeat;
   border-radius: 12px;
   color: #f1f1f1;
@@ -347,12 +347,13 @@ header {
    ======================================== */
 
 .botao {
-    display: inline-block;
-    padding: 1rem 1rem; /* Ajustei o padding para ficar mais amplo */
+    display: block;
+    padding: 0.5rem 0.5rem; /* Ajustei o padding para ficar mais amplo */
     margin-top: 1rem; /* Ajustei a margem superior */
     background: #08e40833;
     color: var(--text-dark); /* Cor do texto mais escura para contraste */
     text-decoration: none;
+    text-align: center;
     border-radius: 8px;
     font-weight: bold;
     box-shadow: 0 0 15px rgb(248, 248, 248); /* Sombra mais vibrante */
