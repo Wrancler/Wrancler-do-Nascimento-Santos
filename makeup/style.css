@@ -114,7 +114,7 @@ header {
   flex-shrink: 0;
   display: block;
   object-fit: cover;
-  max-height: 400px;
+  max-height: 550px;
   border-radius: 0px;
   scroll-snap-align: center;
 }
