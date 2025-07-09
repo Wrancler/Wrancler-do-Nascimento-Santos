@@ -11,7 +11,7 @@
     --color-purple-dark: #ebebeb34; /* Hover/Ativo */
     --color-pink-accent: #ff69b4; /* Um toque de rosa para maquiagem */
     --color-pink-shadow: rgba(255, 105, 180, 0.2); /* Sombra suave para o rosa */
-    --color-text-light: #13e40c9d;
+    --color-text-light: #f8f8f8d5;
     --color-text-medium: #e0e0e0;
     --color-text-dark: #cccccc;
 
@@ -96,6 +96,7 @@ header {
  header p {
       font-style: italic;
       color: #ddd;
+      
     }
 
 
@@ -107,6 +108,7 @@ header {
   padding: 2rem;
   max-width: 700px;
   margin: auto;
+  
   
 }
 
@@ -254,6 +256,8 @@ header {
     padding: var(--spacing-xl) var(--spacing-sm);
     background-color: var(--color-gray-darkest);
     text-align: center;
+    text-decoration: none;
+    
 }
 
 .main-cta-button {
@@ -272,10 +276,12 @@ header {
     transition: var(--transition-normal);
     box-shadow: var(--shadow-purple-glow); /* Efeito de brilho roxo */
     max-width: 400px; /* Limita a largura do botão */
+    text-decoration: none;
 }
 
 .main-cta-button i {
     font-size: var(--font-size-xl);
+    text-decoration: none;
 }
 
 .main-cta-button:hover {
