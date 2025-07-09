@@ -6,12 +6,12 @@
     --color-gray-dark: #1a1a1a;
     --color-gray-medium: #333333;
     --color-gray-light: #555555;
-    --color-purple-main: #9B59B6; /* Roxo vibrante Jenifer Lima */
-    --color-purple-light: rgba(155, 89, 182, 0.1); /* Para fundos sutis */
-    --color-purple-dark: #8e44ad; /* Hover/Ativo */
+    --color-purple-main: #9c59b646; /* Roxo vibrante Jenifer Lima */
+    --color-purple-light: rgba(172, 25, 230, 0.1); /* Para fundos sutis */
+    --color-purple-dark: #ebebeb34; /* Hover/Ativo */
     --color-pink-accent: #ff69b4; /* Um toque de rosa para maquiagem */
     --color-pink-shadow: rgba(255, 105, 180, 0.2); /* Sombra suave para o rosa */
-    --color-text-light: #ffffff;
+    --color-text-light: #13e40c9d;
     --color-text-medium: #e0e0e0;
     --color-text-dark: #cccccc;
 
