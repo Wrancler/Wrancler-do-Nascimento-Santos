@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Desejo Secreto - Loja virtual de produtos íntimos com discrição e qualidade">
+    <meta name="keywords" content="produtos íntimos, sex shop, adultos, sensual">
+    <title>Desejo Secreto - Sua Loja de Produtos Íntimos</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="nav-wrapper">
+                <!-- Logo -->
+                <div class="logo">
+                    <h1>Desejo Secreto</h1>
+                    <span class="tagline">Sua intimidade, nossa prioridade</span>
+                </div>
+                
+                <!-- Navegação -->
+                <nav class="nav">
+                    <ul class="nav-list">
+                        <li><a href="#" onclick="showPage('home')" class="nav-link active">Início</a></li>
+                        <li><a href="#" onclick="showPage('products')" class="nav-link">Produtos</a></li>
+                        <li><a href="#" onclick="showPage('contact')" class="nav-link">Contato</a></li>
+                    </ul>
+                </nav>
+                
+                <!-- Carrinho -->
+                <div class="cart-icon" onclick="showPage('cart')">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </div>
+                
+                <!-- Menu Mobile -->
+                <div class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="main">
+        <!-- Página Inicial -->
+        <section id="home" class="page active">
+            <!-- Banner Principal -->
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <h2 class="hero-title">Desperte Seus Desejos</h2>
+                    <p class="hero-subtitle">Produtos íntimos de qualidade com total discrição</p>
+                    <button class="cta-button" onclick="showPage('products')">
+                        Explorar Produtos
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="hero-image">
+                    <img src="img/hero-banner.jpg" alt="Banner Principal" class="placeholder-img">
+                </div>
+            </div>
+            
+            <!-- Produtos em Destaque -->
+            <section class="featured-products">
+                <div class="container">
+                    <h2 class="section-title">Produtos em Destaque</h2>
+                    <div class="products-grid" id="featuredProducts">
+                        <!-- Produtos serão carregados via JavaScript -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Seções de Chamada para Ação -->
+            <section class="cta-sections">
+                <div class="container">
+                    <div class="cta-grid">
+                        <div class="cta-card">
+                            <i class="fas fa-shipping-fast"></i>
+                            <h3>Entrega Discreta</h3>
+                            <p>Embalagem neutra e entrega rápida em todo o Brasil</p>
+                        </div>
+                        <div class="cta-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Compra Segura</h3>
+                            <p>Seus dados protegidos com criptografia de ponta</p>
+                        </div>
+                        <div class="cta-card">
+                            <i class="fas fa-heart"></i>
+                            <h3>Qualidade Premium</h3>
+                            <p>Produtos selecionados para sua satisfação</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- Página de Produtos -->
+        <section id="products" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h2 class="page-title">Nossos Produtos</h2>
+                    <p class="page-subtitle">Descubra nossa seleção exclusiva</p>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="categoryFilter">Categoria:</label>
+                        <select id="categoryFilter" onchange="filterProducts()">
+                            <option value="">Todas</option>
+                            <option value="lingerie">Lingerie</option>
+                            <option value="brinquedos">Brinquedos</option>
+                            <option value="cosmeticos">Cosméticos</option>
+                            <option value="acessorios">Acessórios</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="priceFilter">Preço:</label>
+                        <select id="priceFilter" onchange="filterProducts()">
+                            <option value="">Todos</option>
+                            <option value="0-50">Até R$ 50</option>
+                            <option value="50-100">R$ 50 - R$ 100</option>
+                            <option value="100-200">R$ 100 - R$ 200</option>
+                            <option value="200+">Acima de R$ 200</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="sortFilter">Ordenar por:</label>
+                        <select id="sortFilter" onchange="filterProducts()">
+                            <option value="name">Nome</option>
+                            <option value="price-low">Menor Preço</option>
+                            <option value="price-high">Maior Preço</option>
+                            <option value="popular">Mais Vendidos</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Lista de Produtos -->
+                <div class="products-grid" id="allProducts">
+                    <!-- Produtos serão carregados via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Página de Detalhes do Produto -->
+        <section id="product-detail" class="page">
+            <div class="container">
+                <div class="product-detail-content" id="productDetailContent">
+                    <!-- Conteúdo será carregado via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Página do Carrinho -->
+        <section id="cart" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h2 class="page-title">Seu Carrinho</h2>
+                    <p class="page-subtitle">Revise seus itens antes de finalizar</p>
+                </div>
+                
+                <div class="cart-content">
+                    <div class="cart-items" id="cartItems">
+                        <!-- Itens do carrinho serão carregados via JavaScript -->
+                    </div>
+                    
+                    <div class="cart-summary">
+                        <div class="summary-item">
+                            <span>Subtotal:</span>
+                            <span id="cartSubtotal">R$ 0,00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Frete:</span>
+                            <span>Grátis</span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Total:</span>
+                            <span id="cartTotal">R$ 0,00</span>
+                        </div>
+                        
+                        <button class="checkout-button" onclick="showPage('checkout')">
+                            Finalizar Compra
+                            <i class="fas fa-credit-card"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Página de Checkout -->
+        <section id="checkout" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h2 class="page-title">Finalizar Compra</h2>
+                    <p class="page-subtitle">Preencha seus dados para concluir o pedido</p>
+                </div>
+                
+                <div class="checkout-content">
+                    <form class="checkout-form" id="checkoutForm">
+                        <div class="form-section">
+                            <h3>Dados Pessoais</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="firstName">Nome:</label>
+                                    <input type="text" id="firstName" name="firstName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="lastName">Sobrenome:</label>
+                                    <input type="text" id="lastName" name="lastName" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="email">E-mail:</label>
+                                    <input type="email" id="email" name="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Telefone:</label>
+                                    <input type="tel" id="phone" name="phone" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Endereço de Entrega</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="zipCode">CEP:</label>
+                                    <input type="text" id="zipCode" name="zipCode" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="address">Endereço:</label>
+                                    <input type="text" id="address" name="address" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">Cidade:</label>
+                                    <input type="text" id="city" name="city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">Estado:</label>
+                                    <select id="state" name="state" required>
+                                        <option value="">Selecione</option>
+                                        <option value="SP">São Paulo</option>
+                                        <option value="RJ">Rio de Janeiro</option>
+                                        <option value="MG">Minas Gerais</option>
+                                        <!-- Outros estados -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Forma de Pagamento</h3>
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="credit" checked>
+                                    <span>Cartão de Crédito</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="debit">
+                                    <span>Cartão de Débito</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="pix">
+                                    <span>PIX</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="place-order-button">
+                            Finalizar Pedido
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
+                    
+                    <div class="order-summary">
+                        <h3>Resumo do Pedido</h3>
+                        <div id="checkoutSummary">
+                            <!-- Resumo será carregado via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Página de Contato -->
+        <section id="contact" class="page">
+            <div class="container">
+                <div class="page-header">
+                    <h2 class="page-title">Entre em Contato</h2>
+                    <p class="page-subtitle">Estamos aqui para ajudar você</p>
+                </div>
+                
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <h3>E-mail</h3>
+                                <p>contato@desejosecreto.com.br</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <h3>Telefone</h3>
+                                <p>(11) 99999-9999</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <h3>Horário de Atendimento</h3>
+                                <p>Segunda a Sexta: 9h às 18h</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Nome:</label>
+                            <input type="text" id="contactName" name="contactName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactEmail">E-mail:</label>
+                            <input type="email" id="contactEmail" name="contactEmail" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactSubject">Assunto:</label>
+                            <input type="text" id="contactSubject" name="contactSubject" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactMessage">Mensagem:</label>
+                            <textarea id="contactMessage" name="contactMessage" rows="5" required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="submit-button">
+                            Enviar Mensagem
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Desejo Secreto</h3>
+                    <p>Sua loja de produtos íntimos com total discrição e qualidade premium.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Links Úteis</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Política de Privacidade</a></li>
+                        <li><a href="#">Termos de Uso</a></li>
+                        <li><a href="#">Trocas e Devoluções</a></li>
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Atendimento</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Central de Ajuda</a></li>
+                        <li><a href="#">Rastrear Pedido</a></li>
+                        <li><a href="#">Fale Conosco</a></li>
+                        <li><a href="#">Suporte</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Newsletter</h4>
+                    <p>Receba ofertas exclusivas e novidades</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="Seu e-mail" required>
+                        <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Desejo Secreto. Todos os direitos reservados.</p>
+                <p>Site desenvolvido para maiores de 18 anos.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/script.js"></script>
+</body>
+</html>
+
