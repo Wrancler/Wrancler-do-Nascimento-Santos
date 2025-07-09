@@ -1,393 +1,698 @@
-/* ========================================
-   CONFIGURAÇÕES GLOBAIS E BODY
-   ======================================== 
-  
-   */
+/* --- Variáveis CSS: O Coração do Nosso Design System --- */
+:root {
+    /* Paleta de Cores (Roxo principal para distinção, tons de cinza/preto para sofisticação) */
+    --color-primary-dark: #000000;
+    --color-gray-darkest: #111111;
+    --color-gray-dark: #1a1a1a;
+    --color-gray-medium: #333333;
+    --color-gray-light: #555555;
+    --color-purple-main: #9B59B6; /* Roxo vibrante Jenifer Lima */
+    --color-purple-light: rgba(155, 89, 182, 0.1); /* Para fundos sutis */
+    --color-purple-dark: #8e44ad; /* Hover/Ativo */
+    --color-pink-accent: #ff69b4; /* Um toque de rosa para maquiagem */
+    --color-pink-shadow: rgba(255, 105, 180, 0.2); /* Sombra suave para o rosa */
+    --color-text-light: #ffffff;
+    --color-text-medium: #e0e0e0;
+    --color-text-dark: #cccccc;
+
+    /* Tipografia */
+    --font-family-heading: 'Montserrat', sans-serif;
+    --font-family-display: 'Playfair Display', serif;
+    --font-family-body: 'Roboto', sans-serif;
+
+    --font-size-base: 1rem; /* 16px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem; /* 36px */
+    --font-size-5xl: 3rem; /* 48px */
+    --font-size-6xl: 3.75rem; /* 60px */
+
+    /* Espaçamentos (base 0.5rem = 8px) */
+    --spacing-xs: 0.5rem;   /* 8px */
+    --spacing-sm: 1rem;     /* 16px */
+    --spacing-md: 1.5rem;   /* 24px */
+    --spacing-lg: 2rem;     /* 32px */
+    --spacing-xl: 3rem;     /* 48px */
+    --spacing-2xl: 4rem;    /* 64px */
+    --spacing-3xl: 6rem;    /* 96px */
+
+    /* Bordas e Sombras */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-xl: 1rem;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    --shadow-purple-glow: 0 0 25px rgba(155, 89, 182, 0.5); /* Sombra roxa intensa */
+
+    /* Transições */
+    --transition-fast: 0.2s ease-in-out;
+    --transition-normal: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
+}
+
+/* --- Estilos Globais e Reset --- */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
-   background: linear-gradient(rgba(0, 0, 0, 0.87), rgba(0,0,0,0.6)),
-              url("imagens/pequenojeni.jpeg") center/cover no-repeat;
-  font-family: Arial, sans-serif;
-  margin: 0px;
-  padding: 0px;
- 
-  color: #f1f1f1;
-  overflow-x: hidden; /* previne rolagem horizontal */
+    font-family: var(--font-family-body);
+    line-height: 1.6;
+    color: var(--color-text-light);
+    background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.8)), 
+                url("imagens/pequenojeni.jpeg") center center / cover no-repeat fixed; /* Parallax aprimorado */
+    overflow-x: hidden; /* Garante que não haja rolagem horizontal */
+    -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
+    scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
 }
 
-/* ========================================
-   CABEÇALHO (HEADER)
-   ======================================== */
-
-header {
-  background: linear-gradient(rgba(3, 3, 3, 0), rgba(0, 0, 0, 0.322)),
-              url("imagens/jeniferheader.jpeg") center/cover no-repeat;
- text-align: center;
-      padding: 4rem 1rem 2rem;
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
- header h1 {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.8em;
-      color: #fff;
-      text-shadow: 0 0 8px #ff69b4a1;
-    }
-
- header p {
-      font-style: italic;
-      color: #ddd;
-    }
-
-
-/* ========================================
-   SEÇÃO DE DESCRIÇÃO E PREÇO
-   ======================================== */
-
-.descricao, .preco {
-  padding: 2rem;
-  max-width: 700px;
-  margin: auto;
-  
+ul {
+    list-style: none;
 }
 
-.descricao > h2 {
-  text-shadow: 0 0 6px #ff69b4a1;
-  color: white;
-  text-align: center;
-  
+.container {
+    max-width: 1100px; /* Um pouco mais amplo para desktop */
+    margin: 0 auto;
+    padding: 0 var(--spacing-sm); /* Padding lateral padrão */
 }
 
-.descricao ul {
-  list-style: none;
-  padding: 0;
+.section-padding {
+    padding: var(--spacing-3xl) 0; /* Padding vertical padrão para seções */
+    position: relative; /* Para possíveis efeitos internos */
+    z-index: 1; /* Garante que seções fiquem acima do background */
 }
 
-.descricao li::before {
-  content: "\2705";
-  margin-right: 5px;
+.section-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    text-align: center;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-2xl);
+    position: relative;
+    padding-bottom: var(--spacing-sm);
 }
 
-.preco h2 span {
-  color: #50ff40;
+.section-title::after {
+    content: '';
+    display: block;
+    width: 90px; /* Largura da linha */
+    height: 4px;
+    background-color: var(--color-purple-main);
+    margin: var(--spacing-xs) auto 0;
+    border-radius: var(--border-radius-sm);
 }
 
-
-/* ========================================
-   LISTA DE CONTEÚDO
-   ======================================== */
-
-.lista-conteudo {
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0;
-  color: #bebebe; /* cor mais escura */
-  font-size: 1rem;
-  line-height: 1.6;
-  box-shadow: 0px 4px 15px black;
+/* --- Cabeçalho Hero --- */
+.hero-header {
+    position: relative;
+    padding: var(--spacing-3xl) 0 var(--spacing-xl);
+    min-height: 70vh; /* Altura mínima para a seção principal */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6)), 
+                url("imagens/jeniferheader.jpeg") center top / cover no-repeat;
+    background-blend-mode: multiply; /* Mistura o gradiente com a imagem */
 }
 
-.lista-conteudo li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: flex-start;
+.hero-header::before { /* Overlay roxo sutil, similar ao Desejo Secreto */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(0, 0, 0, 0.25));
+    z-index: 0;
 }
 
-
-
-/* ========================================
-   IMAGEM DE CAPA / CARROSSEL
-   ======================================== */
-
-.imagem-capa {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+.header-content {
+    position: relative;
+    z-index: 1;
+    padding: var(--spacing-md);
 }
 
-.imagem-capa img {
-  width: 100vw;
-  height: auto;
-  flex-shrink: 0;
-  display: block;
-  object-fit: cover;
-  max-height: 550px;
-  border-radius: 0px;
-  scroll-snap-align: center;
+.hero-header h1 {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-6xl); /* Título grande e impactante */
+    font-weight: 700;
+    color: var(--color-text-light);
+    text-shadow: 0 0 15px var(--color-pink-shadow); /* Sombra mais destacada */
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.1;
+    background: linear-gradient(45deg, var(--color-text-light), var(--color-pink-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-
-/* ========================================
-   REDES SOCIAIS
-   ======================================== */
-
-.redes-sociais {
-  padding: 10px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  
+.hero-header p {
+    font-family: var(--font-family-display); /* Mais elegante */
+    font-size: var(--font-size-xl);
+    font-style: italic;
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-xl);
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.redes-sociais a {
-  background-color: rgba(243, 240, 240, 0.171);
-  color: #fff;
-  padding: 8px 20px;
-  font-weight: bold;
-  text-decoration: none;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.3s;
+/* --- Navegação de Redes Sociais --- */
+.social-links-nav {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
 }
 
-.redes-sociais a:hover {
-  background-color: #fcfcfc;
-  color: #000;
+.social-links-nav a {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background-color: var(--color-gray-dark);
+    color: var(--color-text-medium);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
+    transition: var(--transition-normal);
+    border: 1px solid var(--color-gray-medium); /* Borda sutil */
+    box-shadow: var(--shadow-sm);
 }
 
-.redes-sociais i {
-  font-size: 1.2rem;
+.social-links-nav a:hover {
+    background-color: var(--color-purple-light);
+    color: var(--color-purple-main);
+    transform: translateY(-3px); /* Efeito suave */
+    border-color: var(--color-purple-main);
+    box-shadow: var(--shadow-md);
 }
 
-/* ========================================
-   GALERIA E SETAS
-   ======================================== */
-
-.galeria-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  gap: 10px;
-  padding: 1rem;
-  overflow: hidden;
+.social-links-nav i {
+    font-size: var(--font-size-lg);
 }
 
-  .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 2rem;
-    }
+/* Cores específicas dos ícones */
+.social-links-nav .fa-whatsapp { color: #25D366; }
+.social-links-nav .fa-instagram { color: #E1306C; }
+.social-links-nav .fa-tiktok { color: #69C9D0; }
+.social-links-nav .fa-youtube { color: #FF0000; }
+.social-links-nav .fa-facebook { color: #1877F2; }
 
-.seta {
-  font-size: 2rem;
-  color: #ffffff2c;
-  cursor: pointer;
-  user-select: none;
-  padding: 0 10px;
-  transition: color 0.3s;
+/* --- Carrossel de Imagens (Galeria) --- */
+.gallery-section {
+    background-color: var(--color-primary-dark);
+    padding: var(--spacing-md) 0; /* Padding mínimo para o carrossel */
+    position: relative;
+    overflow: hidden;
 }
 
-.seta:hover {
-  color: #ffffff;
+.image-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Suaviza rolagem em iOS */
+    width: 100%;
+    max-height: 550px; /* Altura máxima para imagens maiores */
+    border-radius: var(--border-radius-xl); /* Mais arredondado */
+    box-shadow: var(--shadow-lg);
+    margin: 0 auto;
+    position: relative;
+    z-index: 5;
 }
 
-/* ========================================
-   LAYOUT DE COLUNAS (GRID)
-   ======================================== */
-
-.grid-2-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas */
-    gap: 30px; /* Espaçamento entre os itens */
-    margin-top: 30px;
+.image-carousel img {
+    width: 100vw; /* Cada imagem ocupa a largura total da viewport */
+    height: 100%; /* Ocupa a altura total do carrossel */
+    flex-shrink: 0; /* Impede que as imagens encolham */
+    object-fit: cover; /* Garante que a imagem preencha o espaço sem distorcer */
+    scroll-snap-align: center; /* Garante que a imagem pare no centro ao rolar */
+    border-radius: var(--border-radius-xl); /* Mantém arredondamento */
 }
 
-.feature-item {
-    background-color: #ffffff18;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+/* --- Botão CTA Principal --- */
+.cta-section {
+    padding: var(--spacing-xl) var(--spacing-sm);
+    background-color: var(--color-gray-darkest);
     text-align: center;
 }
 
-.feature-item .feature-icon {
-    font-size: 48px;
-    color: #fafafa71; /* Cor rosa, combine com sua paleta */
-    margin-bottom: 15px;
+.main-cta-button {
+    display: inline-flex; /* Para alinhar ícone e texto */
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    background: linear-gradient(45deg, var(--color-purple-main), var(--color-purple-dark));
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--border-radius-xl);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    box-shadow: var(--shadow-purple-glow); /* Efeito de brilho roxo */
+    max-width: 400px; /* Limita a largura do botão */
 }
 
-.feature-item h3 {
-    font-size: 22px;
-    color: #e9e8e8;
-    margin-bottom: 10px;
+.main-cta-button i {
+    font-size: var(--font-size-xl);
 }
 
-.feature-item p {
-    font-size: 18px;
-    color: #ccc4c4;
-    line-height: 1.6;
+.main-cta-button:hover {
+    transform: translateY(-4px); /* Efeito de elevação mais pronunciado */
+    box-shadow: 0 0 35px rgba(155, 89, 182, 0.7); /* Brilho mais forte no hover */
 }
 
-/* ========================================
-   RESPONSIVIDADE (MEDIA QUERIES)
-   ======================================== */
+/* --- Seção "Para Quem É Este Curso?" --- */
+.benefits-section {
+    background-color: var(--color-gray-darkest); /* Fundo escuro */
+}
 
-@media (max-width: 768px) {
-    .grid-2-cols {
-        grid-template-columns: 1fr; /* Uma coluna em telas menores */
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adaptável */
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
+}
+
+.benefit-card {
+    background-color: var(--color-gray-dark);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    border: 1px solid transparent;
+    transition: var(--transition-normal);
+}
+
+.benefit-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--color-purple-main);
+    box-shadow: var(--shadow-purple-glow);
+    background-color: var(--color-gray-medium); /* Leve clareamento no hover */
+}
+
+.benefit-icon {
+    font-size: var(--font-size-5xl);
+    color: var(--color-purple-main);
+    margin-bottom: var(--spacing-md);
+}
+
+.benefit-card h3 {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-sm);
+}
+
+.benefit-card p {
+    font-size: var(--font-size-base);
+    color: var(--color-text-dark);
+}
+
+/* --- Seção "O Que Você Vai Aprender:" --- */
+.content-section {
+    background-color: var(--color-primary-dark); /* Fundo contrastante */
+    padding: var(--spacing-3xl) 0;
+}
+
+.course-topics-list {
+    max-width: 700px;
+    margin: var(--spacing-xl) auto var(--spacing-2xl);
+    padding: var(--spacing-xl);
+    background-color: var(--color-gray-dark);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-gray-medium);
+}
+
+.course-topics-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-medium);
+    font-weight: 400;
+}
+
+.course-topics-list li i {
+    color: var(--color-purple-main);
+    font-size: var(--font-size-xl);
+    flex-shrink: 0;
+    margin-top: 2px; /* Pequeno ajuste de alinhamento visual */
+}
+
+.course-summary-text {
+    text-align: center;
+    font-family: var(--font-family-display); /* Mais elegância */
+    font-size: var(--font-size-lg);
+    font-style: italic;
+    color: var(--color-text-dark);
+    max-width: 600px;
+    margin: var(--spacing-lg) auto 0;
+}
+
+/* --- Seção Bônus --- */
+.bonus-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.7)), 
+                url("imagens/certificadojeni.png") center center / cover no-repeat fixed; /* Parallax aqui também */
+    background-blend-mode: multiply;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.bonus-section::before { /* Overlay roxo mais forte */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(0, 0, 0, 0.3));
+    z-index: 0;
+}
+
+.bonus-section > .container { /* Garante que o conteúdo fique acima do overlay */
+    position: relative;
+    z-index: 1;
+}
+
+.bonus-intro-text {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-dark);
+    max-width: 700px;
+    margin: 0 auto var(--spacing-xl);
+}
+
+.bonus-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    max-width: 600px;
+    margin: var(--spacing-xl) auto;
+}
+
+.bonus-item {
+    background-color: var(--color-gray-dark);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    border: 1px solid var(--color-gray-medium);
+    transition: var(--transition-fast);
+}
+
+.bonus-item:hover {
+    background-color: var(--color-gray-medium);
+    border-color: var(--color-purple-main);
+    transform: translateY(-2px);
+}
+
+.bonus-item .bonus-icon {
+    font-size: var(--font-size-2xl);
+    color: var(--color-purple-main);
+    flex-shrink: 0;
+}
+
+.bonus-item p {
+    font-size: var(--font-size-base);
+    color: var(--color-text-medium);
+    margin: 0; /* Resetar margem do parágrafo */
+    text-align: left;
+}
+
+.certificate-display {
+    margin: var(--spacing-2xl) auto;
+    max-width: 400px; /* Limita o tamanho da imagem do certificado */
+    background-color: var(--color-gray-dark); /* Fundo para o certificado */
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-purple-main);
+    overflow: hidden; /* Garante que a imagem não vaze */
+}
+
+.certificate-display img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--border-radius-md);
+}
+
+/* Botão CTA de Preço */
+.price-cta-button {
+    display: inline-flex;
+    flex-direction: column; /* Texto em duas linhas */
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    background: linear-gradient(45deg, var(--color-purple-main), var(--color-purple-dark));
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--border-radius-xl);
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    box-shadow: var(--shadow-purple-glow);
+    max-width: 450px;
+    margin: var(--spacing-2xl) auto 0; /* Centraliza e adiciona margem superior */
+    text-align: center;
+}
+
+.price-cta-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 35px rgba(155, 89, 182, 0.7);
+}
+
+.price-text {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-xs); /* Espaço entre as linhas */
+    color: var(--color-text-light);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* Sombra suave para o texto do preço */
+}
+
+.call-to-action-text {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-medium);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.call-to-action-text i {
+    font-size: var(--font-size-base);
+}
+
+/* --- Rodapé --- */
+.site-footer {
+    background-color: var(--color-gray-dark);
+    border-top: 1px solid var(--color-purple-main);
+    padding: var(--spacing-lg) 0;
+    text-align: center;
+    color: var(--color-text-dark);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-3xl);
+}
+
+.site-footer strong {
+    color: var(--color-text-light);
+}
+
+/* --- Responsividade Aprimorada --- */
+@media (max-width: 1024px) {
+    .hero-header h1 {
+        font-size: var(--font-size-5xl);
     }
 }
 
-@media (max-width: 600px) {
-  .seta {
-    font-size: 1.6rem;
-  }
+@media (max-width: 768px) {
+    .container {
+        padding: 0 var(--spacing-xs); /* Reduz padding lateral em telas menores */
+    }
+
+    .hero-header {
+        padding: var(--spacing-2xl) 0 var(--spacing-lg);
+        min-height: 60vh;
+    }
+
+    .hero-header h1 {
+        font-size: var(--font-size-4xl);
+    }
+
+    .hero-header p {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .social-links-nav {
+        flex-direction: column; /* Botões empilhados em mobile */
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .social-links-nav a {
+        width: 90%; /* Ocupa mais largura */
+        max-width: 280px;
+        font-size: var(--font-size-sm);
+    }
+
+    .image-carousel {
+        max-height: 400px; /* Altura ajustada para mobile */
+        border-radius: 0; /* Remove borda para preencher a largura total */
+    }
+
+    .image-carousel img {
+        height: 100%;
+        border-radius: 0;
+    }
+
+    .main-cta-button {
+        font-size: var(--font-size-base);
+        padding: var(--spacing-md) var(--spacing-xl);
+        width: 90%;
+        max-width: 300px;
+    }
+
+    .section-title {
+        font-size: var(--font-size-3xl);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .section-title::after {
+        width: 70px;
+    }
+
+    .benefits-grid {
+        grid-template-columns: 1fr; /* Uma coluna em mobile */
+        gap: var(--spacing-lg);
+    }
+
+    .benefit-card {
+        padding: var(--spacing-lg);
+    }
+
+    .benefit-icon {
+        font-size: var(--font-size-4xl);
+    }
+
+    .benefit-card h3 {
+        font-size: var(--font-size-lg);
+    }
+
+    .benefit-card p {
+        font-size: var(--font-size-sm);
+    }
+
+    .course-topics-list {
+        padding: var(--spacing-lg);
+        margin: var(--spacing-lg) auto var(--spacing-xl);
+    }
+
+    .course-topics-list li {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .course-topics-list li i {
+        font-size: var(--font-size-lg);
+    }
+
+    .course-summary-text {
+        font-size: var(--font-size-base);
+    }
+
+    .bonus-section {
+        padding: var(--spacing-2xl) 0;
+    }
+
+    .bonus-intro-text {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .bonus-item p {
+        font-size: var(--font-size-sm);
+    }
+
+    .certificate-display {
+        max-width: 300px;
+        padding: var(--spacing-sm);
+    }
+
+    .price-cta-button {
+        font-size: var(--font-size-base);
+        padding: var(--spacing-md) var(--spacing-xl);
+        width: 90%;
+        max-width: 350px;
+    }
+
+    .price-text {
+        font-size: var(--font-size-xl);
+    }
+
+    .call-to-action-text {
+        font-size: var(--font-size-base);
+    }
+
+    .site-footer {
+        padding: var(--spacing-md) 0;
+        font-size: var(--font-size-xs);
+    }
 }
 
 @media (max-width: 480px) {
-  header h1 {
-    font-size: 1.6rem;
-    letter-spacing: 1px;
-    text-shadow: 0 0 6px #50ff4088;
-  }
+    .hero-header h1 {
+        font-size: var(--font-size-3xl);
+    }
 
-  header p {
-    font-size: 1rem;
-  }
+    .hero-header p {
+        font-size: var(--font-size-sm);
+    }
 
-  body {
-    overflow-x: hidden; /* força a remover rolagem lateral */
-  }
-}
+    .section-title {
+        font-size: var(--font-size-2xl);
+    }
 
-@media (max-width: 380px) {
-  .botao {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.9rem;
-  }
-
-  .feature-item {
-    padding: 20px;
-  }
-
-  .redes-sociais a {
-    padding: 6px 10px;
-  }
-}
-
-
-/* ========================================
-   OUTROS ESTILOS (VERIFICAR USO)
-   ======================================== */
-
-.container h2 {
-    color: white;
-    text-align: center;
-    text-shadow: 0 0 6px #000000ad;  
-    padding: 1rem 2rem;
-    margin-top: 1rem;
-    color: #fdfdfdfd;
-    text-decoration: none;
-    border-radius: 15px;
-    font-weight: bold;
-}
-
-
-/* Seção bônus */
-.bonus {
-  padding: 2rem;
-  max-width: 700px;
-  margin: 2rem auto;
-  background: linear-gradient(rgba(63, 62, 62, 0.904), rgb(0, 0, 0)),
-              url("imagens/certificadojeni.png") center/cover no-repeat;
-  border-radius: 12px;
-  color: #f1f1f1;
-  text-align: center;
-}
-
-.bonus h2 {
-    font-size: 1.6rem;
-    text-shadow: 0 0 6px var(--primary-color);
-    margin-bottom: 0.5rem;
-}
-
-.bonus p {
-  text-align: center;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  color: #fcf6f6;
-  font-weight: bold;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-}
-
-.bonusli {
-  text-align: center;
-  background-color: rgba(7, 7, 7, 0.103);
-  border-radius: 10px;
-  color: white;
-}
-
-
-
-/* Selo visual */
-.selo-certificado {
-  margin: 1rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-weight: bold;
-  color: #f6f7f6;
-}
-
-.selo-certificado img {
-  width: 40px;
-  height: auto;
-}
-
-
-/* ========================================
-   BOTÃO
-   ======================================== */
-
-.botao {
-    display: block;
-    padding: 0.5rem 0.5rem; /* Ajustei o padding para ficar mais amplo */
-    margin-top: 1rem; /* Ajustei a margem superior */
-    background: #08e40833;
-    color: var(--text-dark); /* Cor do texto mais escura para contraste */
-    text-decoration: none;
-    text-align: center;
-    border-radius: 8px;
-    font-weight: bold;
+    .main-cta-button {
+        font-size: var(--font-size-sm);
+        padding: var(--spacing-sm) var(--spacing-lg);
+    }
     
-    box-shadow: 0 0 15px rgb(126, 117, 117); /* Sombra mais vibrante */
-    transition: all 0.3s ease;
+    .benefit-icon {
+        font-size: var(--font-size-3xl);
+    }
+
+    .course-topics-list li {
+        font-size: var(--font-size-sm);
+    }
+
+    .price-text {
+        font-size: var(--font-size-lg);
+    }
+
+    .call-to-action-text {
+        font-size: var(--font-size-sm);
+    }
 }
-
-.botao:hover {
-   
-  transform: scale(1.05);
-  background: #3dd60e31;
-  color: rgb(243, 243, 243);
-
-}
-
-/* ========================================
-   RODAPÉ (FOOTER)
-   ======================================== */
-
-footer {
-  text-align: center;
-  background: #2c2c2c;
-  padding: 1rem;
-  font-size: 0.9rem;
-  color: #aaa;
-}
-
-
-.section-title::after {
-  content: '';
-  display: block;
-  width: auto;
-  height: 4px;
-  margin: 8px auto 0;
-  background-color: rgba(255, 105, 180, 0.308);
-  border-radius: 2px;
-}
-
