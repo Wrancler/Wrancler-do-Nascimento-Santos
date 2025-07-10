@@ -63,16 +63,23 @@
    ======================================== 
   
    */
+   /* --- Estilos Globais e Reset --- */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 
 body {
-   background: linear-gradient(rgba(0, 0, 0, 0.87), rgba(0,0,0,0.6)),
-              url("imagens/pequenojeni.jpeg") center/cover no-repeat;
-  font-family: Arial, sans-serif;
-  margin: 0px;
-  padding: 0px;
- 
-  color: #f1f1f1;
-  overflow-x: hidden; /* previne rolagem horizontal */
+   font-family: var(--font-family-body);
+    line-height: 1.6;
+    color: var(--color-text-light);
+    background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.8)), 
+                url("imagens/pequenojeni.jpeg") center center / cover no-repeat fixed; /* Parallax aprimorado */
+    overflow-x: hidden; /* Garante que não haja rolagem horizontal */
+    -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
+    scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
 }
 
 /* ========================================
@@ -158,6 +165,12 @@ header {
     font-weight: 400;
 }
 
+.lista-conteudo li i {
+    color: #9B59B6;;
+    font-size: var(--font-size-xl);
+    flex-shrink: 0;
+    margin-top: 2px; /* Pequeno ajuste de alinhamento visual */
+}
 
 
 /* ========================================
@@ -219,6 +232,13 @@ header {
   font-size: 1.2rem;
 }
 
+/* Cores específicas dos ícones */
+.redes-sociais .fa-whatsapp { color: #25d36557; }
+.redes-sociais .fa-instagram { color: #e1306b59; }
+.redes-sociais .fa-tiktok { color: #69c9d07a; }
+.redes-sociais .fa-youtube { color: #ff00006b; }
+.redes-sociais .fa-facebook { color: #1876f26b; }
+
 /* ========================================
    GALERIA E SETAS
    ======================================== */
@@ -238,6 +258,20 @@ header {
       margin: auto;
       padding: 2rem;
     }
+    
+  .containeraprender {
+     
+    max-width: 1100px; /* Um pouco mais amplo para desktop */
+    margin: 0 auto;
+    padding: 0 var(--spacing-sm); /* Padding lateral padrão */
+
+  }
+
+  .containeraprender li {
+    max-width: 1100px; /* Um pouco mais amplo para desktop */
+    margin: 0 auto;
+    padding: 0 var(--spacing-sm); /* Padding lateral padrão */
+  }
 
 .seta {
   font-size: 2rem;
