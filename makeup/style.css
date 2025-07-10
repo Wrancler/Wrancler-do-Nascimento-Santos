@@ -265,7 +265,7 @@ header p {
     background-color: #ffffff18;
     padding: 30px;
     border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px rgb(88, 66, 94);
     text-align: center;
 }
 
@@ -274,6 +274,7 @@ header p {
     color: #fafafa71; /* Cor rosa, combine com sua paleta */
     margin-bottom: 15px;
 }
+
 
 .feature-item h3 {
     font-size: 22px;
