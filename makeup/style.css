@@ -69,8 +69,8 @@ body {
     font-family: var(--font-family-body);
     line-height: 1.6;
     color: var(--color-text-light);
-    background: linear-gradient(rgba(0, 0, 0, 0.63), rgba(0, 0, 0, 0.8)),
-                url("imagens/jeni03.png") center center / cover no-repeat fixed; /* Parallax aprimorado */
+    background: linear-gradient(rgba(0, 0, 0, 0.63), rgba(0, 0, 0, 0.425)),
+                url("imagens/pequenojeni.jpeg") center center / cover no-repeat fixed; /* Parallax aprimorado */
     overflow-x: hidden; /* Garante que não haja rolagem horizontal */
     -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
     scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
@@ -320,6 +320,7 @@ header p {
 }
 
 /* --- Seção de Bônus "O QUE VOCÊ IRÁ RECEBER:" --- */
+/* --- Seção de Bônus "O QUE VOCÊ IRÁ RECEBER:" --- */
 .bonus { /* Classe na section bônus */
     padding: var(--spacing-3xl) 0;
 }
@@ -384,6 +385,22 @@ header p {
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--color-purple-main);
     overflow: hidden; /* Garante que a imagem não vaze */
+    
+    /* --- INÍCIO DA ALTERAÇÃO PARA ESCURECER A IMAGEM --- */
+    position: relative; /* Necessário para posicionar o pseudo-elemento */
+}
+
+.certificate-display::before {
+    content: ''; /* Conteúdo vazio para o pseudo-elemento */
+    position: absolute; /* Posicionamento absoluto em relação ao pai (.certificate-display) */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Camada preta semi-transparente (50% de opacidade) */
+    border-radius: var(--border-radius-md); /* Aplica o border-radius da imagem ao overlay */
+    z-index: 1; /* Garante que o overlay fique acima da imagem */
+    pointer-events: none; /* Permite que cliques passem pelo overlay se houver links por baixo */
 }
 
 .certificate-display img {
@@ -391,7 +408,10 @@ header p {
     height: auto;
     display: block;
     border-radius: var(--border-radius-md);
+    position: relative; /* Garante que a imagem fique abaixo do overlay (z-index padrão é 0) */
+    z-index: 0; /* Define a imagem para ficar abaixo do pseudo-elemento */
 }
+/* --- FIM DA ALTERAÇÃO PARA ESCURECER A IMAGEM --- */
 
 /* --- Selo Visual (não encontrado no HTML, mas mantido conforme pedido) --- */
 .selo-certificado {
