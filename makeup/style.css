@@ -101,13 +101,23 @@ body {
     padding-bottom: var(--spacing-sm);
 }
 
+.section-title::before { /* NOVO: Adiciona a linha na parte de CIMA */
+    content: '';
+    display: block;
+    width: auto; /* Pode ser ajustado para uma largura fixa ou porcentagem, como 80% */
+    height: 4px;
+    margin: 0 auto 8px; /* Espaço entre a linha de cima e o texto */
+    background-color: rgba(255, 105, 180, 0.308); /* A mesma cor rosa */
+    border-radius: 2px;
+}
+
 .section-title::after {
     content: '';
     display: block;
     width: auto;
     height: 4px;
     margin: 8px auto 0;
-    background-color: rgba(255, 105, 180, 0.308);
+    
     border-radius: 2px;
 }
 
@@ -293,6 +303,14 @@ header p {
     padding-bottom: var(--spacing-sm);
 }
 
+.containeraprender p {
+   text-align: center;
+   font-size: var(--font-size-lg);
+   color: var(--color-text-dark);
+   max-width: 700px;
+   margin: 0 auto var(--spacing-xl);
+}
+
 .lista-conteudo {
     max-width: 700px;
     margin: var(--spacing-xl) auto var(--spacing-2xl);
@@ -320,6 +338,7 @@ header p {
     margin-top: 2px; /* Pequeno ajuste de alinhamento visual */
 }
 
+
 /* --- Seção de Bônus "O QUE VOCÊ IRÁ RECEBER:" --- */
 .bonus { /* Classe na section bônus */
     padding: var(--spacing-3xl) 0;
@@ -335,6 +354,7 @@ header p {
     color: var(--color-text-dark);
     max-width: 700px;
     margin: 0 auto var(--spacing-xl);
+    text-align: center;
 }
 
 .bonus-items-grid {
