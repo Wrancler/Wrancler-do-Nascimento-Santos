@@ -172,14 +172,39 @@ header p {
  color: #ddd;
 }
 
-/* --- Navegação de Redes Sociais no Header --- */
-.redes-sociais {
- padding: 10px;
- display: flex;
- justify-content: center;
- flex-wrap: wrap;
- gap: 10px;
+ .menu-toggle {
+  background: linear-gradient(45deg, #eb07e02f, var(--color-purple-main));
+  color: rgba(255, 255, 255, 0.89);
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-purple-glow);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+   /* oculto por padrão */
 }
+
+.menu-toggle:hover {
+  transform: scale(1.05);
+  background: linear-gradient(45deg, #eb07df18, var(--color-purple-main));
+  box-shadow: 0 0 15px #c749889d;
+
+}
+
+.redes-sociais.active {
+        display: flex;
+      }
+
+/* --- Navegação de Redes Sociais no Header --- */
+  .redes-sociais {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 1rem;
+      }
 
 .redes-sociais a {
  background-color: rgba(243, 240, 240, 0.171);
@@ -205,11 +230,11 @@ header p {
 }
 
 /* Cores específicas dos ícones */
-.redes-sociais .fa-whatsapp { color: #25d36671; } /* Sutilmente opaco no normal */
-.redes-sociais .fa-instagram { color: #e1306b71; }
-.redes-sociais .fa-tiktok { color: #69c9d071; }
-.redes-sociais .fa-youtube { color: #ff000071; }
-.redes-sociais .fa-facebook { color: #1876f271; }
+.redes-sociais .fa-whatsapp { color: #fcfcfcf3; } /* Sutilmente opaco no normal */
+.redes-sociais .fa-instagram { color: #ffffff; }
+.redes-sociais .fa-tiktok { color: #ffffff; }
+.redes-sociais .fa-youtube { color: #ffffff; }
+.redes-sociais .fa-facebook { color: #ffffff; }
 
 .redes-sociais a:hover .fa-whatsapp { color: #25d366; } /* Cor cheia no hover */
 .redes-sociais a:hover .fa-instagram { color: #e1306b; }
@@ -552,8 +577,8 @@ text-decoration: none;
 }
 
 .price-cta-button:hover {
- transform: translateY(-6px) scale(1.02);
-box-shadow: 0 0 45px rgba(233, 233, 233, 0.7);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 0 45px rgba(233, 233, 233, 0.7);
     animation: none; /* Remove a animação de pulso no hover */
 }
 
@@ -605,6 +630,13 @@ color: #aaa;
 .grid-2-cols {
   grid-template-columns: 1fr; /* Uma coluna em telas menores */
  }
+
+ @media (max-width: 400px) {
+      .menu-toggle {
+        display: block;
+        margin: 1rem auto 0;
+      }
+    }
 
  /* --- INÍCIO DA ALTERAÇÃO PARA MELHORAR O BACKGROUND NO MOBILE --- */
  body {
