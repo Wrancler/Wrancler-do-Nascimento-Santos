@@ -193,6 +193,11 @@ header p {
 
 }
 
+.hidden {
+  display: none;
+}
+
+
 .redes-sociais.active {
         display: flex;
       }

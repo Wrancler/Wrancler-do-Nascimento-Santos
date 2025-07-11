@@ -19,11 +19,17 @@
       <p>Aprenda a se maquiar de forma profissional e prática com Jenifer Lima! 💄</p>
       <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i> Redes Sociais</button>
       <nav class="redes-sociais" id="redesSociais">
+
+        <div id="social-links" class="social hidden">
         <a href="http://wa.me/5583986138621" target="_blank" data-aos="fade-up" data-aos-delay="100"><i class="fab fa-whatsapp"></i> WhatsApp</a>
         <a href="https://www.instagram.com/jeniferlimamakeup/" target="_blank" data-aos="fade-up" data-aos-delay="200"><i class="fab fa-instagram"></i> Instagram</a>
         <a href="https://www.tiktok.com/@jeniferlimamakeup" target="_blank" data-aos="fade-up" data-aos-delay="300"><i class="fab fa-tiktok"></i> TikTok</a>
         <a href="https://www.youtube.com/@jeniferlimamakeup/shorts" target="_blank" data-aos="fade-up" data-aos-delay="400"><i class="fab fa-youtube"></i> YouTube</a>
         <a href="https://www.facebook.com/share/1Bm5FNhvYk/?mibextid=wwXIfr" target="_blank" data-aos="fade-up" data-aos-delay="500"><i class="fab fa-facebook"></i> Facebook</a>
+        </div>
+
+
+       
       </nav>
     </div>
   </header>
@@ -155,8 +161,8 @@
     });
 
     document.getElementById('menuToggle').addEventListener('click', function () {
-      document.getElementById('redesSociais').classList.toggle('active');
-    });
+    document.getElementById('social-links').classList.toggle('hidden');
+});
 
 </script>
 
