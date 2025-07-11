@@ -160,8 +160,9 @@
       once: true
     });
 
-    document.getElementById('menuToggle').addEventListener('click', function () {
-    document.getElementById('social-links').classList.toggle('social-hidden');
+ document.getElementById('menuToggle').addEventListener('click', function () {
+  const menu = document.getElementById('social-links');
+  menu.classList.toggle('show-menu');
 });
 
 </script>

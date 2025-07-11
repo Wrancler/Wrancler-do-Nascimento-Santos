@@ -196,6 +196,12 @@ header p {
 .social-hidden {
   display: none;
 }
+#social-links.show-menu {
+  display: flex !important;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1rem;
+}
 
 
 .redes-sociais.active {
