@@ -173,7 +173,7 @@ header p {
 }
 
  .menu-toggle {
-     display: flex;
+  display: inline-block;
   gap: 10px;
   background: linear-gradient(45deg, #eb07e02f, var(--color-purple-main));
   color: rgba(255, 255, 255, 0.89);
@@ -698,4 +698,742 @@ padding: 20px;
  .redes-sociais a {
 padding: 6px 10px;
  }
+}   
+
+/* --- Variáveis CSS: O Coração do Nosso Design System --- */
+:root {
+ /* Paleta de Cores (Roxo principal para distinção, tons de cinza/preto para sofisticação) */
+ --color-primary-dark: #000000;
+ --color-gray-darkest: #111111;
+ --color-gray-dark: #1a1a1a;
+ --color-gray-medium: #333333;
+ --color-purple-main: #9c59b646; /* Roxo vibrante Jenifer Lima */
+ --color-purple-light: rgba(172, 25, 230, 0.1); /* Para fundos sutis */
+ --color-purple-dark: #ebebeb34; /* Hover/Ativo */
+ --color-pink-accent: #ff69b4; /* Um toque de rosa para maquiagem */
+ --color-pink-shadow: rgba(255, 105, 180, 0.2); /* Sombra suave para o rosa */
+ --color-text-light: #f8f8f8d5;
+ --color-text-medium: #e0e0e0;
+ --color-text-dark: #cccccc;
+
+ /* Tipografia */
+ --font-family-heading: 'Montserrat', sans-serif;
+ --font-family-display: 'Playfair Display', serif;
+ --font-family-body: 'Roboto', sans-serif;
+
+ --font-size-base: 1rem; /* 16px */
+ --font-size-sm: 0.875rem; /* 14px */
+ --font-size-lg: 1.125rem; /* 18px */
+ --font-size-xl: 1.25rem; /* 20px */
+ --font-size-2xl: 1.5rem; /* 24px */
+ --font-size-3xl: 1.875rem; /* 30px */
+ --font-size-4xl: 2.25rem; /* 36px */
+ --font-size-5xl: 3rem; /* 48px */
+ --font-size-6xl: 3.75rem; /* 60px */
+
+ /* Espaçamentos (base 0.5rem = 8px) */
+ --spacing-xs: 0.5rem;  /* 8px */
+ --spacing-sm: 1rem;  /* 16px */
+ --spacing-md: 1.5rem;  /* 24px */
+ --spacing-lg: 2rem;  /* 32px */
+ --spacing-xl: 3rem;  /* 48px */
+ --spacing-2xl: 4rem; /* 64px */
+ --spacing-3xl: 6rem; /* 96px */
+
+ /* Bordas e Sombras */
+ --border-radius-sm: 0.25rem;
+ --border-radius-md: 0.5rem;
+ --border-radius-lg: 0.75rem;
+ --border-radius-xl: 1rem;
+ --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+ --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+ --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+ --shadow-purple-glow: 0 0 25px rgba(155, 89, 182, 0.5); /* Sombra roxa intensa */
+
+ /* Transições */
+ --transition-fast: 0.2s ease-in-out;
+ --transition-normal: 0.3s ease-in-out;
+ --transition-slow: 0.5s ease-in-out;
+
+    /* NOVAS Variáveis para Animações */
+    --animation-duration: 0.8s;
+    --animation-delay-base: 0.1s;
+}
+
+/* ========================================
+    CONFIGURAÇÕES GLOBAIS E BODY
+    ======================================== */
+*, *::before, *::after {
+ margin: 0;
+ padding: 0;
+ box-sizing: border-box;
+}
+
+body {
+ font-family: var(--font-family-body);
+ line-height: 1.6;
+ color: var(--color-text-light);
+ /* Mantém o background-attachment: fixed para desktop */
+ background: linear-gradient(rgba(0, 0, 0, 0.89), rgba(0, 0, 0, 0.603)),
+  url("imagens/pequenojeni.jpeg") center center/ cover no-repeat fixed; /* Parallax aprimorado */
+overflow-x: hidden; /* Garante que não haja rolagem horizontal */
+ -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
+ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
+}
+
+/* Animação para entrada de elementos */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 25px var(--color-purple-main);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 45px var(--color-purple-main);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 25px var(--color-purple-main);
+    }
+}
+
+/* --- Estilos para Containers --- */
+.containeraprender { /* Usado para "PARA QUEM É ESTE CURSO?" e "O QUE VOCÊ VAI APRENDER?" */
+ max-width: 1100px; /* Um pouco mais amplo para desktop */
+ margin: 0 auto;
+ padding: 0 var(--spacing-sm); /* Padding lateral padrão */
+}
+.container { /* Usado para "O QUE VOCÊ IRÁ RECEBER:" */
+ max-width: 1100px; /* Um pouco mais amplo para desktop, ajustado para consistência */
+ margin: 0 auto;
+ padding: 0 var(--spacing-sm);
+}
+
+/* --- Estilos para Títulos de Seção --- */
+.section-title { /* Aplicado ao h2 em "PARA QUEM É ESTE CURSO?" e "O QUE VOCÊ IRÁ RECEBER:" */
+ font-family: var(--font-family-heading);
+ font-size: 2em; /* Mantido o valor original, mas a variável --font-size-4xl também pode ser usada */
+ font-weight: 700;
+ text-align: center;
+ color: var(--color-text-light);
+ margin-bottom: var(--spacing-2xl);
+ position: relative;
+ padding-bottom: var(--spacing-sm);
+}
+
+.section-title::before { /* NOVO: Adiciona a linha na parte de CIMA */
+ content: '';
+ display: block;
+ width: auto; /* Pode ser ajustado para uma largura fixa ou porcentagem, como 80% */
+ height: 4px;
+ margin: 0 auto 8px; /* Espaço entre a linha de cima e o texto */
+ background-color: rgba(255, 105, 180, 0.308); /* A mesma cor rosa */
+ border-radius: 2px;
+}
+
+.section-title::after {
+ content: '';
+ display: block;
+ width: auto;
+ height: 4px;
+ margin: 8px auto 0;
+ background-color: rgba(255, 105, 180, 0.308); /* A mesma cor rosa */
+ border-radius: 2px;
+}
+
+/* ========================================
+    CABEÇALHO (HEADER)
+    ======================================== */
+header {
+ background: linear-gradient(rgba(3, 3, 3, 0), rgba(0, 0, 0, 0.322)),
+url("imagens/jeniferheader.jpeg") center/cover no-repeat;
+ text-align: center;
+ padding: 4rem 1rem 2rem;
+}
+
+header h1 {
+ font-family: 'Montserrat', sans-serif;
+ font-size: 1.8em;
+ color: #fff;
+ text-shadow: 0 0 8px #ff69b4a1;
+}
+
+header p {
+ font-style: italic;
+ color: #ddd;
+}
+
+ .menu-toggle {
+  display: inline-block;
+  gap: 10px;
+  background: linear-gradient(45deg, #eb07e02f, var(--color-purple-main));
+  color: rgba(255, 255, 255, 0.89);
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-purple-glow);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+   /* oculto por padrão */
+}
+
+.menu-toggle:hover {
+  transform: scale(1.05);
+  background: linear-gradient(45deg, #eb07df18, var(--color-purple-main));
+  box-shadow: 0 0 15px #c749889d;
+
+}
+
+.social-hidden {
+  display: none;
+}
+#social-links.show-menu {
+  display: flex !important;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+
+ .redes-sociais.active {
+    display: flex !important;
+  }
+
+/* --- Navegação de Redes Sociais no Header --- */
+  .redes-sociais {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 1rem;
+      }
+
+.redes-sociais a {
+ background-color: rgba(243, 240, 240, 0.171);
+ color: #fff;
+ padding: 8px 20px;
+ font-weight: bold;
+ text-decoration: none;
+ border-radius: 5px;
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ transition: background-color 0.3s ease, transform 0.2s ease; /* Adiciona transição para transform */
+}
+
+.redes-sociais a:hover {
+ background-color: #fcfcfc;
+ color: #000;
+    transform: translateY(-3px); /* Pequena elevação ao passar o mouse */
+}
+
+.redes-sociais i {
+ font-size: 1.2rem;
+}
+
+/* Cores específicas dos ícones */
+.redes-sociais .fa-whatsapp { color: #fcfcfcf3; } /* Sutilmente opaco no normal */
+.redes-sociais .fa-instagram { color: #ffffff; }
+.redes-sociais .fa-tiktok { color: #ffffff; }
+.redes-sociais .fa-youtube { color: #ffffff; }
+.redes-sociais .fa-facebook { color: #ffffff; }
+
+.redes-sociais a:hover .fa-whatsapp { color: #25d366; } /* Cor cheia no hover */
+.redes-sociais a:hover .fa-instagram { color: #e1306b; }
+.redes-sociais a:hover .fa-tiktok { color: #69c9d0; }
+.redes-sociais a:hover .fa-youtube { color: #ff0000; }
+.redes-sociais a:hover .fa-facebook { color: #1876f2; }
+
+/* ========================================
+    CONTEÚDO PRINCIPAL (MAIN)
+    ======================================== */
+
+/* --- Seção de Galeria de Imagens (Carrossel) --- */
+.galeria-container {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ position: relative;
+ overflow: hidden;
+}
+
+.imagem-capa { /* Elemento interno do carrossel */
+ display: flex;
+ overflow-x: auto;
+ scroll-snap-type: x mandatory;
+ scroll-behavior: smooth;
+ -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.imagem-capa::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+
+.imagem-capa img {
+ width: 100vw;
+ height: auto;
+ flex-shrink: 0;
+ display: block;
+ object-fit: cover;
+ max-height: 550px;
+ border-radius: 0;
+ scroll-snap-align: center;
+}
+
+/* --- Seção de CTA Principal (Garanta seu acesso agora) --- */
+.cta-section {
+ padding: var(--spacing-xl) var(--spacing-sm);
+ background-color: var(--color-gray-darkest);
+ text-align: center;
+ text-decoration: none; /* Propriedade não aplicável a 'section' diretamente, mas mantida como estava */
+}
+
+.main-cta-button {
+ display: inline-flex; /* Para alinhar ícone e texto */
+ align-items: center;
+ justify-content: center;
+ gap: var(--spacing-sm);
+ padding: var(--spacing-lg) var(--spacing-2xl);
+ background: linear-gradient(45deg, var(--color-purple-main), var(--color-purple-dark));
+ color: var(--color-text-light);
+ border: none;
+ border-radius: var(--border-radius-xl);
+ font-size: var(--font-size-lg);
+ font-weight: 600;
+ cursor: pointer;
+ transition: var(--transition-normal);
+ box-shadow: var(--shadow-purple-glow); /* Efeito de brilho roxo */
+ max-width: 400px; /* Limita a largura do botão */
+ text-decoration: none;
+    animation: pulse 2s infinite ease-in-out; /* Adiciona a animação de pulso */
+}
+
+.main-cta-button i {
+ font-size: var(--font-size-xl);
+}
+
+.main-cta-button:hover {
+ transform: translateY(-6px) scale(1.02); /* Efeito de elevação mais pronunciado e ligeiro aumento */
+ box-shadow: 0 0 45px rgba(155, 89, 182, 0.9); /* Brilho mais forte e opacidade */
+    animation: none; /* Remove a animação de pulso no hover para focar na interação do usuário */
+}
+
+/* --- Seção "PARA QUEM É ESTE CURSO?" --- */
+.section-padding { /* Classe na section que contém o grid de features */
+ padding: var(--spacing-3xl) 0;
+}
+
+.grid-2-cols {
+ display: grid;
+ grid-template-columns: 1fr 1fr; /* Duas colunas */
+ gap: 30px; /* Espaçamento entre os itens */
+ margin-top: 30px;
+}
+
+.feature-item {
+ background-color: #ffffff18;
+ padding: 30px;
+ border-radius: 8px;
+ box-shadow: 0 4px 15px rgb(88, 66, 94);
+ text-align: center;
+    transition: var(--transition-normal); /* Adiciona transição para hover */
+}
+
+.feature-item .feature-icon {
+ font-size: 48px;
+ color: #fafafa71; /* Cor rosa, combine com sua paleta */
+ margin-bottom: 15px;
+}
+
+.feature-item:hover {
+    transform: translateY(-5px) scale(1.02); /* Eleva e aumenta ligeiramente no hover */
+    box-shadow: 0 8px 25px rgba(88, 66, 94, 0.7); /* Sombra mais intensa */
+}
+
+.feature-item h3 {
+ font-size: 22px;
+ color: #e9e8e8;
+ margin-bottom: 10px;
+}
+
+.feature-item p {
+ font-size: 18px;
+ color: #ccc4c4;
+ line-height: 1.6;
+}
+
+/* --- Seção "O QUE VOCÊ VAI APRENDER:" --- */
+.descricao { /* Classe na section para o padding */
+ padding: var(--spacing-3xl) 0;
+}
+
+.containeraprender h2 { /* Título específico para esta seção, mantido como estava */
+ font-family: var(--font-family-heading);
+ font-size: var(--font-size-4xl);
+ font-weight: 700;
+ text-align: center;
+ color: var(--color-text-light);
+ margin-bottom: var(--spacing-2xl);
+ position: relative;
+ padding-bottom: var(--spacing-sm);
+}
+
+.containeraprender p {
+text-align: center;
+font-size: var(--font-size-lg);
+color: var(--color-text-dark);
+max-width: 700px;
+margin: 0 auto var(--spacing-xl);
+}
+
+.lista-conteudo {
+ max-width: 700px;
+ margin: var(--spacing-xl) auto var(--spacing-2xl);
+ padding: var(--spacing-xl);
+ background-color: var(--color-gray-dark);
+ border-radius: var(--border-radius-lg);
+ box-shadow: var(--shadow-md);
+ border: 1px solid var(--color-gray-medium);
+}
+
+.lista-conteudo li {
+ display: flex;
+ align-items: flex-start;
+ gap: var(--spacing-sm);
+ margin-bottom: var(--spacing-md);
+ font-size: var(--font-size-lg);
+ color: var(--color-text-medium);
+ font-weight: 400;
+    transition: transform 0.2s ease, background-color 0.2s ease; /* Transição para hover */
+}
+
+.lista-conteudo li:hover {
+    transform: translateX(5px); /* Move ligeiramente para a direita no hover */
+    background-color: rgba(51, 51, 51, 0.5); /* Fundo sutil no hover */
+}
+
+.lista-conteudo li i {
+ color: #9B59B6;
+ font-size: var(--font-size-xl);
+ flex-shrink: 0;
+ margin-top: 2px; /* Pequeno ajuste de alinhamento visual */
+    transition: color 0.3s ease; /* Transição de cor para o ícone */
+}
+
+.lista-conteudo li:hover i {
+    color: var(--color-pink-accent); /* Muda a cor do ícone no hover */
+}
+
+
+/* --- Seção de Bônus "O QUE VOCÊ IRÁ RECEBER:" --- */
+.bonus { /* Classe na section bônus */
+ padding: var(--spacing-3xl) 0;
+}
+
+.bonus-section > .container { /* Garante que o conteúdo fique acima do overlay */
+ position: relative;
+ z-index: 1;
+}
+
+.bonus-intro-text {
+ font-size: var(--font-size-lg);
+ color: var(--color-text-dark);
+ max-width: 700px;
+ margin: 0 auto var(--spacing-xl);
+ text-align: center;
+}
+
+.bonus-items-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+ gap: var(--spacing-lg);
+ max-width: 600px;
+ margin: var(--spacing-xl) auto;
+}
+
+.bonus-item {
+ background-color: var(--color-gray-dark);
+ padding: var(--spacing-md);
+ border-radius: var(--border-radius-md);
+ box-shadow: var(--shadow-sm);
+ display: flex;
+ align-items: center;
+ gap: var(--spacing-sm);
+ border: 1px solid var(--color-gray-medium);
+ transition: var(--transition-fast);
+}
+
+.bonus-item:hover {
+ background-color: var(--color-gray-medium);
+ border-color: var(--color-pink-accent); /* Mude a cor da borda para rosa no hover */
+ transform: translateY(-5px) scale(1.02); /* Mais elevação e zoom no hover */
+ box-shadow: var(--shadow-md); /* Sombra um pouco mais pronunciada */
+}
+
+.bonus-item .bonus-icon {
+ font-size: var(--font-size-2xl);
+ color: var(--color-purple-main);
+ flex-shrink: 0;
+    transition: color 0.3s ease; /* Transição de cor para o ícone */
+}
+
+.bonus-item:hover .bonus-icon {
+    color: var(--color-pink-accent); /* Mude a cor do ícone para rosa no hover */
+}
+
+.bonus-item p {
+ font-size: var(--font-size-base);
+ color: var(--color-text-medium);
+ margin: 0; /* Resetar margem do parágrafo */
+ text-align: left;
+}
+
+.certificate-display {
+ margin: var(--spacing-2xl) auto;
+ max-width: 400px; /* Limita o tamanho da imagem do certificado */
+ background-color: var(--color-gray-dark); /* Fundo para o certificado */
+ padding: var(--spacing-md);
+ border-radius: var(--border-radius-lg);
+ box-shadow: var(--shadow-lg);
+ border: 1px solid var(--color-purple-main);
+ overflow: hidden; /* Garante que a imagem não vaze */
+
+ /* --- INÍCIO DA ALTERAÇÃO PARA ESCURECER A IMAGEM --- */
+ position: relative; /* Necessário para posicionar o pseudo-elemento */
+    transition: transform 0.4s ease, box-shadow 0.4s ease; /* Adiciona transição para o hover */
+}
+
+.certificate-display::before {
+ content: ''; /* Conteúdo vazio para o pseudo-elemento */
+ position: absolute; /* Posicionamento absoluto em relação ao pai (.certificate-display) */
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background-color: rgba(0, 0, 0, 0.5); /* Camada preta semi-transparente (50% de opacidade) */
+ border-radius: var(--border-radius-md); /* Aplica o border-radius da imagem ao overlay */
+ z-index: 1; /* Garante que o overlay fique acima da imagem */
+ pointer-events: none; /* Permite que cliques passem pelo overlay se houver links por baixo */
+}
+
+.certificate-display:hover {
+    transform: scale(1.03); /* Ligeiro aumento no hover */
+    box-shadow: 0 15px 30px rgba(155, 89, 182, 0.6); /* Sombra mais forte e colorida */
+}
+
+/* Remove a sobreposição escura no hover para revelar mais a imagem */
+.certificate-display:hover::before {
+    background-color: rgba(0, 0, 0, 0.1); /* Menos escuro no hover */
+}
+
+
+.certificate-display img {
+ width: 100%;
+ height: auto;
+ display: block;
+ border-radius: var(--border-radius-md);
+ position: relative; /* Garante que a imagem fique abaixo do overlay (z-index padrão é 0) */
+ z-index: 0; /* Define a imagem para ficar abaixo do pseudo-elemento */
+}
+/* --- FIM DA ALTERAÇÃO PARA ESCURECER A IMAGEM --- */
+
+/* --- Selo Visual (não encontrado no HTML, mas mantido conforme pedido) --- */
+.selo-certificado {
+ margin: 1rem 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 10px;
+ font-weight: bold;
+ color: #f6f7f6;
+}
+
+.selo-certificado img {
+ width: 40px;
+ height: auto;
+}
+
+/* --- Botão CTA de Preço Final --- */
+.price-cta-button {
+ display: flex;
+ flex-direction: column; /* Texto em duas linhas */
+ align-items: center;
+ justify-content: center;
+ padding: var(--spacing-lg) var(--spacing-2xl);
+ background: linear-gradient(45deg, var(--color-purple-main), var(--color-purple-dark));
+ color: var(--color-text-light);
+ border: none;
+ border-radius: var(--border-radius-xl);
+ font-weight: 700;
+ cursor: pointer;
+ transition: var(--transition-normal);
+ box-shadow: var(--shadow-purple-glow);
+ max-width: 450px;
+ margin: var(--spacing-2xl) auto 0; /* Centraliza e adiciona margem superior */
+ text-align: center;
+text-decoration: none;
+    animation: pulse 2s infinite ease-in-out; /* Adiciona animação de pulso */
+}
+
+.price-cta-button:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 0 45px rgba(233, 233, 233, 0.7);
+    animation: none; /* Remove a animação de pulso no hover */
+}
+
+.price-text {
+ font-size: var(--font-size-2xl);
+ margin-bottom: var(--spacing-xs); /* Espaço entre as linhas */
+ color: var(--color-text-light);
+ text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* Sombra suave para o texto do preço */
+}
+
+.call-to-action-text {
+font-size: var(--font-size-lg);
+color: var(--color-text-medium);
+ margin: 0;
+ display: flex;
+ align-items: center;
+ gap: var(--spacing-xs);
+}
+
+.call-to-action-text i {
+font-size: var(--font-size-base);
+    animation: bounce 1s infinite alternate ease-in-out; /* Adiciona animação de "pulinho" ao ícone */
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-3px); /* Faz o ícone "pular" para cima */
+    }
+}
+
+/* ========================================
+    RODAPÉ (FOOTER)
+    ======================================== */
+footer {
+ text-align: center;
+ background: #2c2c2c;
+padding: 1rem;
+ font-size: 0.9rem;
+color: #aaa;
+}
+
+/* ========================================
+    RESPONSIVIDADE (MEDIA QUERIES)
+    ======================================== */
+@media (max-width: 768px) {
+.grid-2-cols {
+  grid-template-columns: 1fr; /* Uma coluna em telas menores */
+ }
+
+ @media (max-width: 400px) {
+      .menu-toggle {
+        display: block;
+        margin: 1rem auto 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+  .redes-sociais {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 1rem;
+  }
+}
+
+ /* --- INÍCIO DA ALTERAÇÃO PARA MELHORAR O BACKGROUND NO MOBILE --- */
+ body {
+  /* Garante que a imagem de fundo role com o conteúdo (não fixa) */
+  background-attachment: scroll;
+  /* Altera a posição da imagem para focar mais no topo no mobile */
+  background-position: top center;
+ }
+ /* --- FIM DA ALTERAÇÃO PARA MELHORAR O BACKGROUND NO MOBILE --- */
+}
+
+@media (max-width: 600px) {
+.seta { /* Não encontrado no HTML, mas mantido conforme pedido */
+font-size: 1.6rem;
+ }
+}
+
+@media (max-width: 480px) {
+header h1 {
+  font-size: 1.6rem;
+letter-spacing: 1px;
+Text-shadow: 0 0 6px #50ff4088;
+}
+
+ header p {
+font-size: 1rem;
+}
+
+ /* Removido: overflow-x: hidden; (já está no body global) */
+/* body { overflow-x: hidden; } */
+
+.feature-item {
+padding: 20px;
+ }
+
+ .redes-sociais a {
+padding: 6px 10px;
+ }
+}   
+
+/* --- Menu hambúrguer --- */
+.menu-toggle {
+  display: none;
+}
+.redes-sociais {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+    background: linear-gradient(45deg, #eb07e02f, var(--color-purple-main));
+    color: var(--color-text-light);
+    padding: 0.7rem 1.2rem;
+    border: none;
+    border-radius: var(--border-radius-lg);
+    font-weight: bold;
+    box-shadow: var(--shadow-purple-glow);
+    margin: 1rem auto 0;
+    cursor: pointer;
+  }
+  .redes-sociais {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .redes-sociais.active {
+    display: flex !important;
+  }
 }
