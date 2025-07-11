@@ -166,7 +166,7 @@ header h1 {
  font-family: 'Montserrat', sans-serif;
  font-size: 1.8em;
  color: #fff;
- text-shadow: 0 0 8px #ff69b4a1;
+
 }
 
 header p {
@@ -307,7 +307,8 @@ header p {
 
 .imagem-capa img {
  width: 100vw;
- height: auto;
+ height: 420px;
+ 
  flex-shrink: 0;
  display: block;
  object-fit: cover;
