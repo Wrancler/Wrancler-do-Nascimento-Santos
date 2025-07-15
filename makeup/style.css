@@ -74,7 +74,7 @@ font-family: var(--font-family-body);
 line-height: 1.6;
 color: var(--color-text-light);
 /* Mantém o background-attachment: fixed para desktop */
-background: linear-gradient(rgba(0, 0, 0, 0.89), rgba(0, 0, 0, 0.603)),
+background: linear-gradient(rgba(0, 0, 0, 0.973), rgba(0, 0, 0, 0.603)),
  url("imagens/pequenojeni.jpeg") center/ cover no-repeat fixed; /* Parallax aprimorado */
 overflow-x: hidden; /* Garante que não haja rolagem horizontal */
 -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
@@ -365,6 +365,7 @@ margin-top: 30px;
  color: var(--color-text-dark);
  max-width: 700px;
  margin: 0 auto var(--spacing-xl);
+ 
 }
 
 .lista-conteudo {
@@ -377,6 +378,7 @@ margin-top: 30px;
  border: 1px solid var(--color-gray-medium);
  }
 
+ 
 .lista-conteudo li {
  display: flex;
  align-items: flex-start;
