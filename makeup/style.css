@@ -75,7 +75,7 @@ line-height: 1.6;
 color: var(--color-text-light);
 /* Mantém o background-attachment: fixed para desktop */
 background: linear-gradient(rgba(0, 0, 0, 0.89), rgba(0, 0, 0, 0.603)),
- url("imagens/pequenojeni.jpeg") center center/ cover no-repeat fixed; /* Parallax aprimorado */
+ url("imagens/pequenojeni.jpeg") center/ cover no-repeat fixed; /* Parallax aprimorado */
 overflow-x: hidden; /* Garante que não haja rolagem horizontal */
 -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
 scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
@@ -86,19 +86,21 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
     CABEÇALHO (HEADER)
    ======================================== */
  header {
- background: linear-gradient(rgba(3, 3, 3, 0), rgba(0, 0, 0, 0.322)),
+ background: linear-gradient(rgba(0, 0, 0, 0.589), rgba(0, 0, 0, 0.582)),
  url("imagens/jeniferheader.jpeg") center/cover no-repeat;
  text-align: center;
  padding: 4rem 1rem 2rem;
 }
 
- header h2 {
- font-size: 1.8em;
+ header h1 {
+ font-size: 2em;
+ padding-bottom: 10px;
 }
 
  header p {
  font-style: italic;
  color: #ddd;
+ padding-bottom: 30px;
 }
 
  .menu-toggle {
@@ -174,7 +176,8 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
      A visibilidade será controlada via JavaScript (adicionando/removendo a classe .active). */
   display: flex; /* Mantém flexbox para layout interno, mas a visibilidade é por max-height/opacity */
   flex-direction: column;
-  align-items: center;
+ 
+  
   gap: 10px;
   margin-top: 1rem;
   max-height: 0; /* Começa oculto */
@@ -200,6 +203,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  border-radius: 5px;
  display: flex;
  align-items: center;
+ 
  gap: 6px;
  transition: background-color 0.3s ease, transform 0.2s ease; /* Adiciona transição para transform */
 }
@@ -270,7 +274,8 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  .cta-section {
  padding: var(--spacing-xl) var(--spacing-sm);
  background-color: var(--color-gray-darkest);
- text-align: center;
+ 
+ width: auto;
 }
 
  .main-cta-button {
@@ -278,7 +283,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  align-items: center;
  justify-content: center;
  gap: var(--spacing-sm);
- padding: var(--spacing-lg) var(--spacing-2xl);
+ padding: 30px;
  background: linear-gradient(45deg, var(--color-purple-main), var(--color-purple-dark));
  color: var(--color-text-light);
  border: none;
@@ -288,7 +293,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  cursor: pointer;
  transition: var(--transition-normal);
  box-shadow: var(--shadow-purple-glow); /* Efeito de brilho roxo */
- max-width: 400px; /* Limita a largura do botão */
+ width: 100%;
  text-decoration: none;
  animation: pulse 2s infinite ease-in-out; /* Adiciona a animação de pulso */
 }
