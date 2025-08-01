@@ -111,7 +111,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  padding: 0.7rem 1.2rem;
  border: none;
  border-radius: var(--border-radius-lg);
- font-size: 1.2rem;
+ font-size: 1em;
  font-weight: bold;
  cursor: pointer;
  box-shadow: var(--shadow-purple-glow);
