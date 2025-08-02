@@ -612,6 +612,7 @@ footer {
 
 /* --- INÍCIO DA ALTERAÇÃO PARA MELHORAR O BACKGROUND NO MOBILE --- */
 body {
+    background-color: black;
  /* Garante que a imagem de fundo role com o conteúdo (não fixa) */
  background-attachment: scroll;
  /* Altera a posição da imagem para focar mais no topo no mobile */
@@ -624,11 +625,13 @@ body {
     .seta {
         font-size: 1.6rem;
     }
-    body {
+    /*body {
        background: linear-gradient(rgba(0, 0, 0, 0.973), rgba(0, 0, 0, 0.253)),
  url("imagens/pequenojeni.jpeg") center/ cover no-repeat fixed; /* Parallax aprimorado */
-    }
-}
+    } 
+
+    
+
 
 @media (max-width: 480px) {
     header h1 {
