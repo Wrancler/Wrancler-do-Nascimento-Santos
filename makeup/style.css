@@ -148,6 +148,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
  margin-bottom: (--spacing-2xl);
  position: relative;
  padding-bottom: 8px;
+
 }
 
  .section-title::before { /* NOVO: Adiciona a linha na parte de CIMA */
@@ -352,12 +353,7 @@ margin-top: 30px;
  line-height: 1.6;
 }
 
-/* --- Seção "O QUE VOCÊ VAI APRENDER:" --- */
-.descricao { /* Classe na section para o padding */
- padding-bottom: 100px;
-}
 
-/* Removido o .containeraprender h2 duplicado. Agora o h2 terá a classe section-title diretamente no HTML. */
 
 .containeraprender p {
  text-align: center;
