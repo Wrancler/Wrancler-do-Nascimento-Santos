@@ -74,8 +74,7 @@ font-family: var(--font-family-body);
 line-height: 1.6;
 color: var(--color-text-light);
 /* Mantém o background-attachment: fixed para desktop */
-background: linear-gradient(rgba(0, 0, 0, 0.973), rgba(0, 0, 0, 0.603)),
- url("imagens/pequenojeni.jpeg") center/ cover no-repeat fixed; /* Parallax aprimorado */
+
 overflow-x: hidden; /* Garante que não haja rolagem horizontal */
 -webkit-font-smoothing: antialiased; /* Suaviza fontes no Webkit */
 scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
@@ -622,8 +621,12 @@ body {
 }
 
 @media (max-width: 600px) {
-    .seta { /* Não encontrado no HTML, mas mantido conforme pedido */
+    .seta {
         font-size: 1.6rem;
+    }
+    body {
+       background: linear-gradient(rgba(0, 0, 0, 0.973), rgba(0, 0, 0, 0.253)),
+ url("imagens/pequenojeni.jpeg") center/ cover no-repeat fixed; /* Parallax aprimorado */
     }
 }
 
