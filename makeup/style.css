@@ -103,7 +103,7 @@ scroll-behavior: smooth; /* Rolagem suave ao navegar por âncoras */
 }
 
  .menu-toggle {
- display: flex; /* Escondido por padrão, visível apenas em mobile */
+ display: inline-block; /* Escondido por padrão, visível apenas em mobile */
  gap: 10px;
  background: linear-gradient(45deg, #eb07e02f, var(--color-purple-main));
  color: rgba(255, 255, 255, 0.89);
