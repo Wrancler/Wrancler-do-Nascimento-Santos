@@ -38,7 +38,7 @@ document.getElementById('welcomeModal').addEventListener('click', function(e) {
 // ========================================
 // CONTADOR ANIMADO DE ALUNOS
 // ========================================
-const targetCount = 1247;
+const targetCount = 500;
 const duration = 2000;
 const increment = targetCount / (duration / 16);
 let current = 0;
