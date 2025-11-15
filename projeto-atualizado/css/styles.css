@@ -193,7 +193,7 @@ body {
    HEADER
    ======================================== */
 .header {
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../imagens/jeniferheader.jpeg") center/cover no-repeat;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../imagens/jenitop3.jpeg") center/cover no-repeat;
   background-attachment: fixed;
   min-height: 400px;
   display: flex;
