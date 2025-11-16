@@ -264,13 +264,13 @@ const conversionNames = [
 
 function showConversionNotification() {
   const name = conversionNames[Math.floor(Math.random() * conversionNames.length)];
-  const timeAgo = Math.floor(Math.random() * 30) + 1;
-  const imgNumber = Math.floor(Math.random() * 70) + 1;
+  const timeAgo = Math.floor(Math.random() * 70) + 1;
+  const imgNumber = Math.floor(Math.random() * 110) + 1;
 
   const notification = document.createElement('div');
   notification.className = 'conversion-notification';
   notification.innerHTML = `
-    <img src="https://i.pravatar.cc/150?img=${imgNumber}" alt="${name}">
+    <img src="imagens/jenitop2.jpeg" alt="${name}">
     <div class="conversion-notification-content">
       <strong>${name}</strong>
       <small>Acabou de se inscrever há ${timeAgo} minutos</small>
@@ -287,7 +287,7 @@ function showConversionNotification() {
 // Mostrar notificação a cada 8-15 segundos
 setInterval(() => {
   showConversionNotification();
-}, Math.random() * 7000 + 8000);
+}, Math.random() * 10000 + 11000);
 
 // Mostrar primeira notificação após 5 segundos
 setTimeout(showConversionNotification, 5000);
