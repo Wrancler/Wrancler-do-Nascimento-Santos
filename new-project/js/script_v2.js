@@ -264,13 +264,13 @@ const conversionNames = [
 
 function showConversionNotification() {
   const name = conversionNames[Math.floor(Math.random() * conversionNames.length)];
-  const timeAgo = Math.floor(Math.random() * 70) + 1;
-  const imgNumber = Math.floor(Math.random() * 110) + 1;
+  const timeAgo = Math.floor(Math.random() * 30) + 1;
+  const imgNumber = Math.floor(Math.random() * 70) + 1;
 
   const notification = document.createElement('div');
   notification.className = 'conversion-notification';
   notification.innerHTML = `
-    <img src="imagens/jenitop2.jpeg" alt="${name}">
+    <img src="https://i.pravatar.cc/150?img=${imgNumber}" alt="${name}">
     <div class="conversion-notification-content">
       <strong>${name}</strong>
       <small>Acabou de se inscrever há ${timeAgo} minutos</small>
@@ -284,13 +284,15 @@ function showConversionNotification() {
   }, 5000);
 }
 
-// Mostrar notificação a cada 8-15 segundos
-setInterval(() => {
-  showConversionNotification();
-}, Math.random() * 10000 + 11000);
+// Mostrar primeira notificação após 10 segundos
+setTimeout(showConversionNotification, 10000);
 
-// Mostrar primeira notificação após 5 segundos
-setTimeout(showConversionNotification, 5000);
+// Depois, mostrar notificação a cada 20 segundos
+setTimeout(() => {
+  setInterval(() => {
+    showConversionNotification();
+  }, 20000);
+}, 10000);
 
 // ========================================
 // CONTADOR ANIMADO DE ALUNOS
@@ -477,3 +479,4 @@ window.addEventListener('scroll', function() {
 console.log('%c🎨 Site Ultra-Moderno desenvolvido com ❤️ para Jenifer Lima Makeup', 'color: #ff69b4; font-size: 18px; font-weight: bold;');
 console.log('%c💄 Curso de Automaquiagem - Versão 2.0 com funcionalidades avançadas!', 'color: #9c59b6; font-size: 16px;');
 console.log('%c✨ Funcionalidades: Timer, Popup de Saída, Notificações, Modo Escuro, Partículas, Ripple Effect e muito mais!', 'color: #ff69b4; font-size: 14px;');
+
