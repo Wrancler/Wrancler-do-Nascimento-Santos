@@ -749,12 +749,12 @@ body {
 .carousel-image {
   width: 100vw;
   min-height: 350px;
-  max-height: 600px;
+  max-height: 1400px;
   flex-shrink: 0;
   object-fit: cover;
   scroll-snap-align: start;
   filter: brightness(0.9);
-  transition: filter 0.3s;
+  transition: filter 3s;
 }
 
 .carousel-image:hover {
@@ -1298,6 +1298,8 @@ body {
 .footer strong {
   color: var(--color-accent);
 }
+
+
 
 /* ========================================
    RESPONSIVE
