@@ -203,7 +203,7 @@ updateTimer();
 // ========================================
 setTimeout(function() {
   document.getElementById('welcomeModal').classList.add('show');
-}, 2000);
+}, 9000);
 
 function closeWelcomeModal() {
   document.getElementById('welcomeModal').classList.remove('show');
@@ -297,7 +297,7 @@ setTimeout(() => {
 // ========================================
 // CONTADOR ANIMADO DE ALUNOS
 // ========================================
-const targetCount = 1247;
+const targetCount = 621;
 const duration = 2000;
 const increment = targetCount / (duration / 16);
 let current = 0;

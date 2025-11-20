@@ -670,6 +670,7 @@ body {
 }
 
 .nav-menu {
+  padding-bottom: 100px;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -733,6 +734,7 @@ body {
 }
 
 .carousel-container {
+  height: 100%;
   display: flex;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
