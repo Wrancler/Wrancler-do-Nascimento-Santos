@@ -285,14 +285,14 @@ function showConversionNotification() {
 }
 
 // Mostrar primeira notificação após 10 segundos
-setTimeout(showConversionNotification, 10000);
+setTimeout(showConversionNotification, 15000);
 
 // Depois, mostrar notificação a cada 20 segundos
 setTimeout(() => {
   setInterval(() => {
     showConversionNotification();
-  }, 20000);
-}, 10000);
+  }, 25000);
+}, 11000);
 
 // ========================================
 // CONTADOR ANIMADO DE ALUNOS
