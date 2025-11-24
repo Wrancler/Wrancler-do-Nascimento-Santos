@@ -291,8 +291,8 @@ setTimeout(showConversionNotification, 15000);
 setTimeout(() => {
   setInterval(() => {
     showConversionNotification();
-  }, 25000);
-}, 11000);
+  }, 30000);
+}, 20000);
 
 // ========================================
 // CONTADOR ANIMADO DE ALUNOS
