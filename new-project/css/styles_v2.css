@@ -670,6 +670,7 @@ body {
 }
 
 .nav-menu {
+  padding-bottom: 100px;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -734,6 +735,7 @@ body {
 }
 
 .carousel-container {
+  height: 100%;
   display: flex;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -748,12 +750,12 @@ body {
 .carousel-image {
   width: 100vw;
   min-height: 350px;
-  max-height: 600px;
+  max-height: 1400px;
   flex-shrink: 0;
   object-fit: cover;
   scroll-snap-align: start;
   filter: brightness(0.9);
-  transition: filter 0.3s;
+  transition: filter 3s;
 }
 
 .carousel-image:hover {
@@ -862,7 +864,7 @@ body {
 }
 
 .section-title {
-  font-size: clamp(1.6rem, 4.5vw, 2.8rem);
+  font-size: clamp(1.6rem, 4.5vw, 2.6rem);
   font-weight: 700;
   text-align: center;
   color: var(--text-primary);
@@ -1297,6 +1299,8 @@ body {
 .footer strong {
   color: var(--color-accent);
 }
+
+
 
 /* ========================================
    RESPONSIVE
