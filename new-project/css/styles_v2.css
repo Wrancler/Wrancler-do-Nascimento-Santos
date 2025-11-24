@@ -584,7 +584,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 16px;
+  padding: 80px 16px 120px 16px;
   position: relative;
   overflow: hidden;
 }
@@ -622,7 +622,7 @@ body {
 }
 
 .header-title {
-  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
   font-weight: 700;
   color: #f8f8f8;
   margin-bottom: 16px;
@@ -632,7 +632,7 @@ body {
 }
 
 .header-subtitle {
-  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  font-size: clamp(0.95rem, 2.5vw, 1.2rem);
   color: #ddd;
   font-style: italic;
   margin-bottom: 32px;
@@ -731,6 +731,7 @@ body {
   background: var(--bg-secondary);
   position: relative;
   z-index: 1;
+  margin-top: 40px;
 }
 
 .carousel-container {
@@ -765,8 +766,6 @@ body {
    VIDEO SECTION
    ======================================== */
 .video-section {
-  width: 100%;
-  overflow: hidden;
   background: var(--bg-secondary);
   position: relative;
   z-index: 1;
@@ -865,7 +864,7 @@ body {
 }
 
 .section-title {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(1.6rem, 4.5vw, 2.8rem);
   font-weight: 700;
   text-align: center;
   color: var(--text-primary);
