@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA BARBER CLUB | Estilo & Sofisticação</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* --- VARIÁVEIS E RESET --- */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --silver: #C0C0C0;     /* Prata Metálica Principal */
+            --silver-light: #E5E5E5; /* Prata Claro para detalhes */
+            --text-light: #F5F5F5;
+            --text-gray: #A0A0A0;
+            --transition: all 0.3s ease;
+            --section-spacing: 80px; /* Espaçamento padrão desktop */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* --- UTILITÁRIOS --- */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-padding { padding: var(--section-spacing) 0; }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--silver);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        /* Botões */
+        .btn-silver {
+            background-color: var(--silver);
+            color: #000;
+            padding: 12px 30px;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+            transition: var(--transition);
+            display: inline-block;
+            border: 2px solid var(--silver);
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-silver:hover {
+            background-color: transparent;
+            color: var(--silver-light);
+            border-color: var(--silver-light);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-light);
+            padding: 12px 30px;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+            border: 2px solid var(--text-light);
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--text-light);
+            color: #000;
+        }
+
+        /* --- HEADER --- */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 50px;
+            width: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: var(--transition);
+            text-transform: uppercase;
+        }
+
+        .nav-links a:hover { color: var(--silver); }
+
+        .menu-toggle { display: none; font-size: 1.5rem; color: var(--silver); cursor: pointer; }
+
+        /* --- HERO SECTION (Imagem Nova Aplicada) --- */
+        .hero {
+            min-height: 100vh; /* Garante altura total em mobile */
+            /* Overlay mais escuro (0.85) para garantir leitura sobre a imagem colorida */
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(0, 0, 0, 0.452)), url('imagens/body.png');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed; /* Efeito parallax suave */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 80px;
+            padding-bottom: 40px;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            color: var(--silver-light);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: #ddd;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+        }
+
+        /* --- GRIDS GERAIS (Serviços, Profissionais) --- */
+        .grid-layout {
+            display: grid;
+            /* Ajustado minmax para 250px para melhor adaptação mobile */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        /* --- SERVIÇOS --- */
+        .service-card {
+            background: var(--card-bg);
+            padding: 30px 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            transition: var(--transition);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--silver);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .service-icon { font-size: 2.5rem; color: var(--silver); margin-bottom: 20px; }
+        .service-card h3 { margin-bottom: 10px; font-size: 1.2rem; }
+        .service-card p { color: var(--text-gray); font-size: 0.9rem; flex-grow: 1; margin-bottom: 15px; }
+        .service-price { display: block; font-size: 1.5rem; font-weight: 700; color: var(--silver); margin-bottom: 15px; }
+
+        /* --- PROFISSIONAIS --- */
+        .barber-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: var(--transition);
+        }
+
+        .barber-card img {
+            width: 100%;
+            height: 280px; /* Altura fixa para consistência */
+            object-fit: cover;
+            filter: grayscale(30%);
+            transition: var(--transition);
+        }
+
+        .barber-card:hover img { filter: grayscale(0%); }
+        .barber-info { padding: 20px; text-align: center; }
+        .barber-name { font-size: 1.3rem; margin-bottom: 5px; color: var(--text-light); }
+        .barber-spec { color: var(--text-gray); font-size: 0.9rem; margin-bottom: 15px; }
+
+        /* --- AGENDAMENTO --- */
+        .booking-section {
+            background-color: var(--card-bg);
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .booking-form {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--silver);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: #121212;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+        }
+
+        .form-control:focus { outline: none; border-color: var(--silver); }
+
+        /* Container para Data e Hora */
+        .date-time-container {
+            display: flex;
+            gap: 20px;
+        }
+        .date-time-container .form-group { flex: 1; }
+
+        /* --- GALERIA --- */
+        .gallery-grid {
+            display: grid;
+            /* Ajustado para mobile: colunas menores */
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .gallery-item {
+            overflow: hidden;
+            border-radius: 8px;
+            aspect-ratio: 1 / 1; /* Garante que sejam quadrados */
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-item:hover img { transform: scale(1.1); }
+
+        /* --- AVALIAÇÕES --- */
+        .testimonial-card {
+            background: #151515;
+            padding: 25px;
+            border-left: 3px solid var(--silver);
+            border-radius: 4px;
+        }
+        .stars { color: var(--silver); margin-bottom: 10px; }
+        .quote { font-style: italic; color: #ddd; margin-bottom: 15px; font-size: 0.95rem; }
+        .author { font-weight: 700; color: var(--text-gray); }
+
+        /* --- CONTATO --- */
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .contact-info i { color: var(--silver); margin-right: 15px; font-size: 1.2rem; }
+        .contact-item { margin-bottom: 25px; display: flex; align-items: center; font-size: 1.1rem; }
+        
+        .map-container iframe { 
+            width: 100%; 
+            height: 350px; 
+            border: 0; 
+            border-radius: 8px; 
+            filter: grayscale(100%) invert(92%) contrast(83%); 
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background: #080808;
+            padding: 50px 0 30px;
+            text-align: center;
+            border-top: 1px solid #222;
+        }
+        
+        footer .logo img {
+            margin: 0 auto 25px auto;
+            height: 60px;
+        }
+
+        .social-links { margin-bottom: 25px; }
+        .social-links a { font-size: 1.8rem; margin: 0 15px; color: var(--text-gray); transition: 0.3s; }
+        .social-links a:hover { color: var(--silver); }
+
+        /* Botão Flutuante */
+        .float-whatsapp {
+            position: fixed;
+            width: 55px;
+            height: 55px;
+            bottom: 25px;
+            right: 25px;
+            background-color: #25d366;
+            color: #FFF;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 28px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .float-whatsapp:hover { transform: scale(1.1); }
+
+        /* =========================================
+           AGORA A MÁGICA DA RESPONSIVIDADE MÓVEL
+        ========================================= */
+        @media (max-width: 992px) {
+             /* Ajuste para tablets / desktops pequenos */
+            .hero-content h1 { font-size: 3rem; }
+            .contact-container { grid-template-columns: 1fr; gap: 30px; }
+            .map-container iframe { height: 300px; }
+        }
+
+        @media (max-width: 768px) {
+            /* Reduz espaçamento geral em mobile */
+            :root { --section-spacing: 50px; }
+            
+            /* Títulos menores */
+            .section-title { font-size: 2rem; }
+            .section-subtitle { font-size: 1rem; margin-bottom: 30px; }
+
+            /* Menu Hambúrguer */
+            .menu-toggle { display: block; }
+            .nav-links {
+                display: none; /* Escondido por padrão */
+                flex-direction: column;
+                position: absolute;
+                top: 81px; /* Altura exata do header */
+                left: 0;
+                width: 100%;
+                background: #121212;
+                padding: 30px 0;
+                border-bottom: 1px solid #333;
+                gap: 20px;
+            }
+            .nav-links.active { display: flex; } /* Classe adicionada via JS */
+            
+            /* Hero Mobile */
+            .hero-content h1 { font-size: 2.2rem; }
+            .hero-content p { font-size: 1rem; }
+            .hero-buttons { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto; }
+            .btn-silver, .btn-outline { width: 100%; }
+
+            /* Formulário Mobile: Data e Hora empilhados */
+            .date-time-container { flex-direction: column; gap: 15px; }
+        }
+
+        @media (max-width: 480px) {
+            /* Ajustes finos para telas muito pequenas */
+            :root { --section-spacing: 40px; }
+            .logo img { height: 40px; }
+            .section-title { font-size: 1.75rem; }
+            
+            /* Galeria em 2 colunas em telas pequenas */
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            .contact-item { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">
+                    <img src="imagens/logobarb.jpg" alt="LA BARBER CLUB Logo">
+                </a>
+                <div class="menu-toggle" id="mobile-menu">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <ul class="nav-links" id="nav-links">
+                    <li><a href="#hero">Início</a></li>
+                    <li><a href="#services">Serviços</a></li>
+                    <li><a href="#team">Barbeiros</a></li>
+                    <li><a href="#gallery">Galeria</a></li>
+                    <li><a href="#contact">Contato</a></li>
+                    <li><a href="#booking" class="btn-silver" style="width: auto; display: inline-block;">Agendar Agora</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="hero" class="hero">
+        <div class="container hero-content">
+            <h1>Sua Melhor Versão<br>Começa Aqui</h1>
+            <p>LA BARBER CLUB: Onde a tradição encontra a modernidade. Agende seu momento.</p>
+            <div class="hero-buttons">
+                <a href="#booking" class="btn-silver">Agendar Corte</a>
+                <a href="#services" class="btn-outline">Ver Serviços</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">Nossos Serviços</h2>
+            <p class="section-subtitle">Experiências exclusivas para o homem moderno</p>
+            
+            <div class="grid-layout">
+                <div class="service-card">
+                    <i class="fas fa-cut service-icon"></i>
+                    <h3>Corte Masculino</h3>
+                    <p>Consultoria de visagismo, lavagem e finalização premium.</p>
+                    <span class="service-price">R$ 60,00</span>
+                    <a href="#booking" class="btn-outline" style="font-size: 0.8rem; padding: 8px 20px; width: auto;">Agendar</a>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-user-tie service-icon"></i>
+                    <h3>Barba Completa</h3>
+                    <p>Toalha quente, navalha e hidratação com óleos essenciais.</p>
+                    <span class="service-price">R$ 50,00</span>
+                    <a href="#booking" class="btn-outline" style="font-size: 0.8rem; padding: 8px 20px; width: auto;">Agendar</a>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-crown service-icon"></i>
+                    <h3>Combo LA Club</h3>
+                    <p>Corte + Barba + Sobrancelha + Bebida de cortesia.</p>
+                    <span class="service-price">R$ 100,00</span>
+                    <a href="#booking" class="btn-outline" style="font-size: 0.8rem; padding: 8px 20px; width: auto;">Agendar</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="team" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">Nossos Profissionais</h2>
+            <p class="section-subtitle">Mestres na arte da barbearia</p>
+
+            <div class="grid-layout">
+                <div class="barber-card">
+                    <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop" alt="Barbeiro Guilherme">
+                    <div class="barber-info">
+                        <h3 class="barber-name">Guilherme Silva</h3>
+                        <p class="barber-spec">Especialista em Cortes Clássicos</p>
+                        <button class="btn-silver" style="width: 100%;" onclick="setBarber('Guilherme')">Agendar com Guilherme</button>
+                    </div>
+                </div>
+                <div class="barber-card">
+                    <img src="https://images.unsplash.com/photo-1593526613712-7b4b9a707330?q=80&w=2070&auto=format&fit=crop" alt="Barbeiro Lucas">
+                    <div class="barber-info">
+                        <h3 class="barber-name">Lucas Mendes</h3>
+                        <p class="barber-spec">Especialista em Degradê e Navalha</p>
+                        <button class="btn-silver" style="width: 100%;" onclick="setBarber('Lucas')">Agendar com Lucas</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking" class="section-padding booking-section">
+        <div class="container">
+            <h2 class="section-title">Agendamento Online</h2>
+            <p class="section-subtitle">Selecione suas preferências e finalize no WhatsApp</p>
+
+            <form class="booking-form" id="bookingForm">
+                <div class="form-group">
+                    <label for="barberSelect"><i class="fas fa-user"></i> Escolha o Barbeiro:</label>
+                    <select id="barberSelect" class="form-control" required>
+                        <option value="">Selecione...</option>
+                        <option value="Guilherme">Guilherme</option>
+                        <option value="Lucas">Lucas</option>
+                        <option value="Qualquer Profissional">Primeiro Disponível</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="serviceSelect"><i class="fas fa-cut"></i> Serviço:</label>
+                    <select id="serviceSelect" class="form-control" required>
+                        <option value="">Selecione...</option>
+                        <option value="Corte Masculino">Corte Masculino</option>
+                        <option value="Barba">Barba</option>
+                        <option value="Combo LA Club">Combo LA Club</option>
+                        <option value="Navalhado Premium">Navalhado Premium</option>
+                    </select>
+                </div>
+
+                <div class="date-time-container">
+                    <div class="form-group">
+                        <label for="dateInput"><i class="far fa-calendar-alt"></i> Data:</label>
+                        <input type="date" id="dateInput" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeInput"><i class="far fa-clock"></i> Horário:</label>
+                        <input type="time" id="timeInput" class="form-control" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-silver" style="width: 100%; margin-top: 10px; font-size: 1.1rem;">
+                    <i class="fab fa-whatsapp"></i> Confirmar Agendamento
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <section id="gallery" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">Nossa Galeria</h2>
+            <p class="section-subtitle">Um pouco do nosso ambiente e trabalho</p>
+            <div class="gallery-grid">
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1503951914875-452162b7f304?q=80&w=2070&auto=format&fit=crop" alt="Ambiente"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1976&auto=format&fit=crop" alt="Corte"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop" alt="Barba"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1634480496821-4f057885b736?q=80&w=2070&auto=format&fit=crop" alt="Detalhe"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=1974&auto=format&fit=crop" alt="Barbeiro trabalhando"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1512690459411-b9245aed614b?q=80&w=2070&auto=format&fit=crop" alt="Produtos"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-padding" style="background: #151515;">
+        <div class="container">
+            <h2 class="section-title">Depoimentos</h2>
+            <p class="section-subtitle">O que nossos clientes dizem</p>
+            <div class="grid-layout">
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="quote">"Atendimento impecável! O ambiente é incrível e o corte ficou perfeito."</p>
+                    <p class="author">- Ricardo Santos</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="quote">"Melhor barbearia da cidade. O Combo LA Club vale muito a pena."</p>
+                    <p class="author">- Felipe Costa</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p class="quote">"Profissionais de alto nível. Recomendo o navalhado premium."</p>
+                    <p class="author">- André Oliveira</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="section-padding">
+        <div class="container">
+            <div class="contact-container">
+                <div>
+                    <h2 class="section-title" style="text-align: left;">Onde Estamos</h2>
+                    <p style="margin-bottom: 30px; color: #aaa; font-size: 1.1rem;">Venha viver a experiência LA BARBER CLUB.</p>
+                    
+                    <div class="contact-item"><i class="fas fa-map-marker-alt"></i> Rua da Elegância, 123 - Centro</div>
+                    <div class="contact-item"><i class="fab fa-whatsapp"></i> (11) 99999-9999</div>
+                    <div class="contact-item"><i class="fas fa-clock"></i> Seg - Sáb: 09:00 às 20:00</div>
+                    
+                    <div style="margin-top: 35px;">
+                        <a href="#" class="btn-outline">Siga no Instagram</a>
+                    </div>
+                </div>
+                <div class="map-container">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.197588970738!2d-46.65219368502227!3d-23.56134928468297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1spt-BR!2sbr!4v1623338888888!5m2!1spt-BR!2sbr" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <a href="#" class="logo">
+                <img src="image_0.png" alt="LA BARBER CLUB Logo">
+            </a>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <p style="color: #666; font-size: 0.9rem;">© 2024 LA BARBER CLUB. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/5511999999999" class="float-whatsapp" target="_blank" aria-label="Chamar no WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script>
+        // --- Lógica do Menu Mobile ---
+        const mobileMenuBtn = document.getElementById('mobile-menu');
+        const navLinksContainer = document.getElementById('nav-links');
+        const navLinks = document.querySelectorAll('.nav-links a'); // Seleciona todos os links
+
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinksContainer.classList.toggle('active');
+            // Alterna o ícone entre barras e 'X'
+            mobileMenuBtn.querySelector('i').classList.toggle('fa-bars');
+            mobileMenuBtn.querySelector('i').classList.toggle('fa-times');
+        });
+
+        // Fecha o menu automaticamente ao clicar em um link
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (navLinksContainer.classList.contains('active')) {
+                    navLinksContainer.classList.remove('active');
+                    mobileMenuBtn.querySelector('i').classList.add('fa-bars');
+                    mobileMenuBtn.querySelector('i').classList.remove('fa-times');
+                }
+            });
+        });
+
+        // --- Função para pré-selecionar o barbeiro ---
+        function setBarber(name) {
+            document.getElementById('barberSelect').value = name;
+            document.querySelector('#booking').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // --- Lógica de Envio para o WhatsApp ---
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const barber = document.getElementById('barberSelect').value;
+            const service = document.getElementById('serviceSelect').value;
+            const date = document.getElementById('dateInput').value;
+            const time = document.getElementById('timeInput').value;
+            
+            if(!date || !time) {
+                alert("Por favor, selecione uma data e horário.");
+                return;
+            }
+
+            const dateObj = new Date(date);
+            const dateFormatted = dateObj.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+
+            // ATENÇÃO: Substitua pelo número real da barbearia
+            const whatsappNumber = "5511999999999"; 
+
+            const message = `Olá! Gostaria de agendar no *LA BARBER CLUB*:%0A` +
+                            `__________________________%0A` +
+                            `👤 *Profissional:* ${barber}%0A` +
+                            `✂️ *Serviço:* ${service}%0A` +
+                            `📅 *Data:* ${dateFormatted}%0A` +
+                            `⏰ *Horário:* ${time}%0A` +
+                            `__________________________%0A` +
+                            `Aguardo confirmação. Obrigado!`;
+
+            // Detecta se é dispositivo móvel para usar a API correta
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const baseUrl = isMobile ? 'https://api.whatsapp.com/send' : 'https://web.whatsapp.com/send';
+            const url = `${baseUrl}?phone=${whatsappNumber}&text=${message}`;
+
+            window.open(url, '_blank');
+        });
+    </script>
+</body>
+</html>
