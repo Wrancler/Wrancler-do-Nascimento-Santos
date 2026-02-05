@@ -8,18 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      min-height: 100vh; /* Garante altura total em mobile */
-            /* Overlay mais escuro (0.85) para garantir leitura sobre a imagem colorida */
-      background: linear-gradient(rgba(0,0,0,0.85), rgba(0, 0, 0, 0.452)), url('imagens/body.png');
-      background-size: cover;
-      background-position: center center;
-      background-attachment: fixed; /* Efeito parallax suave */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding-top: 80px;
-      padding-bottom: 40px;
+      background: #111;
       color: #fff;
       display: flex;
       justify-content: center;
@@ -27,7 +16,7 @@
     }
 
     .container {
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       background: #1c1c1c;
       padding: 20px;
@@ -36,7 +25,7 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
 
     p {
@@ -52,7 +41,7 @@
       font-weight: bold;
     }
 
-    select, button {
+    select, input, button {
       width: 100%;
       padding: 12px;
       border-radius: 8px;
@@ -60,7 +49,7 @@
       font-size: 16px;
     }
 
-    select {
+    select, input {
       background: #2a2a2a;
       color: #fff;
     }
@@ -91,7 +80,7 @@
 
   <div class="container">
     <h1>Agende seu horário</h1>
-    <p>Escolha o barbeiro e o serviço</p>
+    <p>Escolha o serviço, data e horário</p>
 
     <label>Barbeiro</label>
     <select id="barbeiro">
@@ -101,18 +90,20 @@
     </select>
 
     <label>Serviço</label>
-    <select id="servico">   
+    <select id="servico">
       <option value="">Selecione</option>
-      <option value="Corte Simples|35">COMBO ( Cabelo + Barba + Sobrancelhas )</option>
-      <option value="Corte + Barba|35">COMBO ( Cabelo + Barba )</option>
-      <option value="Corte + Barba + Sobrancelha|"> Barba</option>
-      <option value="Corte + Barba + Sobrancelha|"> Degrade</option>
-      <option value="Corte + Barba + Sobrancelha|"> Corte simples</option>
-      <option value="Corte + Barba + Sobrancelha|"> Platinado</option>
-      <option value="Corte + Barba + Sobrancelha|"> Luzes</option>
-      <option value="Corte + Barba + Sobrancelha|"> Corte + Pigmentação</option>
-       
+      <option value="Corte Simples|25">Corte simples</option>
+      <option value="Corte + Barba|35">Corte + barba</option>
+      <option value="Corte + Barba + Sobrancelha|40">
+        Corte + barba + sobrancelha
+      </option>
     </select>
+
+    <label>Data</label>
+    <input type="date" id="data" />
+
+    <label>Horário</label>
+    <input type="time" id="hora" />
 
     <div class="price" id="preco"></div>
 
@@ -123,37 +114,47 @@
     const servicoSelect = document.getElementById('servico');
     const precoDiv = document.getElementById('preco');
 
+    // Mostrar preço ao escolher serviço
     servicoSelect.addEventListener('change', () => {
       const value = servicoSelect.value;
       if (!value) {
         precoDiv.innerText = '';
         return;
       }
-
       const preco = value.split('|')[1];
       precoDiv.innerText = `Valor: R$ ${preco}`;
     });
 
+    // Impede escolher datas passadas
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('data').min = hoje;
+
     function agendar() {
       const barbeiro = document.getElementById('barbeiro').value;
       const servicoValue = document.getElementById('servico').value;
+      const data = document.getElementById('data').value;
+      const hora = document.getElementById('hora').value;
 
-      if (!barbeiro || !servicoValue) {
-        alert('Selecione o barbeiro e o serviço.');
+      if (!barbeiro || !servicoValue || !data || !hora) {
+        alert('Preencha todos os campos.');
         return;
       }
 
       const [servico, preco] = servicoValue.split('|');
+
+      const dataFormatada = data.split('-').reverse().join('/');
 
       const mensagem = `
 Olá! Gostaria de agendar um horário:
 
 👤 Barbeiro: ${barbeiro}
 ✂️ Serviço: ${servico}
+📅 Data: ${dataFormatada}
+⏰ Horário: ${hora}
 💰 Valor: R$ ${preco}
       `;
 
-      const telefone = '5599999999999'; // <-- COLOQUE O WHATSAPP DO BARBEIRO AQUI
+      const telefone = '5599999999999'; // <-- WHATSAPP DO BARBEIRO
       const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
 
       window.open(url, '_blank');
