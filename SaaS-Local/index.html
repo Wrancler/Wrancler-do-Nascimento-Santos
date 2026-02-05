@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agendamento | Barbearia</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh; /* Garante altura total em mobile */
+            /* Overlay mais escuro (0.85) para garantir leitura sobre a imagem colorida */
+      background: linear-gradient(rgba(0,0,0,0.85), rgba(0, 0, 0, 0.452)), url('imagens/body.png');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed; /* Efeito parallax suave */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 80px;
+      padding-bottom: 40px;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 400px;
+      width: 100%;
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    p {
+      text-align: center;
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    select {
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    .price {
+      margin-top: 10px;
+      font-size: 18px;
+      text-align: center;
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #25D366;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Agende seu horário</h1>
+    <p>Escolha o barbeiro e o serviço</p>
+
+    <label>Barbeiro</label>
+    <select id="barbeiro">
+      <option value="">Selecione</option>
+      <option value="Guilherme">Guilherme</option>
+      <option value="Gabriel">Gabriel</option>
+    </select>
+
+    <label>Serviço</label>
+    <select id="servico">   
+      <option value="">Selecione</option>
+      <option value="Corte Simples|35">COMBO ( Cabelo + Barba + Sobrancelhas )</option>
+      <option value="Corte + Barba|35">COMBO ( Cabelo + Barba )</option>
+      <option value="Corte + Barba + Sobrancelha|"> Barba</option>
+      <option value="Corte + Barba + Sobrancelha|"> Degrade</option>
+      <option value="Corte + Barba + Sobrancelha|"> Corte simples</option>
+      <option value="Corte + Barba + Sobrancelha|"> Platinado</option>
+      <option value="Corte + Barba + Sobrancelha|"> Luzes</option>
+      <option value="Corte + Barba + Sobrancelha|"> Corte + Pigmentação</option>
+       
+    </select>
+
+    <div class="price" id="preco"></div>
+
+    <button onclick="agendar()">Agendar no WhatsApp</button>
+  </div>
+
+  <script>
+    const servicoSelect = document.getElementById('servico');
+    const precoDiv = document.getElementById('preco');
+
+    servicoSelect.addEventListener('change', () => {
+      const value = servicoSelect.value;
+      if (!value) {
+        precoDiv.innerText = '';
+        return;
+      }
+
+      const preco = value.split('|')[1];
+      precoDiv.innerText = `Valor: R$ ${preco}`;
+    });
+
+    function agendar() {
+      const barbeiro = document.getElementById('barbeiro').value;
+      const servicoValue = document.getElementById('servico').value;
+
+      if (!barbeiro || !servicoValue) {
+        alert('Selecione o barbeiro e o serviço.');
+        return;
+      }
+
+      const [servico, preco] = servicoValue.split('|');
+
+      const mensagem = `
+Olá! Gostaria de agendar um horário:
+
+👤 Barbeiro: ${barbeiro}
+✂️ Serviço: ${servico}
+💰 Valor: R$ ${preco}
+      `;
+
+      const telefone = '5599999999999'; // <-- COLOQUE O WHATSAPP DO BARBEIRO AQUI
+      const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+
+      window.open(url, '_blank');
+    }
+  </script>
+
+</body>
+</html>
