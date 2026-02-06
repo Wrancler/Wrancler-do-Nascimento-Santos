@@ -8,7 +8,19 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
+      background: linear-gradient(rgba(0,0,0,0.85), rgba(0, 0, 0, 0.452)), url('imagens/body.png'); 
+      min-height: 100vh; /* Garante altura total em mobile */
+            /* Overlay mais escuro (0.85) para garantir leitura sobre a imagem colorida */
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(0, 0, 0, 0.452)), url('imagens/body.png');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed; /* Efeito parallax suave */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 80px;
+            padding-bottom: 40px;
       color: #fff;
       display: flex;
       justify-content: center;
