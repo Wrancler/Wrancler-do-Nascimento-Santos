@@ -90,6 +90,23 @@ const clientPhoneInput = document.getElementById("clientPhone");
 
 dateInput.addEventListener("change", renderSlots);
 
+// ✅ Scroll helpers
+function smoothScrollTo(el) {
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function smoothScrollToId(id) {
+  smoothScrollTo(document.getElementById(id));
+}
+
+// ✅ Foco suave (espera o scroll terminar um pouco)
+function focusAfterScroll(inputEl, delayMs = 350) {
+  if (!inputEl) return;
+  window.setTimeout(() => {
+    inputEl.focus({ preventScroll: true });
+  }, delayMs);
+}
+
 function addMinutes(time, minutes) {
   const [h, m] = time.split(":").map(Number);
   const total = h * 60 + m + minutes;
@@ -182,6 +199,9 @@ professionalsDiv.addEventListener("click", (e) => {
   updateScheduleLockState();
 
   if (dateInput.value && selectedServiceId) renderSlots();
+
+  // ✅ Selecionou barbeiro → pula para serviço
+  smoothScrollToId("servicesSection");
 });
 
 // Clique no serviço
@@ -203,6 +223,12 @@ servicesDiv.addEventListener("click", (e) => {
   updateScheduleLockState();
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
+
+  // ✅ Selecionou serviço → rola até Seus dados
+  smoothScrollToId("clientSection");
+
+  // ✅ E já coloca o cursor no "Seu nome"
+  focusAfterScroll(clientNameInput, 350);
 });
 
 async function renderSlots() {
@@ -235,6 +261,8 @@ async function renderSlots() {
 
     if (slots.length === 0) {
       slotsDiv.textContent = "Sem horários disponíveis neste dia.";
+      // ✅ Selecionou data → rola até Horários disponíveis
+      smoothScrollTo(slotsDiv);
       return;
     }
 
@@ -245,9 +273,13 @@ async function renderSlots() {
       btn.onclick = () => handleCreateAppointment(time, date);
       slotsDiv.appendChild(btn);
     });
+
+    // ✅ Selecionou data → rola até Horários disponíveis
+    smoothScrollTo(slotsDiv);
   } catch (e) {
     console.error(e);
     slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
+    smoothScrollTo(slotsDiv);
   }
 }
 
