@@ -1,32 +1,73 @@
 import {
+  collection,
   doc,
-  runTransaction
+  runTransaction,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { db } from "./config.js";
 
-// docId seguro: remove ":" do horário
-function makeAppointmentId({ tenantId, professionalId, date, startTime }) {
-  const safeTime = startTime.replace(":", ""); // "09:00" -> "0900"
-  return `${tenantId}__${professionalId}__${date}__${safeTime}`;
+function makeLockId({ tenantId, professionalId, date, startTime }) {
+  return `${tenantId}_${professionalId}_${date}_${startTime}`.replace(/\s+/g, "");
 }
 
-export async function createAppointment(data) {
-  const id = makeAppointmentId(data);
-  const ref = doc(db, "appointments", id);
+/**
+ * createAppointment(payload)
+ * Espera receber os campos como você já está usando no booking.js:
+ * tenantId, professionalId, date, startTime, endTime, serviceName, servicePrice, clientName, clientPhone
+ */
+export async function createAppointment(payload) {
+  const {
+    tenantId,
+    professionalId,
+    date,
+    startTime,
+    endTime,
+    serviceName = "Serviço",
+    servicePrice = 0,
+    clientName = "Cliente",
+    clientPhone = "",
+  } = payload;
 
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
+  const lockId = makeLockId({ tenantId, professionalId, date, startTime });
+  const lockRef = doc(db, "slotLocks", lockId);
 
-    if (snap.exists()) {
-      throw new Error("Horário já ocupado.");
+  const appointmentsCol = collection(db, "appointments");
+  const appointmentRef = doc(appointmentsCol); // ID automático
+
+  return runTransaction(db, async (tx) => {
+    const lockSnap = await tx.get(lockRef);
+
+    if (lockSnap.exists()) {
+      throw new Error("HORARIO_OCUPADO");
     }
 
-    tx.set(ref, {
-      ...data,
-      createdAt: new Date().toISOString(),
+    // 1) lock do slot
+    tx.set(lockRef, {
+      tenantId,
+      professionalId,
+      date,
+      startTime,
+      endTime,
+      appointmentId: appointmentRef.id,
+      createdAt: serverTimestamp(),
     });
-  });
 
-  return id;
+    // 2) appointment
+    tx.set(appointmentRef, {
+      tenantId,
+      professionalId,
+      date,
+      startTime,
+      endTime,
+      serviceName,
+      servicePrice,
+      clientName,
+      clientPhone,
+      status: "confirmed",
+      createdAt: serverTimestamp(),
+    });
+
+    return { appointmentId: appointmentRef.id, lockId };
+  });
 }

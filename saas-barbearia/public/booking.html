@@ -2,24 +2,207 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Agendar Horário</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <h1>Agende seu horário</h1>
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__content">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand__mark">LA</div>
+          <div class="brand__info">
+            <div class="brand__name">La Barber Clube</div>
+            <div class="brand__tag">Agendamento premium</div>
+          </div>
+        </div>
 
-  <label>Seu nome</label>
-  <input id="clientName" placeholder="Ex: João" />
+        <div class="hero__title">
+          <h1>AGENDAMENTO</h1>
+          <p id="subtitle">Escolha o barbeiro e o serviço para liberar a agenda.</p>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  <label>Seu WhatsApp</label>
-  <input id="clientPhone" placeholder="Ex: 83999999999" />
+  <main class="container main">
+    <section class="section">
+      <div class="section__head">
+        <h2>Escolha o barbeiro</h2>
+        <p>Selecione quem vai te atender.</p>
+      </div>
 
-  <label>Data</label>
-  <input type="date" id="date" />
+      <div id="professionals" class="grid grid--2">
+        <button class="card card--person" data-prof="guilherme" data-prof-name="Guilherme Silva" type="button">
+          <div class="card__media">
+            <img src="assets/barbers/guilherme.jpeg" alt="Guilherme Silva" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Guilherme Silva</div>
+            <div class="card__meta">Toque para selecionar</div>
+          </div>
+        </button>
 
-  <h3>Horários disponíveis</h3>
-  <div id="slots"></div>
+        <button class="card card--person" data-prof="gabriel" data-prof-name="Gabriel Silva" type="button">
+          <div class="card__media">
+            <img src="assets/barbers/gabriel.jpeg" alt="Gabriel Silva" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Gabriel Silva</div>
+            <div class="card__meta">Toque para selecionar</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="pill" id="selectedProfessionalText"></div>
+    </section>
+
+    <section class="section">
+      <div class="section__head">
+        <h2>Escolha o serviço</h2>
+        <p>Todos os serviços têm 40 minutos.</p>
+      </div>
+
+      <div id="services" class="grid grid--3">
+        <button class="card card--service" data-service="combo_cabelo_barba_sobrancelha" type="button">
+          <div class="card__media">
+            <img src="assets/services/combo-completo.png" alt="Combo completo" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Combo completo</div>
+            <div class="card__meta">Cabelo ╉ Barba ╉ Sobrancelhas • 40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="combo_cabelo_barba" type="button">
+          <div class="card__media">
+            <img src="assets/services/combo.png" alt="Combo" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Combo</div>
+            <div class="card__meta">Cabelo ╉ Barba • 40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="barba" type="button">
+          <div class="card__media">
+            <img src="assets/services/barba.png" alt="Barba" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Barba</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="degrade" type="button">
+          <div class="card__media">
+            <img src="assets/services/degrade.png" alt="Degradê" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Degradê</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="corte_simples" type="button">
+          <div class="card__media">
+            <img src="assets/services/corte-simples.png" alt="Corte simples" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Corte simples</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="platinado" type="button">
+          <div class="card__media">
+            <img src="assets/services/platinado.png" alt="Platinado" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Platinado</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="luzes" type="button">
+          <div class="card__media">
+            <img src="assets/services/luzes.png" alt="Luzes" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Luzes</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+
+        <button class="card card--service" data-service="corte_pigmentacao" type="button">
+          <div class="card__media">
+            <img src="assets/services/corte-pigmentacao.png" alt="Corte e pigmentação" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">Corte ╉ Pigmentação</div>
+            <div class="card__meta">40 min</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="pill" id="selectedServiceText"></div>
+    </section>
+
+    <section class="section">
+      <div class="section__head">
+        <h2>Seus dados</h2>
+        <p>Só para confirmar seu horário.</p>
+      </div>
+
+      <div class="form">
+        <label class="label">Seu nome</label>
+        <input class="input" id="clientName" placeholder="Ex: João" autocomplete="name" />
+
+        <label class="label">Seu WhatsApp</label>
+        <input class="input" id="clientPhone" placeholder="Ex: 83999999999" autocomplete="tel" inputmode="numeric" />
+      </div>
+    </section>
+
+    <section class="section" id="scheduleSection" aria-disabled="true">
+      <div class="section__head">
+        <h2>Escolha o dia e o horário</h2>
+        <p id="hint">Selecione um barbeiro e um serviço para liberar a agenda.</p>
+      </div>
+
+      <div class="schedule">
+        <div class="schedule__left">
+          <label class="label">Data</label>
+          <input class="input" type="date" id="date" />
+          <div class="note">Horários em blocos de 40 min.</div>
+        </div>
+
+        <div class="schedule__right">
+          <div class="slots__title">Horários disponíveis</div>
+          <div id="slots" class="slots"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> La Barber Clube</span>
+
+    </footer>
+  </main>
 
   <script type="module" src="booking.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 </body>
 </html>
