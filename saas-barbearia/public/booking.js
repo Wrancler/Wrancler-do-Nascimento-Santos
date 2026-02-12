@@ -304,17 +304,22 @@ async function handleCreateAppointment(time, date) {
     servicePrice: service.price,
     date,
     startTime: time,
-    endTime: addMinutes(time, service.durationMinutes), // ✅ 40 min fixo
+    endTime: addMinutes(time, service.durationMinutes), // 40 min fixo
     clientName,
     clientPhone,
     status: "confirmed"
   };
 
   try {
-    await createAppointment(payload);
+    // ✅ pega o retorno com code
+    const result = await createAppointment(payload);
+    const code = result?.code;
 
+    // ✅ mensagem do WhatsApp (já com código)
     const msg =
 `Novo agendamento ✂️
+
+Código: ${code}
 
 Barbeiro: ${selectedProfessionalName}
 Cliente: ${clientName}
@@ -323,10 +328,16 @@ Serviço: ${service.name}
 Data: ${date}
 Hora: ${time} (${SERVICE_DURATION} min)`;
 
-    window.open(`https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
+    // abre WhatsApp do barbeiro
+    window.open(
+      `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
 
-    alert("Agendamento confirmado!");
-    await renderSlots();
+    // ✅ vai para o comprovante premium
+    window.location.href =
+      `confirmed.html?tenant=${encodeURIComponent(tenantId)}&code=${encodeURIComponent(code)}&whats=${encodeURIComponent(barberWhatsapp)}`;
+
   } catch (e) {
     if (e?.message === "HORARIO_OCUPADO") {
       alert("Esse horário acabou de ser reservado por outra pessoa. Escolha outro.");
@@ -338,6 +349,7 @@ Hora: ${time} (${SERVICE_DURATION} min)`;
     setButtonsDisabled(false);
   }
 }
+
 
 // ✅ Pré-seleção via URL (se tiver)
 preselectFromUrl();

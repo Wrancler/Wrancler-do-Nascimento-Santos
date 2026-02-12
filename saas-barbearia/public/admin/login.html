@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin • Login</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__content">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand__mark">
+            <img class="brand__logo" src="../assets/brand/logo.png" alt="La Barber Clube">
+          </div>
+          <div class="brand__info">
+            <div class="brand__name">La Barber Clube</div>
+            <div class="brand__tag">Admin</div>
+          </div>
+        </div>
+
+        <div class="hero__title">
+          <h1>LOGIN</h1>
+          <p>Acesso restrito para administração.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main">
+    <section class="section">
+      <div class="section__head">
+        <h2>Entrar</h2>
+        <p>Use seu e-mail e senha.</p>
+      </div>
+
+      <div class="form">
+        <label class="label">E-mail</label>
+        <input class="input" id="email" type="email" autocomplete="email" placeholder="admin@exemplo.com" />
+
+        <label class="label">Senha</label>
+        <input class="input" id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+
+        <button class="btn" id="btnLogin" type="button">Entrar</button>
+
+        <div class="note errorbox" id="errorBox" style="display:none;"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> La Barber Clube</span>
+    </footer>
+  </main>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+  <script type="module" src="login.js"></script>
+</body>
+</html>

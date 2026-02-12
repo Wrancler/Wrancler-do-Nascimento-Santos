@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agendamento Confirmado</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__content">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand__mark">
+            <img class="brand__logo" src="assets/brand/logo.png" alt="La Barber Clube">
+          </div>
+          <div class="brand__info">
+            <div class="brand__name">La Barber Clube</div>
+            <div class="brand__tag">Comprovante do agendamento</div>
+          </div>
+        </div>
+
+        <div class="hero__title">
+          <h1>CONFIRMADO</h1>
+          <p>Seu horário foi reservado com sucesso.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main">
+    <section class="section">
+      <div class="section__head">
+        <h2>Detalhes</h2>
+        <p>Guarde seu código. Ele identifica seu horário.</p>
+      </div>
+
+      <div class="pill pill--big" id="codePill">Carregando...</div>
+
+      <div class="confirm-grid">
+        <div class="confirm-item">
+          <div class="confirm-label">Barbeiro</div>
+          <div class="confirm-value" id="barberValue">—</div>
+        </div>
+        <div class="confirm-item">
+          <div class="confirm-label">Serviço</div>
+          <div class="confirm-value" id="serviceValue">—</div>
+        </div>
+        <div class="confirm-item">
+          <div class="confirm-label">Data</div>
+          <div class="confirm-value" id="dateValue">—</div>
+        </div>
+        <div class="confirm-item">
+          <div class="confirm-label">Hora</div>
+          <div class="confirm-value" id="timeValue">—</div>
+        </div>
+        <div class="confirm-item">
+          <div class="confirm-label">Cliente</div>
+          <div class="confirm-value" id="clientValue">—</div>
+        </div>
+        <div class="confirm-item">
+          <div class="confirm-label">WhatsApp</div>
+          <div class="confirm-value" id="phoneValue">—</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="btnWhatsapp" type="button">Enviar comprovante no WhatsApp</button>
+        <a class="btn btn--ghost" href="booking.html">Agendar outro horário</a>
+      </div>
+
+      <div class="note errorbox" id="errorBox" style="display:none;"></div>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> La Barber Clube</span>
+    </footer>
+  </main>
+
+  <script type="module" src="confirmed.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
