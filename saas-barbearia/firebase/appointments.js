@@ -44,7 +44,7 @@ export async function getAppointments({ tenantId, professionalId, date }) {
  */
 export async function getAppointmentByCode({ tenantId, code }) {
   const q = query(
-    collection(db, "appointments"),
+    collection(db, "appointmentsPublic"),
     where("tenantId", "==", tenantId),
     where("code", "==", code),
     limit(1)

@@ -52,8 +52,7 @@ async function load() {
     serviceValue.textContent = appt.serviceName || "—";
     dateValue.textContent = appt.date || "—";
     timeValue.textContent = `${appt.startTime || "—"} - ${appt.endTime || "—"}`;
-    clientValue.textContent = appt.clientName || "—";
-    phoneValue.textContent = digits(appt.clientPhone) || "—";
+    
 
     const msg =
 `Comprovante de agendamento ✂️
