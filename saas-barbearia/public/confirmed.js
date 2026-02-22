@@ -17,8 +17,9 @@ const barberValue = document.getElementById("barberValue");
 const serviceValue = document.getElementById("serviceValue");
 const dateValue = document.getElementById("dateValue");
 const timeValue = document.getElementById("timeValue");
-const clientValue = document.getElementById("clientValue");
-const phoneValue = document.getElementById("phoneValue");
+
+// 🔒 Removidos clientValue e phoneValue (não usamos mais)
+
 const btnWhatsapp = document.getElementById("btnWhatsapp");
 const errorBox = document.getElementById("errorBox");
 
@@ -52,8 +53,8 @@ async function load() {
     serviceValue.textContent = appt.serviceName || "—";
     dateValue.textContent = appt.date || "—";
     timeValue.textContent = `${appt.startTime || "—"} - ${appt.endTime || "—"}`;
-    
 
+    // 🔒 Mensagem sem dados sensíveis
     const msg =
 `Comprovante de agendamento ✂️
 
@@ -61,15 +62,13 @@ Código: ${appt.code}
 Barbeiro: ${profName}
 Serviço: ${appt.serviceName}
 Data: ${appt.date}
-Hora: ${appt.startTime} (${(appt.endTime || "") ? "até " + appt.endTime : "40 min"})
-
-Cliente: ${appt.clientName}
-WhatsApp: ${digits(appt.clientPhone)}`;
+Horário: ${appt.startTime} - ${appt.endTime}`;
 
     btnWhatsapp.onclick = () => {
       if (!whats) return alert("WhatsApp do barbeiro não informado no link.");
       window.open(`https://wa.me/${whats}?text=${encodeURIComponent(msg)}`, "_blank");
     };
+
   } catch (e) {
     console.error(e);
     errorBox.style.display = "block";
