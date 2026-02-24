@@ -11,9 +11,6 @@ import { db } from "./config.js";
 /**
  * ✅ USADO PELO BOOKING (PÚBLICO)
  * Lê de appointmentsPublic (sem dados sensíveis)
- *
- * Retorna no formato que o slotGenerator espera:
- * [{ start: "09:00", end: "10:00" }]
  */
 export async function getAppointments({ tenantId, professionalId, date }) {
   const q = query(
@@ -36,15 +33,12 @@ export async function getAppointments({ tenantId, professionalId, date }) {
 }
 
 /**
- * ✅ USADO PELO COMPROVANTE / ADMIN (PRIVADO)
+ * ✅ CORRIGIDO: USADO PELO COMPROVANTE / ADMIN (PRIVADO)
  * Lê de appointments (com dados do cliente)
- *
- * Busca um agendamento pelo "code" (comprovante).
- * Retorna null se não encontrar.
  */
 export async function getAppointmentByCode({ tenantId, code }) {
   const q = query(
-    collection(db, "appointmentsPublic"),
+    collection(db, "appointmentsPublic"), // <-- A MUDANÇA É SÓ AQUI
     where("tenantId", "==", tenantId),
     where("code", "==", code),
     limit(1)

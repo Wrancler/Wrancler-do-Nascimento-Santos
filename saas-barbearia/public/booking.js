@@ -306,7 +306,7 @@ async function handleCreateAppointment(time, date) {
     startTime: time,
     endTime: addMinutes(time, service.durationMinutes), // 40 min fixo
     clientName,
-    clientPhone,
+    clientPhone: formatPhoneDigits(clientPhone), // ✅ Telefone limpo salvo no banco
     status: "confirmed"
   };
 
@@ -315,26 +315,8 @@ async function handleCreateAppointment(time, date) {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    // ✅ mensagem do WhatsApp (já com código)
-    const msg =
-`Novo agendamento ✂️
-
-Código: ${code}
-
-Barbeiro: ${selectedProfessionalName}
-Cliente: ${clientName}
-WhatsApp: ${formatPhoneDigits(clientPhone)}
-Serviço: ${service.name}
-Data: ${date}
-Hora: ${time} (${SERVICE_DURATION} min)`;
-
-    // abre WhatsApp do barbeiro
-    window.open(
-      `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`,
-      "_blank"
-    );
-
-    // ✅ vai para o comprovante premium
+    // ✅ O window.open problemático foi removido daqui!
+    // ✅ O cliente vai direto para o comprovante premium
     window.location.href =
       `confirmed.html?tenant=${encodeURIComponent(tenantId)}&code=${encodeURIComponent(code)}&whats=${encodeURIComponent(barberWhatsapp)}`;
 

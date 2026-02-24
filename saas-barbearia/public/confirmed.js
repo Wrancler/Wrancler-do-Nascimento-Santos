@@ -18,8 +18,6 @@ const serviceValue = document.getElementById("serviceValue");
 const dateValue = document.getElementById("dateValue");
 const timeValue = document.getElementById("timeValue");
 
-// 🔒 Removidos clientValue e phoneValue (não usamos mais)
-
 const btnWhatsapp = document.getElementById("btnWhatsapp");
 const errorBox = document.getElementById("errorBox");
 
@@ -43,20 +41,22 @@ async function load() {
       return;
     }
 
+    // Identifica o nome do profissional (MVP dos irmãos)
     const profName =
       appt.professionalName ||
       (appt.professionalId === "guilherme" ? "Guilherme Silva" :
        appt.professionalId === "gabriel" ? "Gabriel Silva" :
        appt.professionalId);
 
+    // Preenche os dados visíveis na tela
     barberValue.textContent = profName || "—";
     serviceValue.textContent = appt.serviceName || "—";
     dateValue.textContent = appt.date || "—";
     timeValue.textContent = `${appt.startTime || "—"} - ${appt.endTime || "—"}`;
 
-    // 🔒 Mensagem sem dados sensíveis
+     // ✅ Mensagem direta (o barbeiro já vai ver o número do cliente no WhatsApp)
     const msg =
-`Comprovante de agendamento ✂️
+`Olá! Fiz um novo agendamento com vocês ✂️
 
 Código: ${appt.code}
 Barbeiro: ${profName}
@@ -64,8 +64,10 @@ Serviço: ${appt.serviceName}
 Data: ${appt.date}
 Horário: ${appt.startTime} - ${appt.endTime}`;
 
+
     btnWhatsapp.onclick = () => {
       if (!whats) return alert("WhatsApp do barbeiro não informado no link.");
+      // ✅ Como o disparo é via clique do botão, o navegador permite abrir a aba!
       window.open(`https://wa.me/${whats}?text=${encodeURIComponent(msg)}`, "_blank");
     };
 

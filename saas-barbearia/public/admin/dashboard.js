@@ -25,7 +25,6 @@ function makeLockId({ tenantId, professionalId, date, startTime }) {
 }
 
 const tenantId = getParam("tenant") || "tenant-demo";
-
 const auth = getAuth();
 
 const subtitle = document.getElementById("subtitle");
@@ -63,14 +62,11 @@ async function load() {
   const professionalId = profEl.value;
 
   try {
-    // Observação: pode pedir índice no Firestore dependendo da sua base.
-    // Se pedir, você cria o índice e pronto.
     const base = [
       where("tenantId", "==", tenantId),
       where("date", "==", date)
     ];
 
-    // opcional: filtra barbeiro
     if (professionalId !== "all") base.push(where("professionalId", "==", professionalId));
 
     const q = query(
@@ -96,7 +92,7 @@ async function load() {
     console.error(e);
     summaryEl.textContent = "";
     errorBox.style.display = "block";
-    errorBox.textContent = "Erro ao carregar. Se o Firebase pedir, crie o índice (ele mostra o link).";
+    errorBox.textContent = "Erro ao carregar. Se o Firebase pedir, crie o índice (ele mostra o link no F12).";
   }
 }
 
@@ -139,7 +135,10 @@ async function markDone(appt) {
 
   try {
     const batch = writeBatch(db);
+    // Atualiza o privado e o público
     batch.update(doc(db, "appointments", appt.id), { status: "done" });
+    batch.update(doc(db, "appointmentsPublic", appt.id), { status: "done" });
+    
     await batch.commit();
     await load();
   } catch (e) {
@@ -161,8 +160,9 @@ async function cancel(appt) {
 
     const batch = writeBatch(db);
 
-    // 1) muda status do agendamento
+    // 1) muda status no privado e no público
     batch.update(doc(db, "appointments", appt.id), { status: "cancelled" });
+    batch.update(doc(db, "appointmentsPublic", appt.id), { status: "cancelled" });
 
     // 2) remove lock do horário para voltar a aparecer na agenda
     batch.delete(doc(db, "slotLocks", lockId));
