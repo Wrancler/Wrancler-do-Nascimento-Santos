@@ -107,25 +107,49 @@ function renderItem(appt) {
   wrap.className = "admin-item";
 
   const status = appt.status || "confirmed";
+  
+  // 1. Criamos um visual de cores para o status
+  let statusBadge = "";
+  if (status === "confirmed") {
+    statusBadge = `<span style="color: #4ade80; font-weight: bold;">CONFIRMADO</span>`;
+  } else if (status === "done") {
+    statusBadge = `<span style="color: #60a5fa; font-weight: bold;">FINALIZADO</span>`;
+  } else if (status === "cancelled") {
+    statusBadge = `<span style="color: #f87171; font-weight: bold;">CANCELADO</span>`;
+  }
+
+  // 2. Formatamos o telefone para criar o link do WhatsApp
+  const cleanPhone = String(appt.clientPhone || "").replace(/[^\d]/g, "");
+  const whatsAppAction = cleanPhone 
+    ? `<a href="https://wa.me/${cleanPhone}" target="_blank" style="color: #25D366; text-decoration: none; font-weight: bold;">💬 Chamar no Whats</a>` 
+    : "Sem número";
 
   wrap.innerHTML = `
     <div class="admin-item__top">
       <div>
         <div class="admin-item__title">${appt.startTime || "—"} • ${profName(appt.professionalId)}</div>
-        <div class="admin-item__meta">
-          ${appt.serviceName || "—"} • Cliente: ${appt.clientName || "—"} • Whats: ${String(appt.clientPhone || "").replace(/[^\d]/g, "")}
+        <div class="admin-item__meta" style="margin-bottom: 8px;">
+          ${appt.serviceName || "—"} <br> 
+          👤 Cliente: ${appt.clientName || "—"} <br> 
+          📱 Whats: ${whatsAppAction}
         </div>
-        <div class="admin-item__code">Código: <strong>${appt.code || "—"}</strong> • Status: <strong>${status}</strong></div>
+        <div class="admin-item__code">Código: <strong>${appt.code || "—"}</strong> • Status: ${statusBadge}</div>
       </div>
       <div class="admin-item__actions">
-        <button class="btn btn--ghost" data-action="done">Finalizar</button>
-        <button class="btn" data-action="cancel">Cancelar</button>
+        ${status === "confirmed" ? `
+          <button class="btn btn--ghost" data-action="done">Finalizar</button>
+          <button class="btn" data-action="cancel">Cancelar</button>
+        ` : ''}
       </div>
     </div>
   `;
 
-  wrap.querySelector('[data-action="done"]').addEventListener("click", () => markDone(appt));
-  wrap.querySelector('[data-action="cancel"]').addEventListener("click", () => cancel(appt));
+  // Adicionamos os eventos apenas se os botões existirem na tela
+  const btnDone = wrap.querySelector('[data-action="done"]');
+  const btnCancel = wrap.querySelector('[data-action="cancel"]');
+  
+  if (btnDone) btnDone.addEventListener("click", () => markDone(appt));
+  if (btnCancel) btnCancel.addEventListener("click", () => cancel(appt));
 
   return wrap;
 }

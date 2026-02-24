@@ -345,7 +345,7 @@ body{
   border-radius:18px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
-  color:var(--text);
+  color:greenyellow;
   cursor:pointer;
   font-weight:900;
   letter-spacing:.06em;
