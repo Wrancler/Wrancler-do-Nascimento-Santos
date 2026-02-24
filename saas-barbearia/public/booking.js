@@ -310,26 +310,31 @@ async function handleCreateAppointment(time, date) {
     status: "confirmed"
   };
 
-  try {
-    // ✅ pega o retorno com code
+    try {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    // ✅ O window.open problemático foi removido daqui!
-    // ✅ O cliente vai direto para o comprovante premium
-    window.location.href =
-      `confirmed.html?tenant=${encodeURIComponent(tenantId)}&code=${encodeURIComponent(code)}&whats=${encodeURIComponent(barberWhatsapp)}`;
+    // 1. Montamos a mensagem automática para o barbeiro
+    const msg = `Novo agendamento ✂️\n\nCódigo: ${code}\nBarbeiro: ${selectedProfessionalName}\nCliente: ${clientName}\nServiço: ${service.name}\nData: ${date}\nHora: ${time}`;
+
+    // 2. Criamos o link do WhatsApp
+    const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
+    
+    // 3. Redirecionamento INSTANTÂNEO
+    // Usamos location.href para que o celular abra o app do WhatsApp na hora
+    window.location.href = whatsappUrl;
 
   } catch (e) {
     if (e?.message === "HORARIO_OCUPADO") {
-      alert("Esse horário acabou de ser reservado por outra pessoa. Escolha outro.");
+      alert("❌ Ops! Esse horário foi preenchido agora pouco. Escolha outro.");
     } else {
-      alert(e?.message || "Erro ao agendar.");
+      alert("❌ Erro ao agendar: " + e.message);
     }
     await renderSlots();
   } finally {
     setButtonsDisabled(false);
   }
+
 }
 
 
