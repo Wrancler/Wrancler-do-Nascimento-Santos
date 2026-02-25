@@ -432,3 +432,21 @@ select {
 .input {
     padding: 12px 16px;
 }
+
+/* ✅ SOLUÇÃO DEFINITIVA ANTI-ZOOM MOBILE */
+@media screen and (max-width: 768px) {
+  .input, 
+  input[type="text"], 
+  input[type="tel"], 
+  input[type="date"], 
+  select {
+    font-size: 16px !important; /* Tamanho mínimo para o Safari não dar zoom */
+    -webkit-text-size-adjust: 100%; /* Impede o redimensionamento automático de texto no iOS */
+  }
+}
+
+/* Garante que o clique seja seco e sem saltos de layout */
+.input:focus {
+  outline: none;
+  border-color: rgba(255,255,255,.28);
+}

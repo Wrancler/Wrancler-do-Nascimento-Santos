@@ -304,25 +304,32 @@ async function handleCreateAppointment(time, date) {
     servicePrice: service.price,
     date,
     startTime: time,
-    endTime: addMinutes(time, service.durationMinutes), // 40 min fixo
+    endTime: addMinutes(time, service.durationMinutes),
     clientName,
-    clientPhone: formatPhoneDigits(clientPhone), // ✅ Telefone limpo salvo no banco
+    clientPhone: formatPhoneDigits(clientPhone),
     status: "confirmed"
   };
 
-    try {
+  try {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    // 1. Montamos a mensagem automática para o barbeiro
-    const msg = `Novo agendamento ✂️\n\nCódigo: ${code}\nBarbeiro: ${selectedProfessionalName}\nCliente: ${clientName}\nServiço: ${service.name}\nData: ${date}\nHora: ${time}`;
+    // 1. Montamos a mensagem rica para o barbeiro (com emojis e negrito)
+    const msg = `✂️ *NOVO AGENDAMENTO* ✂️\n\n` +
+                `*Código:* ${code}\n` +
+                `*Cliente:* ${clientName}\n` +
+                `*Barbeiro:* ${selectedProfessionalName}\n` +
+                `*Serviço:* ${service.name}\n` +
+                `*Data:* ${date}\n` +
+                `*Horário:* ${time}`;
 
-    // 2. Criamos o link do WhatsApp
+    // 2. Link do WhatsApp
     const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
     
-    // 3. Redirecionamento INSTANTÂNEO
-    // Usamos location.href para que o celular abra o app do WhatsApp na hora
-    window.location.href = whatsappUrl;
+    // 3. REDIRECIONAMENTO INSTANTÂNEO
+    // Usamos o location.replace para que a aba atual seja substituída pelo WhatsApp,
+    // o que é mais eficiente em navegadores mobile para evitar bloqueio de popup.
+    window.location.replace(whatsappUrl);
 
   } catch (e) {
     if (e?.message === "HORARIO_OCUPADO") {
@@ -334,7 +341,6 @@ async function handleCreateAppointment(time, date) {
   } finally {
     setButtonsDisabled(false);
   }
-
 }
 
 
