@@ -501,3 +501,70 @@ select {
   font-weight: 700;
   color: #e0b976; /* Um tom de dourado premium, estilo barbearia */
 }
+
+/* =========================================
+   ROLETA DE DATAS (HORIZONTAL)
+   ========================================= */
+.date-slider {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin; /* Para Firefox */
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+.date-slider::-webkit-scrollbar {
+  height: 6px;
+}
+.date-slider::-webkit-scrollbar-track {
+  background: transparent;
+}
+.date-slider::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 10px;
+}
+
+.date-card {
+  flex: 0 0 auto;
+  min-width: 76px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.date-card:hover {
+  background: rgba(255,255,255,0.08);
+}
+.date-card.is-selected {
+  border-color: #e0b976; /* Dourado premium */
+  background: rgba(224, 185, 118, 0.1);
+  transform: translateY(-2px);
+}
+
+.date-card__weekday {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.date-card__day {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+.date-card.is-selected .date-card__day,
+.date-card.is-selected .date-card__weekday,
+.date-card.is-selected .date-card__month {
+  color: #e0b976;
+}
+.date-card__month {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+}

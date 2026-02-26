@@ -1,7 +1,7 @@
 import { generateAvailableSlots } from "../services/slotGenerator.js";
 import { getAppointments } from "../firebase/appointments.js";
 import { createAppointment } from "../firebase/createAppointment.js";
-import { getTenantConfig } from "../firebase/tenants.js"; // Novo import
+import { getTenantConfig } from "../firebase/tenants.js";
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -29,7 +29,6 @@ async function initTenant() {
     const professionalsDiv = document.getElementById("professionals");
     professionalsDiv.innerHTML = ""; 
 
-    // Pega o array de profissionais do banco
     const profs = config.professionals || []; 
     
     profs.forEach(p => {
@@ -39,7 +38,6 @@ async function initTenant() {
       btn.setAttribute("data-prof", p.id);
       btn.setAttribute("data-prof-name", p.name);
       
-      // Se não tiver imagem no banco, ele tenta achar pelo ID
       const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
 
       btn.innerHTML = `
@@ -62,7 +60,6 @@ async function initTenant() {
     servicesDiv.innerHTML = ""; 
 
     config.services.forEach(s => {
-      // Salva na memória para o agendamento
       servicesById[s.id] = {
         id: s.id,
         name: s.name,
@@ -90,7 +87,6 @@ async function initTenant() {
       servicesDiv.appendChild(btn);
     });
 
-    // 4. Executa as validações do seu código original
     preselectFromUrl();
     updateScheduleLockState();
 
@@ -105,23 +101,18 @@ function updateSummaryCard() {
   const summarySection = document.getElementById("summarySection");
   if (!summarySection) return;
 
-  // Verifica se o cliente já clicou no barbeiro E no serviço
   if (selectedProfessionalName && selectedServiceId) {
-    summarySection.style.display = "block"; // Faz o card aparecer
+    summarySection.style.display = "block"; 
     
-    // 1. Preenche Profissional
     document.getElementById("summaryProf").textContent = selectedProfessionalName;
     
-    // 2. Preenche Serviço e Total
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
       document.getElementById("summaryTotal").textContent = `R$ ${servico.price.toFixed(2).replace('.', ',')}`;
     }
 
-    // 3. Preenche Data e Hora
     const dateInput = document.getElementById("date").value;
-    // Tenta achar o botão de horário que estiver com a classe de selecionado no seu HTML
     const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
     
     let dateTimeText = "Escolha o dia e horário";
@@ -143,10 +134,9 @@ let selectedProfessionalId = null;
 let selectedProfessionalName = null;
 let selectedServiceId = null;
 
-// Dispara a busca no banco assim que o arquivo carrega
 initTenant();
 
-// Elements (do HTML premium)
+// Elements
 const professionalsDiv = document.getElementById("professionals");
 const servicesDiv = document.getElementById("services");
 const selectedProfessionalText = document.getElementById("selectedProfessionalText");
@@ -160,10 +150,8 @@ const slotsDiv = document.getElementById("slots");
 const clientNameInput = document.getElementById("clientName");
 const clientPhoneInput = document.getElementById("clientPhone");
 
-dateInput.addEventListener("change", () => {
-  renderSlots();
-  updateSummaryCard(); // Atualiza o resumo quando escolhe o dia
-});
+// Gatilho removido do HTML original, agora é controlado pela Roleta
+// dateInput.addEventListener("change", () => { ... });
 
 // ✅ Scroll helpers
 function smoothScrollTo(el) {
@@ -174,7 +162,7 @@ function smoothScrollToId(id) {
   smoothScrollTo(document.getElementById(id));
 }
 
-// ✅ Foco suave (espera o scroll terminar um pouco)
+// ✅ Foco suave
 function focusAfterScroll(inputEl, delayMs = 350) {
   if (!inputEl) return;
   window.setTimeout(() => {
@@ -209,7 +197,6 @@ function formatPhoneDigits(phone) {
 function updateScheduleLockState() {
   const ready = !!selectedProfessionalId && !!selectedServiceId;
 
-  // ✅ Para o layout premium, usamos aria-disabled
   scheduleSection.setAttribute("aria-disabled", ready ? "false" : "true");
 
   if (!ready) {
@@ -236,7 +223,6 @@ function preselectFromUrl() {
   const prof = getParam("prof");
   const service = (getParam("service") || "").toLowerCase();
 
-  // barbeiro
   if (prof) {
     const btn = professionalsDiv?.querySelector?.(`[data-prof="${prof}"]`);
     if (btn) {
@@ -247,7 +233,6 @@ function preselectFromUrl() {
     }
   }
 
-  // serviço
   if (service && servicesById[service]) {
     selectedServiceId = service;
     markSelected(servicesDiv, "button[data-service]", selectedServiceId, "data-service");
@@ -269,16 +254,12 @@ professionalsDiv.addEventListener("click", (e) => {
   markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
   selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
 
-  // ao trocar barbeiro, reset slots
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
   if (dateInput.value && selectedServiceId) renderSlots();
 
-  // ✅ Selecionou barbeiro → pula para serviço
   smoothScrollToId("servicesSection");
-  
-  // ✅ GATILHO ADICIONADO: Atualiza o card de resumo
   updateSummaryCard();
 });
 
@@ -288,7 +269,7 @@ servicesDiv.addEventListener("click", (e) => {
   if (!btn) return;
 
   const serviceId = btn.getAttribute("data-service");
-  if (!servicesById[serviceId]) return; // evita mismatch com HTML
+  if (!servicesById[serviceId]) return;
 
   selectedServiceId = serviceId;
 
@@ -296,22 +277,20 @@ servicesDiv.addEventListener("click", (e) => {
   const s = servicesById[selectedServiceId];
   selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
 
-  // ao trocar serviço, reset slots
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
-  // ✅ Selecionou serviço → rola até Seus dados
   smoothScrollToId("clientSection");
-
-  // ✅ E já coloca o cursor no "Seu nome"
   focusAfterScroll(clientNameInput, 350);
   
-  // ✅ GATILHO ADICIONADO: Atualiza o card de resumo
   updateSummaryCard();
 });
 
+// =========================================
+// RENDERIZAÇÃO INTELIGENTE DE HORÁRIOS
+// =========================================
 async function renderSlots() {
   const date = dateInput.value;
   if (!date) return;
@@ -322,7 +301,6 @@ async function renderSlots() {
   }
 
   const service = servicesById[selectedServiceId];
-
   setSlotsLoading("Carregando...");
 
   try {
@@ -338,24 +316,51 @@ async function renderSlots() {
       service.durationMinutes
     );
 
+    // ✅ FILTRO INTELIGENTE DO PASSADO
+    let finalSlots = slots;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (date === todayStr) {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      finalSlots = slots.filter(time => {
+        const [h, m] = time.split(":").map(Number);
+        return (h * 60 + m) > currentMinutes;
+      });
+    }
+
     slotsDiv.innerHTML = "";
 
-    if (slots.length === 0) {
-      slotsDiv.textContent = "Sem horários disponíveis neste dia.";
-      // ✅ Selecionou data → rola até Horários disponíveis
+    if (finalSlots.length === 0) {
+      slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
       smoothScrollTo(slotsDiv);
       return;
     }
 
-    slots.forEach(time => {
+    finalSlots.forEach(time => {
       const btn = document.createElement("button");
       btn.type = "button";
+      btn.className = "slot"; // Adicionado classe base para facilitar a seleção
       btn.textContent = time;
-      btn.onclick = () => handleCreateAppointment(time, date);
+      
+      btn.onclick = () => {
+        // Remove a seleção de outros botões de horário
+        const allSlots = slotsDiv.querySelectorAll('button');
+        allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
+        
+        // Adiciona classe de selecionado no horário clicado
+        btn.classList.add('selected', 'is-selected');
+        
+        // Atualiza o resumo primeiro
+        updateSummaryCard();
+        
+        // Chama o agendamento real (adicionando um pequeno atraso para o usuário ver o resumo)
+        setTimeout(() => handleCreateAppointment(time, date), 300);
+      };
+      
       slotsDiv.appendChild(btn);
     });
 
-    // ✅ Selecionou data → rola até Horários disponíveis
     smoothScrollTo(slotsDiv);
   } catch (e) {
     console.error(e);
@@ -370,7 +375,6 @@ async function handleCreateAppointment(time, date) {
 
   if (!selectedProfessionalId) return alert("Escolha um barbeiro.");
   if (!selectedServiceId) return alert("Escolha um serviço.");
-
   if (!clientName) return alert("Digite seu nome.");
   if (!clientPhone) return alert("Digite seu WhatsApp.");
 
@@ -395,7 +399,6 @@ async function handleCreateAppointment(time, date) {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    // 1. Montamos a mensagem rica para o barbeiro (com emojis e negrito)
     const msg = `✂️ *NOVO AGENDAMENTO* ✂️\n\n` +
                 `*Código:* ${code}\n` +
                 `*Cliente:* ${clientName}\n` +
@@ -404,10 +407,7 @@ async function handleCreateAppointment(time, date) {
                 `*Data:* ${date}\n` +
                 `*Horário:* ${time}`;
 
-    // 2. Link do WhatsApp
     const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
-    
-    // 3. REDIRECIONAMENTO INSTANTÂNEO
     window.location.replace(whatsappUrl);
 
   } catch (e) {
@@ -422,8 +422,52 @@ async function handleCreateAppointment(time, date) {
   }
 }
 
-// ✅ Pré-seleção via URL (se tiver)
 preselectFromUrl();
-
-// Inicial
 updateScheduleLockState();
+
+// =========================================
+// GERA A ROLETA DE DATAS (Próximos 15 dias)
+// =========================================
+function renderDateCards() {
+  const dateSlider = document.getElementById("dateSlider");
+  if (!dateSlider) return;
+  dateSlider.innerHTML = "";
+
+  const today = new Date();
+  const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+  for (let i = 0; i < 15; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const isoDate = `${year}-${month}-${day}`;
+
+    const card = document.createElement("div");
+    card.className = "date-card";
+    card.innerHTML = `
+      <span class="date-card__weekday">${diasSemana[d.getDay()]}</span>
+      <span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span>
+      <span class="date-card__month">${meses[d.getMonth()]}</span>
+    `;
+
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".date-card").forEach(c => c.classList.remove("is-selected"));
+      card.classList.add("is-selected");
+
+      const dateInput = document.getElementById("date");
+      dateInput.value = isoDate;
+      
+      renderSlots();
+      updateSummaryCard();
+    });
+
+    dateSlider.appendChild(card);
+  }
+}
+
+// Inicia a roleta de datas na tela
+renderDateCards();

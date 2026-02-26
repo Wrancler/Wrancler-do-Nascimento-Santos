@@ -77,11 +77,14 @@
       </div>
 
       <div class="schedule">
-        <div class="schedule__left">
-          <label class="label">Data</label>
-          <input class="input" type="date" id="date" />
-          <div class="note">Horários em blocos de 40 min.</div>
+          <div class="schedule__left">
+          <div class="slots__title">Escolha o Dia</div>
+          
+          <div id="dateSlider" class="date-slider"></div>
+          
+          <input type="hidden" id="date" />
         </div>
+
 
         <div class="schedule__right">
           <div class="slots__title">Horários disponíveis</div>
