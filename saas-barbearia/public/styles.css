@@ -450,3 +450,54 @@ select {
   outline: none;
   border-color: rgba(255,255,255,.28);
 }
+
+/* =========================================
+   CARD DE RESUMO PREMIUM
+   ========================================= */
+.summary-card {
+  background: #1a1a1a; /* Fundo levemente mais claro que o preto total */
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed #333; /* Linha tracejada sutil */
+}
+
+.summary-item:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  padding-top: 16px;
+}
+
+.summary-label {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.summary-value {
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.summary-total .summary-label {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.summary-total .summary-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e0b976; /* Um tom de dourado premium, estilo barbearia */
+}

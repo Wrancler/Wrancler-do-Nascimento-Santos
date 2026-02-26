@@ -19,16 +19,50 @@ async function initTenant() {
   try {
     const config = await getTenantConfig(tenantId);
     
-    // Alimenta o sistema com os dados reais do banco
+    // 1. Carrega as configurações gerais
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
     
-    // Constrói os botões de serviço na tela dinamicamente
+    // ==========================================
+    // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE
+    // ==========================================
+    const professionalsDiv = document.getElementById("professionals");
+    professionalsDiv.innerHTML = ""; 
+
+    // Pega o array de profissionais do banco
+    const profs = config.professionals || []; 
+    
+    profs.forEach(p => {
+      const btn = document.createElement("button");
+      btn.className = "card card--person";
+      btn.type = "button";
+      btn.setAttribute("data-prof", p.id);
+      btn.setAttribute("data-prof-name", p.name);
+      
+      // Se não tiver imagem no banco, ele tenta achar pelo ID
+      const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
+
+      btn.innerHTML = `
+        <div class="card__media">
+          <img src="${imgCaminho}" alt="${p.name}" loading="lazy">
+          <div class="card__fade"></div>
+        </div>
+        <div class="card__body">
+          <div class="card__title">${p.name}</div>
+          <div class="card__meta">Toque para selecionar</div>
+        </div>
+      `;
+      professionalsDiv.appendChild(btn);
+    });
+
+    // ==========================================
+    // 3. RENDERIZA OS SERVIÇOS DINAMICAMENTE
+    // ==========================================
     const servicesDiv = document.getElementById("services");
     servicesDiv.innerHTML = ""; 
 
     config.services.forEach(s => {
-      // Salva na memória para usar no agendamento
+      // Salva na memória para o agendamento
       servicesById[s.id] = {
         id: s.id,
         name: s.name,
@@ -36,11 +70,18 @@ async function initTenant() {
         durationMinutes: s.duration
       };
 
-      // Cria o botão HTML
       const btn = document.createElement("button");
-      btn.className = "card";
+      btn.className = "card card--service";
+      btn.type = "button";
       btn.setAttribute("data-service", s.id);
+      
+      const imgCaminho = s.image || `assets/services/${s.id}.png`;
+
       btn.innerHTML = `
+        <div class="card__media">
+          <img src="${imgCaminho}" alt="${s.name}" loading="lazy">
+          <div class="card__fade"></div>
+        </div>
         <div class="card__body">
           <div class="card__title">${s.name}</div>
           <div class="card__meta">${s.duration} min • R$ ${s.price}</div>
@@ -49,13 +90,51 @@ async function initTenant() {
       servicesDiv.appendChild(btn);
     });
 
-    // Depois de carregar tudo, verifica se tem algo na URL
+    // 4. Executa as validações do seu código original
     preselectFromUrl();
     updateScheduleLockState();
 
   } catch (error) {
     console.error(error);
     alert("Erro ao carregar dados da barbearia. Verifique o link.");
+  }
+}
+
+// Função para atualizar o Card de Resumo em tempo real
+function updateSummaryCard() {
+  const summarySection = document.getElementById("summarySection");
+  if (!summarySection) return;
+
+  // Verifica se o cliente já clicou no barbeiro E no serviço
+  if (selectedProfessionalName && selectedServiceId) {
+    summarySection.style.display = "block"; // Faz o card aparecer
+    
+    // 1. Preenche Profissional
+    document.getElementById("summaryProf").textContent = selectedProfessionalName;
+    
+    // 2. Preenche Serviço e Total
+    const servico = servicesById[selectedServiceId];
+    if (servico) {
+      document.getElementById("summaryService").textContent = servico.name;
+      document.getElementById("summaryTotal").textContent = `R$ ${servico.price.toFixed(2).replace('.', ',')}`;
+    }
+
+    // 3. Preenche Data e Hora
+    const dateInput = document.getElementById("date").value;
+    // Tenta achar o botão de horário que estiver com a classe de selecionado no seu HTML
+    const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
+    
+    let dateTimeText = "Escolha o dia e horário";
+    
+    if (dateInput) {
+      const dataFormatada = dateInput.split("-").reverse().join("/");
+      if (selectedSlot) {
+        dateTimeText = `${dataFormatada} às ${selectedSlot.textContent}`;
+      } else {
+        dateTimeText = `${dataFormatada} (Aguardando horário)`;
+      }
+    }
+    document.getElementById("summaryDateTime").textContent = dateTimeText;
   }
 }
 
@@ -66,9 +145,6 @@ let selectedServiceId = null;
 
 // Dispara a busca no banco assim que o arquivo carrega
 initTenant();
-
-// Elements (do HTML premium)
-// ... (mantenha o resto do seu código intacto a partir daqui)
 
 // Elements (do HTML premium)
 const professionalsDiv = document.getElementById("professionals");
@@ -84,7 +160,10 @@ const slotsDiv = document.getElementById("slots");
 const clientNameInput = document.getElementById("clientName");
 const clientPhoneInput = document.getElementById("clientPhone");
 
-dateInput.addEventListener("change", renderSlots);
+dateInput.addEventListener("change", () => {
+  renderSlots();
+  updateSummaryCard(); // Atualiza o resumo quando escolhe o dia
+});
 
 // ✅ Scroll helpers
 function smoothScrollTo(el) {
@@ -198,6 +277,9 @@ professionalsDiv.addEventListener("click", (e) => {
 
   // ✅ Selecionou barbeiro → pula para serviço
   smoothScrollToId("servicesSection");
+  
+  // ✅ GATILHO ADICIONADO: Atualiza o card de resumo
+  updateSummaryCard();
 });
 
 // Clique no serviço
@@ -225,6 +307,9 @@ servicesDiv.addEventListener("click", (e) => {
 
   // ✅ E já coloca o cursor no "Seu nome"
   focusAfterScroll(clientNameInput, 350);
+  
+  // ✅ GATILHO ADICIONADO: Atualiza o card de resumo
+  updateSummaryCard();
 });
 
 async function renderSlots() {
@@ -323,8 +408,6 @@ async function handleCreateAppointment(time, date) {
     const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
     
     // 3. REDIRECIONAMENTO INSTANTÂNEO
-    // Usamos o location.replace para que a aba atual seja substituída pelo WhatsApp,
-    // o que é mais eficiente em navegadores mobile para evitar bloqueio de popup.
     window.location.replace(whatsappUrl);
 
   } catch (e) {
@@ -338,7 +421,6 @@ async function handleCreateAppointment(time, date) {
     setButtonsDisabled(false);
   }
 }
-
 
 // ✅ Pré-seleção via URL (se tiver)
 preselectFromUrl();

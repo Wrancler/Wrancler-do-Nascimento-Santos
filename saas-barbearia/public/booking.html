@@ -32,35 +32,14 @@
   </header>
 
   <main class="container main">
+    
     <section class="section">
       <div class="section__head">
         <h2>Escolha o barbeiro</h2>
         <p>Selecione quem vai te atender.</p>
       </div>
 
-      <div id="professionals" class="grid grid--2">
-        <button class="card card--person" data-prof="guilherme" data-prof-name="Guilherme Silva" type="button">
-          <div class="card__media">
-            <img src="assets/barbers/guilherme.jpeg" alt="Guilherme Silva" loading="lazy">
-            <div class="card__fade"></div>
-          </div>
-          <div class="card__body">
-            <div class="card__title">Guilherme Silva</div>
-            <div class="card__meta">Toque para selecionar</div>
-          </div>
-        </button>
-
-        <button class="card card--person" data-prof="gabriel" data-prof-name="Gabriel Silva" type="button">
-          <div class="card__media">
-            <img src="assets/barbers/gabriel.jpeg" alt="Gabriel Silva" loading="lazy">
-            <div class="card__fade"></div>
-          </div>
-          <div class="card__body">
-            <div class="card__title">Gabriel Silva</div>
-            <div class="card__meta">Toque para selecionar</div>
-          </div>
-        </button>
-      </div>
+      <div id="professionals" class="grid grid--2"></div>
 
       <div class="pill" id="selectedProfessionalText"></div>
     </section>
@@ -110,6 +89,34 @@
         </div>
       </div>
     </section>
+
+        <section class="section" id="summarySection" style="display: none;">
+      <div class="section__head">
+        <h2>Resumo do Agendamento</h2>
+        <p>Confira os dados antes de finalizar.</p>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-item">
+          <span class="summary-label">Profissional:</span>
+          <span class="summary-value" id="summaryProf">---</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Serviço:</span>
+          <span class="summary-value" id="summaryService">---</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Data e Hora:</span>
+          <span class="summary-value" id="summaryDateTime">Escolha o dia e horário</span>
+        </div>
+        <div class="summary-item summary-total">
+          <span class="summary-label">Total a pagar:</span>
+          <span class="summary-value" id="summaryTotal">R$ 0,00</span>
+        </div>
+        
+        </div>
+    </section>
+
 
     <footer class="footer">
       <span>© <span id="year"></span> La Barber Clube</span>
