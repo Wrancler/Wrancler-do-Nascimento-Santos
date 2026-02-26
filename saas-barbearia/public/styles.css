@@ -11,7 +11,10 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{
+  height:100%;
+  overflow-x: hidden; /* IMPEDE A TELA DE VAZAR PARA OS LADOS */
+}
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -54,7 +57,7 @@ body{
 
 .brand{
   display:flex;
-  align-items:center; /* garante alinhamento no centro */
+  align-items:center;
   gap:12px;
 }
 .brand__mark{
@@ -66,18 +69,17 @@ body{
   background: var(--glass);
   border:1px solid var(--border);
   box-shadow: 0 14px 40px rgba(0,0,0,.45);
-  overflow:hidden; /* evita sobras */
+  overflow:hidden;
 }
 
 .brand__mark img{
   width:100%;
   height:100%;
-  object-fit:contain; /* mantém a logo inteira */
-  display:block;      /* remove “gap” de inline-img */
-  padding:6px;        /* respira e fica premium */
-  transform: translateY(1px); /* micro-ajuste opcional */
+  object-fit:contain;
+  display:block;
+  padding:6px;
+  transform: translateY(1px);
 }
-
 
 .brand__name{
   font-weight:800;
@@ -250,10 +252,9 @@ body{
     align-items:start;
   }
 }
-.note{
-  margin-top:10px;
-  color: rgba(255,255,255,.55);
-  font-size: 12px;
+
+.schedule__left, .schedule__right {
+  min-width: 0; /* IMPEDE A ROLETA DE QUEBRAR O LAYOUT */
 }
 
 .slots__title{
@@ -285,6 +286,11 @@ body{
   transform: translateY(-1px);
   border-color: rgba(255,255,255,.24);
 }
+.slots button.is-selected {
+  border-color: #e0b976;
+  background: rgba(224, 185, 118, 0.1);
+  color: #e0b976;
+}
 .slots button:disabled{
   opacity:.40;
   cursor:not-allowed;
@@ -298,141 +304,6 @@ body{
   font-size: 12px;
 }
 
-.pill--big{
-  justify-content:center;
-  font-size:16px;
-  font-weight:900;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-}
-
-.confirm-grid{
-  margin-top:14px;
-  display:grid;
-  gap:12px;
-  grid-template-columns: 1fr;
-}
-@media (min-width:760px){
-  .confirm-grid{ grid-template-columns: 1fr 1fr; }
-}
-.confirm-item{
-  padding:14px;
-  border-radius: 18px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-}
-.confirm-label{
-  font-size:12px;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color: rgba(255,255,255,.70);
-}
-.confirm-value{
-  margin-top:8px;
-  font-weight:900;
-  font-size:16px;
-}
-
-.actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:14px;
-}
-
-.btn{
-  padding:14px 16px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06);
-  color:greenyellow;
-  cursor:pointer;
-  font-weight:900;
-  letter-spacing:.06em;
-  text-decoration:none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  transition: transform .14s ease, border-color .14s ease;
-}
-.btn:hover{
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,.24);
-}
-.btn--ghost{
-  background: rgba(0,0,0,.18);
-}
-
-.errorbox{
-  margin-top:12px;
-  color: rgba(255,255,255,.70);
-}
-
-.brand__logo{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:block;
-}
-
-.admin-list{
-  display:grid;
-  gap:12px;
-}
-
-.admin-item{
-  padding:14px;
-  border-radius: 18px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-}
-
-.admin-item__top{
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-  justify-content:space-between;
-  flex-wrap:wrap;
-}
-
-.admin-item__title{
-  font-weight:900;
-  letter-spacing:.02em;
-  font-size:16px;
-}
-
-.admin-item__meta{
-  margin-top:6px;
-  color: rgba(255,255,255,.72);
-  font-size:13px;
-}
-
-.admin-item__code{
-  margin-top:8px;
-  color: rgba(255,255,255,.82);
-  font-size:13px;
-}
-
-.admin-item__actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-/* ✅ Impede o zoom automático ao focar nos campos em dispositivos móveis */
-.input, 
-input[type="text"], 
-input[type="tel"], 
-input[type="date"], 
-select {
-    font-size: 16px !important;
-}
-
-/* Ajuste opcional: melhora o espaçamento interno para a fonte 16px ficar confortável */
-.input {
-    padding: 12px 16px;
-}
-
 /* ✅ SOLUÇÃO DEFINITIVA ANTI-ZOOM MOBILE */
 @media screen and (max-width: 768px) {
   .input, 
@@ -440,22 +311,16 @@ select {
   input[type="tel"], 
   input[type="date"], 
   select {
-    font-size: 16px !important; /* Tamanho mínimo para o Safari não dar zoom */
-    -webkit-text-size-adjust: 100%; /* Impede o redimensionamento automático de texto no iOS */
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
   }
-}
-
-/* Garante que o clique seja seco e sem saltos de layout */
-.input:focus {
-  outline: none;
-  border-color: rgba(255,255,255,.28);
 }
 
 /* =========================================
    CARD DE RESUMO PREMIUM
    ========================================= */
 .summary-card {
-  background: #1a1a1a; /* Fundo levemente mais claro que o preto total */
+  background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 12px;
   padding: 24px;
@@ -468,7 +333,7 @@ select {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px dashed #333; /* Linha tracejada sutil */
+  border-bottom: 1px dashed #333;
 }
 
 .summary-item:last-of-type {
@@ -499,34 +364,27 @@ select {
 .summary-total .summary-value {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #e0b976; /* Um tom de dourado premium, estilo barbearia */
+  color: #e0b976;
 }
 
 /* =========================================
-   ROLETA DE DATAS (HORIZONTAL)
+   ROLETA DE DATAS PREMIUM
    ========================================= */
 .date-slider {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 12px;
-  scrollbar-width: thin; /* Para Firefox */
-  scrollbar-color: rgba(255,255,255,0.2) transparent;
+  width: 100%;
+  scrollbar-width: none; /* Firefox */
 }
 .date-slider::-webkit-scrollbar {
-  height: 6px;
-}
-.date-slider::-webkit-scrollbar-track {
-  background: transparent;
-}
-.date-slider::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.2);
-  border-radius: 10px;
+  display: none; /* Safari e Chrome */
 }
 
 .date-card {
   flex: 0 0 auto;
-  min-width: 76px;
+  min-width: 72px;
   padding: 14px 10px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -542,7 +400,7 @@ select {
   background: rgba(255,255,255,0.08);
 }
 .date-card.is-selected {
-  border-color: #e0b976; /* Dourado premium */
+  border-color: #e0b976;
   background: rgba(224, 185, 118, 0.1);
   transform: translateY(-2px);
 }
