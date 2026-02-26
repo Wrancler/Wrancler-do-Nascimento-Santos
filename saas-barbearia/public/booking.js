@@ -1,78 +1,74 @@
 import { generateAvailableSlots } from "../services/slotGenerator.js";
 import { getAppointments } from "../firebase/appointments.js";
 import { createAppointment } from "../firebase/createAppointment.js";
+import { getTenantConfig } from "../firebase/tenants.js"; // Novo import
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-// Multi-tenant / link monetizável
 const tenantId = getParam("tenant") || "tenant-demo";
-const barberWhatsapp = (getParam("whats") || "5583999126226").replace(/[^\d]/g, "");
 
-// Horários de trabalho (MVP hardcoded — depois vem do Firestore por professional)
-const workingHours = ["09:00-12:00", "14:00-18:00"];
+// Variáveis que agora vêm do Firebase
+let barberWhatsapp = "";
+let workingHours = [];
+let servicesById = {};
 
-// ✅ Regra da barbearia: todos os serviços têm 40 minutos
-const SERVICE_DURATION = 40;
+// Função que inicia o sistema buscando os dados do SaaS
+async function initTenant() {
+  try {
+    const config = await getTenantConfig(tenantId);
+    
+    // Alimenta o sistema com os dados reais do banco
+    barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
+    workingHours = config.workingHours;
+    
+    // Constrói os botões de serviço na tela dinamicamente
+    const servicesDiv = document.getElementById("services");
+    servicesDiv.innerHTML = ""; 
 
-// ✅ Serviços completos (com placeholders de preço: 0)
-// Você pode preencher preços depois, sem mexer na lógica.
-const servicesById = {
-  combo_cabelo_barba_sobrancelha: {
-    id: "combo_cabelo_barba_sobrancelha",
-    name: "COMBO (Cabelo ╉ Barba ╉ Sobrancelhas)",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  combo_cabelo_barba: {
-    id: "combo_cabelo_barba",
-    name: "COMBO (Cabelo ╉ Barba)",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  barba: {
-    id: "barba",
-    name: "Barba",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  degrade: {
-    id: "degrade",
-    name: "Degradê",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  corte_simples: {
-    id: "corte_simples",
-    name: "Corte simples",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  platinado: {
-    id: "platinado",
-    name: "Platinado",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  luzes: {
-    id: "luzes",
-    name: "Luzes",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
-  },
-  corte_pigmentacao: {
-    id: "corte_pigmentacao",
-    name: "Corte ╉ Pigmentação",
-    price: 0,
-    durationMinutes: SERVICE_DURATION
+    config.services.forEach(s => {
+      // Salva na memória para usar no agendamento
+      servicesById[s.id] = {
+        id: s.id,
+        name: s.name,
+        price: s.price,
+        durationMinutes: s.duration
+      };
+
+      // Cria o botão HTML
+      const btn = document.createElement("button");
+      btn.className = "card";
+      btn.setAttribute("data-service", s.id);
+      btn.innerHTML = `
+        <div class="card__body">
+          <div class="card__title">${s.name}</div>
+          <div class="card__meta">${s.duration} min • R$ ${s.price}</div>
+        </div>
+      `;
+      servicesDiv.appendChild(btn);
+    });
+
+    // Depois de carregar tudo, verifica se tem algo na URL
+    preselectFromUrl();
+    updateScheduleLockState();
+
+  } catch (error) {
+    console.error(error);
+    alert("Erro ao carregar dados da barbearia. Verifique o link.");
   }
-};
+}
 
 // Estado da seleção
 let selectedProfessionalId = null;
 let selectedProfessionalName = null;
 let selectedServiceId = null;
+
+// Dispara a busca no banco assim que o arquivo carrega
+initTenant();
+
+// Elements (do HTML premium)
+// ... (mantenha o resto do seu código intacto a partir daqui)
 
 // Elements (do HTML premium)
 const professionalsDiv = document.getElementById("professionals");
