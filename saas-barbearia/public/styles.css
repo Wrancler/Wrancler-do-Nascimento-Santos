@@ -254,7 +254,7 @@ body{
 }
 
 .schedule__left, .schedule__right {
-  min-width: 0; /* IMPEDE A ROLETA DE QUEBRAR O LAYOUT */
+  min-width: 0;
 }
 
 .slots__title{
@@ -425,4 +425,91 @@ body{
   font-size: 0.75rem;
   color: rgba(255,255,255,0.6);
   text-transform: uppercase;
+}
+
+/* =========================================
+   PAINEL ADMIN PREMIUM
+   ========================================= */
+.admin-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.admin-item {
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+  padding-bottom: 12px;
+}
+
+.admin-item__time {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #e0b976;
+}
+
+.admin-item__client {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 4px;
+}
+
+.admin-item__service {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 4px;
+}
+
+.admin-item__prof {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+}
+
+.admin-item__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-admin {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-admin:hover {
+  opacity: 0.8;
+}
+
+.btn-admin--cancel {
+  background: rgba(255, 60, 60, 0.15);
+  color: #ff5555;
+  border: 1px solid rgba(255, 60, 60, 0.3);
+}
+
+.btn-admin--finish {
+  background: rgba(60, 255, 100, 0.15);
+  color: #55ff77;
+  border: 1px solid rgba(60, 255, 100, 0.3);
 }

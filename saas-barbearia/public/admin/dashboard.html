@@ -3,73 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin • Agenda</title>
+  <title>Painel do Barbeiro - La Barber Clube</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
-  <header class="hero">
+  <header class="hero" style="padding-bottom: 10px;">
     <div class="hero__bg"></div>
     <div class="container hero__content">
       <div class="topbar">
-        <div class="brand">
-          <div class="brand__mark">
-            <img class="brand__logo" src="../assets/brand/logo.png" alt="La Barber Clube">
+        <div class="brand" style="justify-content: space-between; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="brand__mark">
+              <img src="../assets/brand/logo.png" alt="La Barber Clube">
+            </div>
+            <div class="brand__info">
+              <div class="brand__name">Painel Admin</div>
+              <div class="brand__tag">Gestão de Agenda</div>
+            </div>
           </div>
-          <div class="brand__info">
-            <div class="brand__name">La Barber Clube</div>
-            <div class="brand__tag">Admin • Agenda</div>
-          </div>
-        </div>
-
-        <div class="hero__title">
-          <h1>PAINEL</h1>
-          <p id="subtitle">Carregando...</p>
+          <button id="btnLogout" class="btn btn--ghost" style="padding: 8px 16px; font-size: 12px; border-radius: 12px;">Sair</button>
         </div>
       </div>
     </div>
   </header>
 
   <main class="container main">
+    
     <section class="section">
       <div class="section__head">
-        <h2>Filtros</h2>
-        <p>Escolha data e barbeiro.</p>
+        <h2>Agenda do Dia</h2>
+        <p>Deslize para ver outras datas.</p>
       </div>
-
-      <div class="schedule">
-        <div class="schedule__left">
-          <label class="label">Data</label>
-          <input class="input" type="date" id="date" />
-
-          <label class="label" style="margin-top:10px;">Barbeiro</label>
-          <select class="input" id="professional">
-            <option value="all">Todos</option>
-            <option value="guilherme">Guilherme</option>
-            <option value="gabriel">Gabriel</option>
-          </select>
-
-          <div class="actions" style="margin-top:12px;">
-            <button class="btn" id="btnLoad" type="button">Carregar</button>
-            <button class="btn btn--ghost" id="btnLogout" type="button">Sair</button>
-          </div>
-
-          <div class="note" id="summary"></div>
-          <div class="note errorbox" id="errorBox" style="display:none;"></div>
-        </div>
-
-        <div class="schedule__right">
-          <div class="slots__title">Agendamentos</div>
-          <div id="list" class="admin-list"></div>
-        </div>
-      </div>
+      
+      <div id="adminDateSlider" class="date-slider"></div>
+      
+      <input type="hidden" id="adminDate" />
     </section>
 
-    <footer class="footer">
-      <span>© <span id="year"></span> La Barber Clube</span>
-    </footer>
+    <section class="section">
+      <div class="section__head">
+        <h2 id="totalAppointments">Carregando horários...</h2>
+      </div>
+
+      <div id="appointmentsList" class="admin-list"></div>
+    </section>
+
   </main>
 
-  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
   <script type="module" src="dashboard.js"></script>
 </body>
 </html>
