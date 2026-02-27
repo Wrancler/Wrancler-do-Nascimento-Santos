@@ -150,10 +150,26 @@ const slotsDiv = document.getElementById("slots");
 const clientNameInput = document.getElementById("clientName");
 const clientPhoneInput = document.getElementById("clientPhone");
 
-// Gatilho removido do HTML original, agora é controlado pela Roleta
-// dateInput.addEventListener("change", () => { ... });
+// =========================================
+// MÁSCARAS E FORMATAÇÕES (NOVO)
+// =========================================
 
-// ✅ Scroll helpers
+// 1. Auto-Maiúscula no Nome
+clientNameInput.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
+});
+
+// 2. Máscara de Telefone (WhatsApp) Automática
+clientPhoneInput.addEventListener("input", (e) => {
+  let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+  e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+});
+
+// =========================================
+// FUNÇÕES DE UTILIDADE E FLUXO
+// =========================================
+
+// Scroll helpers
 function smoothScrollTo(el) {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -162,7 +178,7 @@ function smoothScrollToId(id) {
   smoothScrollTo(document.getElementById(id));
 }
 
-// ✅ Foco suave
+// Foco suave
 function focusAfterScroll(inputEl, delayMs = 350) {
   if (!inputEl) return;
   window.setTimeout(() => {
@@ -316,7 +332,6 @@ async function renderSlots() {
       service.durationMinutes
     );
 
-    // ✅ FILTRO INTELIGENTE DO PASSADO
     let finalSlots = slots;
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -340,22 +355,18 @@ async function renderSlots() {
     finalSlots.forEach(time => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "slot"; // Adicionado classe base para facilitar a seleção
+      btn.className = "slot";
       btn.textContent = time;
       
       btn.onclick = () => {
-        // Remove a seleção de outros botões de horário
         const allSlots = slotsDiv.querySelectorAll('button');
         allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
         
-        // Adiciona classe de selecionado no horário clicado
         btn.classList.add('selected', 'is-selected');
-        
-        // Atualiza o resumo primeiro
         updateSummaryCard();
         
-        // Chama o agendamento real (adicionando um pequeno atraso para o usuário ver o resumo)
-        setTimeout(() => handleCreateAppointment(time, date), 300);
+        // Passa o botão clicado para a função colocar o efeito "Agendando..."
+        setTimeout(() => handleCreateAppointment(time, date, btn), 300);
       };
       
       slotsDiv.appendChild(btn);
@@ -369,18 +380,26 @@ async function renderSlots() {
   }
 }
 
-async function handleCreateAppointment(time, date) {
+// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
+async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
 
   if (!selectedProfessionalId) return alert("Escolha um barbeiro.");
   if (!selectedServiceId) return alert("Escolha um serviço.");
   if (!clientName) return alert("Digite seu nome.");
-  if (!clientPhone) return alert("Digite seu WhatsApp.");
+  
+  // Valida se o telefone tem pelo menos 10 números (DDD + 8 dígitos)
+  const cleanPhone = formatPhoneDigits(clientPhone);
+  if (cleanPhone.length < 10) return alert("Digite um WhatsApp válido com DDD.");
+
+  // Se passou nas verificações de dados, aplica o efeito visual de carregamento!
+  if (clickedBtn) {
+    clickedBtn.textContent = "Agendando...";
+  }
+  setButtonsDisabled(true);
 
   const service = servicesById[selectedServiceId];
-
-  setButtonsDisabled(true);
 
   const payload = {
     tenantId,
@@ -391,7 +410,7 @@ async function handleCreateAppointment(time, date) {
     startTime: time,
     endTime: addMinutes(time, service.durationMinutes),
     clientName,
-    clientPhone: formatPhoneDigits(clientPhone),
+    clientPhone: cleanPhone,
     status: "confirmed"
   };
 
@@ -416,6 +435,7 @@ async function handleCreateAppointment(time, date) {
     } else {
       alert("❌ Erro ao agendar: " + e.message);
     }
+    // O erro fará os horários recarregarem e removerá o texto "Agendando..."
     await renderSlots();
   } finally {
     setButtonsDisabled(false);
