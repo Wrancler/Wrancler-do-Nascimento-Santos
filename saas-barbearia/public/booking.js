@@ -381,6 +381,7 @@ async function renderSlots() {
 }
 
 // Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
+// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
 async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
@@ -418,17 +419,36 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    const msg = `✂️ *NOVO AGENDAMENTO* ✂️\n\n` +
-                `*Código:* ${code}\n` +
-                `*Cliente:* ${clientName}\n` +
-                `*Barbeiro:* ${selectedProfessionalName}\n` +
-                `*Serviço:* ${service.name}\n` +
-                `*Data:* ${date}\n` +
-                `*Horário:* ${time}`;
+    // Converte a data de YYYY-MM-DD para DD/MM/YYYY
+    const dataFormatada = date.split("-").reverse().join("/");
+
+    // Monta a mensagem rica inspirada no sistema que os clientes já conhecem
+       // Monta a mensagem rica IDÊNTICA ao sistema antigo
+    const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
+                `👥 CLIENTE: *${clientName} *\n` +
+                `📞 TELEFONE: ${cleanPhone}\n` +
+                `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n` +
+                `📌 DIA ${dataFormatada}\n` +
+                `⌚ HORÁRIO ${time}\n\n` +
+                `💇‍♂️ PROFISSIONAL\n` +
+                `${selectedProfessionalName}\n\n` +
+                `✂️ SERVIÇO\n` +
+                `${service.name} - R$ ${service.price.toFixed(2).replace('.', ',')}\n\n` +
+                `Olá seu horário foi agendado com sucesso 👍\n` +
+                `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n` +
+                `CASO DESEJE CANCELAR O AGENDAMENTO\n` +
+                `❌ Responda esta mensagem\n` +
+                `❌\n\n` +
+                `COMPROVANTE DE AGENDAMENTO`;
+
 
     const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
+    
+    // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
-  // ✅ 2. NOVO: Recarrega a página após 2 segundos (quando ele já estiver no app do Zap)
+
+    // 2. O Truque Mágico: Recarrega a página após 2 segundos 
+    // (Isso limpa a tela para quando o cliente voltar do WhatsApp pro Safari)
     setTimeout(() => {
       window.location.reload();
     }, 2000);
