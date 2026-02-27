@@ -442,7 +442,9 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `COMPROVANTE DE AGENDAMENTO`;
 
 
-    const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
+        // Link oficial da API do WhatsApp (mais estável para Desktop e Mobile)
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`;
+
     
     // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
