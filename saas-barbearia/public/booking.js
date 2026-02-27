@@ -428,6 +428,10 @@ async function handleCreateAppointment(time, date, clickedBtn) {
 
     const whatsappUrl = `https://wa.me/${barberWhatsapp}?text=${encodeURIComponent(msg)}`;
     window.location.replace(whatsappUrl);
+  // ✅ 2. NOVO: Recarrega a página após 2 segundos (quando ele já estiver no app do Zap)
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
 
   } catch (e) {
     if (e?.message === "HORARIO_OCUPADO") {
