@@ -28,7 +28,7 @@ async function init() {
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
-      loadingText.textContent = "Agendamento não encontrado.";
+      loadingText.textContent = "Agendamento não encontrado no banco de dados.";
       return;
     }
 
@@ -41,12 +41,16 @@ async function init() {
       return;
     }
 
-    const dataFormatada = appData.date.split("-").reverse().join("/");
-    const profName = appData.professionalId.charAt(0).toUpperCase() + appData.professionalId.slice(1);
+    // 🛡️ Blindagem extra: garante que a data existe antes de tentar cortar (split)
+    const dataSalva = appData.date || "";
+    const dataFormatada = dataSalva.includes("-") ? dataSalva.split("-").reverse().join("/") : dataSalva;
+    
+    const profIdSalvo = appData.professionalId || "desconhecido";
+    const profName = profIdSalvo.charAt(0).toUpperCase() + profIdSalvo.slice(1);
 
-    lblService.textContent = appData.serviceName;
-    lblDate.textContent = dataFormatada;
-    lblTime.textContent = appData.startTime;
+    lblService.textContent = appData.serviceName || "Serviço Indefinido";
+    lblDate.textContent = dataFormatada || "--/--/----";
+    lblTime.textContent = appData.startTime || "--:--";
     lblProf.textContent = profName;
 
     loadingText.style.display = "none";
@@ -54,7 +58,13 @@ async function init() {
 
   } catch (error) {
     console.error("Erro ao buscar agendamento:", error);
-    loadingText.textContent = "Erro ao carregar dados. Tente novamente.";
+    // 🚨 O DETETIVE ENTRA EM AÇÃO AQUI:
+    loadingText.innerHTML = `
+      <div style='background: rgba(255,0,0,0.1); border: 1px dashed #ff5555; padding: 15px; border-radius: 8px; text-align: left; margin-top: 20px;'>
+        <strong style='color: #ff5555;'>🚨 Erro Técnico:</strong><br>
+        <span style='color: #ffaa00; font-size: 14px;'>${error.message}</span>
+      </div>
+    `;
   }
 }
 
@@ -71,7 +81,7 @@ if (btnConfirmCancel) {
       successMessage.style.display = "block";
     } catch (error) {
       console.error("Erro ao cancelar:", error);
-      alert("Erro ao cancelar. Tente novamente.");
+      alert("Erro ao cancelar: " + error.message);
       btnConfirmCancel.textContent = "Sim, quero cancelar";
       btnConfirmCancel.disabled = false;
     }
