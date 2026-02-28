@@ -116,6 +116,9 @@ function renderAdminDateCards() {
 // ==========================================
 // 3. BUSCA OS AGENDAMENTOS NA NUVEM
 // ==========================================
+// ==========================================
+// 3. BUSCA OS AGENDAMENTOS NA NUVEM
+// ==========================================
 async function loadAppointments(dateStr) {
   listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
   totalHead.textContent = "Carregando...";
@@ -131,8 +134,14 @@ async function loadAppointments(dateStr) {
     allAppointmentsForDay = []; 
     snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    // Filtro seguro
-    allAppointmentsForDay = allAppointmentsForDay.filter(a => a && a.startTime);
+    // 🧹 MÁGICA DA LIMPEZA VISUAL: Filtro seguro que SOME com os bloqueios desbloqueados
+    allAppointmentsForDay = allAppointmentsForDay.filter(a => {
+      if (!a || !a.startTime) return false;
+      // Se for um Bloqueio Manual que foi cancelado, ESCONDE da tela!
+      if (a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled") return false;
+      return true;
+    });
+    
     allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
     renderBlockSlots(); // Chama nosso gerador blindado interno
