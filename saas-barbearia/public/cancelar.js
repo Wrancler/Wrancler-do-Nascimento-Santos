@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../firebase/config.js"; 
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -17,6 +17,8 @@ const lblProf = document.getElementById("lblProf");
 const btnConfirmCancel = document.getElementById("btnConfirmCancel");
 const btnKeep = document.getElementById("btnKeep");
 
+let docRefToUpdate = null; // Vai guardar o caminho exato para cancelar depois
+
 async function init() {
   if (!appointmentId) {
     loadingText.textContent = "Erro: Link inválido ou quebrado.";
@@ -24,15 +26,41 @@ async function init() {
   }
 
   try {
-    const docRef = doc(db, "appointments", appointmentId);
-    const docSnap = await getDoc(docRef);
+    let appData = null;
 
-    if (!docSnap.exists()) {
+    // 🔎 CÃO FAREJADOR: Busca o agendamento de 3 formas diferentes para não ter erro
+    
+    // 1. Tenta buscar direto pelo nome do documento
+    const directDocRef = doc(db, "appointments", appointmentId);
+    const directSnap = await getDoc(directDocRef);
+
+    if (directSnap.exists()) {
+      appData = directSnap.data();
+      docRefToUpdate = directDocRef;
+    } else {
+      // 2. Procura nas pastas pelo campo "code" (o código TE-PZIJQ)
+      const qCode = query(collection(db, "appointments"), where("code", "==", appointmentId));
+      const snapCode = await getDocs(qCode);
+      
+      if (!snapCode.empty) {
+        appData = snapCode.docs[0].data();
+        docRefToUpdate = snapCode.docs[0].ref;
+      } else {
+        // 3. Procura pelo campo "id" interno
+        const qId = query(collection(db, "appointments"), where("id", "==", appointmentId));
+        const snapId = await getDocs(qId);
+        
+        if (!snapId.empty) {
+          appData = snapId.docs[0].data();
+          docRefToUpdate = snapId.docs[0].ref;
+        }
+      }
+    }
+
+    if (!appData) {
       loadingText.textContent = "Agendamento não encontrado no banco de dados.";
       return;
     }
-
-    const appData = docSnap.data();
 
     if (appData.status === "cancelled") {
       loadingText.textContent = "";
@@ -41,7 +69,6 @@ async function init() {
       return;
     }
 
-    // 🛡️ Blindagem extra: garante que a data existe antes de tentar cortar (split)
     const dataSalva = appData.date || "";
     const dataFormatada = dataSalva.includes("-") ? dataSalva.split("-").reverse().join("/") : dataSalva;
     
@@ -58,7 +85,6 @@ async function init() {
 
   } catch (error) {
     console.error("Erro ao buscar agendamento:", error);
-    // 🚨 O DETETIVE ENTRA EM AÇÃO AQUI:
     loadingText.innerHTML = `
       <div style='background: rgba(255,0,0,0.1); border: 1px dashed #ff5555; padding: 15px; border-radius: 8px; text-align: left; margin-top: 20px;'>
         <strong style='color: #ff5555;'>🚨 Erro Técnico:</strong><br>
@@ -74,8 +100,8 @@ if (btnConfirmCancel) {
     btnConfirmCancel.disabled = true;
 
     try {
-      const docRef = doc(db, "appointments", appointmentId);
-      await updateDoc(docRef, { status: "cancelled" });
+      // 🎯 Tiro certeiro: Atualiza exatamente o documento que o farejador encontrou
+      await updateDoc(docRefToUpdate, { status: "cancelled" });
 
       appointmentInfo.style.display = "none";
       successMessage.style.display = "block";
