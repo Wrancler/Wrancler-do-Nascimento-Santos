@@ -39,6 +39,19 @@
       <div id="adminDateSlider" class="date-slider"></div>
       
       <input type="hidden" id="adminDate" />
+
+      <div style="background: rgba(255,60,60,0.05); padding: 18px; border-radius: 16px; margin-top: 16px; border: 1px dashed rgba(255,60,60,0.25);">
+        <h3 style="margin-top: 0; color: #ff5555; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">Bloquear Horário Livre</h3>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+          <select id="blockProf" class="input" style="flex: 1; min-width: 120px; padding: 12px;">
+            <option value="">Carregando profissionais...</option>
+          </select>
+          <button id="btnConfirmBlock" class="btn-admin btn-admin--cancel" style="flex: 1; min-width: 120px;" disabled>Bloquear Selecionado</button>
+        </div>
+
+        <div id="blockSlots" class="slots"></div>
+      </div>
     </section>
 
     <section class="section">
