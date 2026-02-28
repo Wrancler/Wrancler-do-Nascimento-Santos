@@ -2,8 +2,8 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { collection, query, where, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
-import { generateAvailableSlots } from "../../services/slotGenerator.js";
 
+// ❌ REMOVEMOS O slotGenerator.js externo. Vamos usar um motor blindado interno!
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -13,8 +13,8 @@ const tenantId = getParam("tenant") || "tenant-demo";
 const auth = getAuth();
 
 let workingHours = [];
-let allAppointmentsForDay = []; // Guarda a agenda do dia para calcular os buracos livres
-let selectedBlockTime = null; // Guarda o horário que o admin clicou
+let allAppointmentsForDay = []; 
+let selectedBlockTime = null; 
 
 // ==========================================
 // 1. PROTEÇÃO DE ROTA E LOGOUT
@@ -37,7 +37,7 @@ if (btnLogout) {
 }
 
 // ==========================================
-// 2. INICIALIZAÇÃO (Busca Configurações do SaaS)
+// 2. INICIALIZAÇÃO E ROLETA
 // ==========================================
 const dateInput = document.getElementById("adminDate");
 const listDiv = document.getElementById("appointmentsList");
@@ -46,11 +46,9 @@ const blockProfSelect = document.getElementById("blockProf");
 
 async function initDashboard() {
   try {
-    // Busca os dados da Barbearia (Horários e Profissionais)
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
     
-    // Popula a caixinha de barbeiros automaticamente!
     blockProfSelect.innerHTML = "";
     if (config.professionals) {
       config.professionals.forEach(p => {
@@ -60,13 +58,9 @@ async function initDashboard() {
         blockProfSelect.appendChild(opt);
       });
     }
-  } catch(e) { 
-    console.error("Erro ao carregar configurações da barbearia", e); 
-  }
+  } catch(e) { console.error("Erro config", e); }
 
-  // Se trocar o barbeiro na caixinha, recalcula os botões de horário
   blockProfSelect.addEventListener("change", renderBlockSlots);
-
   renderAdminDateCards();
 }
 
@@ -106,7 +100,6 @@ function renderAdminDateCards() {
     card.addEventListener("click", () => {
       document.querySelectorAll("#adminDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
       card.classList.add("is-selected");
-
       dateInput.value = isoDate;
       loadAppointments(isoDate);
     });
@@ -116,20 +109,15 @@ function renderAdminDateCards() {
 
   setTimeout(() => {
     const selected = dateSlider.querySelector('.is-selected');
-    if(selected) {
-      selected.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
+    if(selected) selected.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, 100);
 }
 
 // ==========================================
-// 3. BUSCA OS AGENDAMENTOS E GERA BOTÕES
-// ==========================================
-// ==========================================
-// 3. BUSCA OS AGENDAMENTOS E GERA BOTÕES
+// 3. BUSCA OS AGENDAMENTOS NA NUVEM
 // ==========================================
 async function loadAppointments(dateStr) {
-  listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários na nuvem...</p>";
+  listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
   totalHead.textContent = "Carregando...";
 
   try {
@@ -143,14 +131,11 @@ async function loadAppointments(dateStr) {
     allAppointmentsForDay = []; 
     snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    // 🛡️ TRAVA DE SEGURANÇA MÁXIMA: Ignora agendamentos zumbis e garante que a hora é um texto
-       // 🛡️ TRAVA DE SEGURANÇA MÁXIMA: Exige que o agendamento tenha Início E Fim!
-    allAppointmentsForDay = allAppointmentsForDay.filter(a => a && a.startTime && a.endTime);
-
+    // Filtro seguro
+    allAppointmentsForDay = allAppointmentsForDay.filter(a => a && a.startTime);
     allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
-    // Agora desenha os botões de bloqueio na tela
-    renderBlockSlots();
+    renderBlockSlots(); // Chama nosso gerador blindado interno
 
     listDiv.innerHTML = "";
 
@@ -168,18 +153,12 @@ async function loadAppointments(dateStr) {
 
       const isCancelled = app.status === "cancelled";
       const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
-      
       let timeColor = "#e0b976"; 
       let timeText = app.startTime;
 
-      if (isCancelled) {
-        timeColor = "#ff5555";
-        timeText = `${app.startTime} (Cancelado)`;
-      } else if (isBlock) {
-        timeColor = "#888888"; 
-      }
+      if (isCancelled) { timeColor = "#ff5555"; timeText = `${app.startTime} (Cancelado)`; } 
+      else if (isBlock) { timeColor = "#888888"; }
 
-      // Previne erro caso o profissional tenha sido salvo em branco num teste antigo
       const profIdSeguro = app.professionalId || "desconhecido";
       const profName = profIdSeguro.charAt(0).toUpperCase() + profIdSeguro.slice(1);
 
@@ -208,7 +187,6 @@ async function loadAppointments(dateStr) {
       if (!isCancelled) {
         const actionsDiv = document.createElement("div");
         actionsDiv.className = "admin-item__actions";
-
         const btnCancel = document.createElement("button");
         btnCancel.className = "btn-admin btn-admin--cancel";
         btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar Horário";
@@ -217,37 +195,86 @@ async function loadAppointments(dateStr) {
           const msg = isBlock 
             ? `Tem certeza que deseja LIBERAR o horário das ${app.startTime}?`
             : `Tem certeza que deseja cancelar o horário de ${app.clientName} às ${app.startTime}?`;
-            
           if (confirm(msg)) {
             btnCancel.textContent = "Aguarde...";
             await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" });
             loadAppointments(dateInput.value); 
           }
         };
-
         actionsDiv.appendChild(btnCancel);
         item.appendChild(actionsDiv);
       }
-
       listDiv.appendChild(item);
     });
 
   } catch (error) {
-    console.error("Erro ao buscar agendamentos:", error);
-    totalHead.textContent = "Erro Fatal!";
-    // 🚨 MOSTRA O CÓDIGO DO ERRO NA TELA PARA NÓS LERMOS
-    listDiv.innerHTML = `
-      <div style='background: rgba(255,0,0,0.1); border: 1px solid #ff5555; padding: 20px; border-radius: 12px; text-align: left;'>
-        <h3 style='color: #ff5555; margin-top: 0;'>🚨 O Firebase bloqueou a leitura!</h3>
-        <p style='color: #eee; font-size: 14px;'>O motivo exato foi:</p>
-        <code style='color: #ffaa00; font-size: 13px; display: block; margin-top: 10px;'>${error.message}</code>
-      </div>
-    `;
+    console.error("Erro:", error);
+    totalHead.textContent = "Erro de Leitura";
+    listDiv.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro: ${error.message}</p>`;
   }
 }
 
 // ==========================================
-// 4. MÁGICA DOS BOTÕES DE BLOQUEIO (NOVO)
+// 4. MOTOR BLINDADO DE HORÁRIOS (NOVO)
+// ==========================================
+function generateAdminSlots(workHours, apps) {
+  const slots = [];
+  if (!workHours || !Array.isArray(workHours)) return slots;
+
+  // Extrai ocupações com segurança extrema
+  const occupied = apps.map(app => {
+    if (!app || !app.startTime) return null;
+    let end = app.endTime;
+    if (!end) { // Se não tiver horário de término salvo, chuta 40 min pra frente pra não quebrar
+      try {
+        const [h, m] = String(app.startTime).split(":").map(Number);
+        const t = h * 60 + m + 40;
+        end = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+      } catch(e) { end = "23:59"; }
+    }
+    return { start: String(app.startTime), end: String(end) };
+  }).filter(Boolean);
+
+  // Desenha os blocos livres
+  workHours.forEach(period => {
+    if (!period || typeof period !== "string" || !period.includes("-")) return;
+    const parts = period.split("-");
+    if (parts.length < 2) return;
+    
+    let [currH, currM] = parts[0].split(":").map(Number);
+    const [endH, endM] = parts[1].split(":").map(Number);
+    let currentTotal = currH * 60 + currM;
+    const endTotal = endH * 60 + endM;
+    const duration = 30; // Blocos de 30 minutos
+
+    while (currentTotal + duration <= endTotal) {
+      const slotTime = `${String(Math.floor(currentTotal/60)).padStart(2,"0")}:${String(currentTotal%60).padStart(2,"0")}`;
+      const slotEndTotal = currentTotal + duration;
+
+      // Checa colisão
+      let hasCollision = false;
+      for (let occ of occupied) {
+        try {
+          const [oSh, oSm] = occ.start.split(":").map(Number);
+          const [oEh, oEm] = occ.end.split(":").map(Number);
+          const occStart = oSh * 60 + oSm;
+          const occEnd = oEh * 60 + oEm;
+          if (currentTotal < occEnd && slotEndTotal > occStart) {
+            hasCollision = true; break;
+          }
+        } catch(e) { } // Ignora erro individual
+      }
+
+      if (!hasCollision) slots.push(slotTime);
+      currentTotal += duration;
+    }
+  });
+
+  return slots;
+}
+
+// ==========================================
+// 5. GERA BOTÕES NA TELA
 // ==========================================
 function renderBlockSlots() {
   const profId = blockProfSelect.value;
@@ -263,21 +290,22 @@ function renderBlockSlots() {
     return;
   }
 
-  // Filtra os cortes APENAS desse barbeiro (pra não bloquear a agenda do outro)
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
 
-  // Usa a mesma inteligência do app do cliente (Tamanho do bloqueio: 30 minutos)
-  let slots = generateAvailableSlots(workingHours, profAppointments, 30);
+  // Usa o NOSSO gerador blindado local
+  let slots = generateAdminSlots(workingHours, profAppointments);
 
-  // Filtra horários que já passaram se for HOJE
+  // Remove horários que já passaram hoje
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   if (dateStr === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     slots = slots.filter(time => {
-      const [h, m] = time.split(":").map(Number);
-      return (h * 60 + m) > currentMinutes;
+      if (!time || typeof time !== "string") return false; // Trava extra!
+      const parts = time.split(":");
+      if (parts.length < 2) return false;
+      return (Number(parts[0]) * 60 + Number(parts[1])) > currentMinutes;
     });
   }
 
@@ -288,7 +316,6 @@ function renderBlockSlots() {
     return;
   }
 
-  // Desenha a grade de botões (Chips) idêntica à do cliente
   slots.forEach(time => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -296,16 +323,11 @@ function renderBlockSlots() {
     btn.textContent = time;
     
     btn.onclick = () => {
-      // Tira o amarelo dos outros e acende o clicado
-      const allBtn = blockSlotsDiv.querySelectorAll('button');
-      allBtn.forEach(b => b.classList.remove('selected', 'is-selected'));
+      blockSlotsDiv.querySelectorAll('button').forEach(b => b.classList.remove('selected', 'is-selected'));
       btn.classList.add('selected', 'is-selected');
-      
-      // Libera o botão vermelho
       selectedBlockTime = time;
       btnConfirmBlock.disabled = false;
     };
-    
     blockSlotsDiv.appendChild(btn);
   });
 }
@@ -316,12 +338,11 @@ if (btnConfirmBlock) {
     const profId = blockProfSelect.value;
     const dateStr = dateInput.value;
 
-    if (!selectedBlockTime) return alert("Por favor, selecione um horário nos botões abaixo.");
+    if (!selectedBlockTime) return;
 
     btnConfirmBlock.textContent = "Bloqueando...";
     btnConfirmBlock.disabled = true;
 
-    // Calcula a duração do bloqueio (30 minutos)
     const time = selectedBlockTime;
     const [h, m] = time.split(":").map(Number);
     const total = h * 60 + m + 30; 
@@ -344,12 +365,10 @@ if (btnConfirmBlock) {
       });
 
       alert("Horário bloqueado com sucesso!");
-      
-      // Recarrega tudo (atualiza os cards e redesenha os botões sem o horário que acabou de sumir)
       loadAppointments(dateStr); 
     } catch (error) {
       console.error(error);
-      alert("Erro ao bloquear a agenda. Verifique o console.");
+      alert("Erro ao bloquear a agenda.");
     } finally {
       btnConfirmBlock.textContent = "Bloquear Selecionado";
     }
