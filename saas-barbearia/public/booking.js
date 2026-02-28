@@ -151,7 +151,7 @@ const clientNameInput = document.getElementById("clientName");
 const clientPhoneInput = document.getElementById("clientPhone");
 
 // =========================================
-// MÁSCARAS E FORMATAÇÕES (NOVO)
+// MÁSCARAS E FORMATAÇÕES
 // =========================================
 
 // 1. Auto-Maiúscula no Nome
@@ -381,7 +381,6 @@ async function renderSlots() {
 }
 
 // Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
-// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
 async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
@@ -422,8 +421,15 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     // Converte a data de YYYY-MM-DD para DD/MM/YYYY
     const dataFormatada = date.split("-").reverse().join("/");
 
-    // Monta a mensagem rica inspirada no sistema que os clientes já conhecem
-       // Monta a mensagem rica IDÊNTICA ao sistema antigo
+    // =========================================
+    // MÁGICA DO LINK DE CANCELAMENTO AUTOMÁTICO
+    // =========================================
+    // Pega o link atual limpo de forma segura (ignorando coisas como ?tenant=...)
+    const currentUrl = new URL(window.location.href);
+    const baseUrl = currentUrl.origin + currentUrl.pathname.replace('booking.html', '');
+    const linkCancelamento = `${baseUrl}cancelar.html?id=${code}`;
+
+    // Monta a mensagem rica com o novo link dinâmico no final
     const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
                 `👥 CLIENTE: *${clientName} *\n` +
                 `📞 TELEFONE: ${cleanPhone}\n` +
@@ -436,15 +442,13 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `${service.name} - R$ ${service.price.toFixed(2).replace('.', ',')}\n\n` +
                 `Olá seu horário foi agendado com sucesso 👍\n` +
                 `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n` +
-                `CASO DESEJE CANCELAR O AGENDAMENTO\n` +
-                `❌ Responda esta mensagem\n` +
-                `❌\n\n` +
+                `CASO DESEJE CANCELAR O AGENDAMENTO:\n` +
+                `❌ Acesse o link abaixo para cancelar na hora:\n` +
+                `${linkCancelamento}\n\n` +
                 `COMPROVANTE DE AGENDAMENTO`;
 
-
-        // Link oficial da API do WhatsApp (mais estável para Desktop e Mobile)
+    // Link oficial da API do WhatsApp (mais estável para Desktop e Mobile)
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`;
-
     
     // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
@@ -467,9 +471,6 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     setButtonsDisabled(false);
   }
 }
-
-preselectFromUrl();
-updateScheduleLockState();
 
 // =========================================
 // GERA A ROLETA DE DATAS (Próximos 15 dias)
