@@ -74,6 +74,7 @@ async function initTenant() {
       
       const imgCaminho = s.image || `assets/services/${s.id}.png`;
 
+      // Os botões agora mostram APENAS a duração, sem menção a preços
       btn.innerHTML = `
         <div class="card__media">
           <img src="${imgCaminho}" alt="${s.name}" loading="lazy">
@@ -81,7 +82,7 @@ async function initTenant() {
         </div>
         <div class="card__body">
           <div class="card__title">${s.name}</div>
-          <div class="card__meta">${s.duration} min • R$ ${s.price}</div>
+          <div class="card__meta">${s.duration} min</div>
         </div>
       `;
       servicesDiv.appendChild(btn);
@@ -109,7 +110,8 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      document.getElementById("summaryTotal").textContent = `R$ ${servico.price.toFixed(2).replace('.', ',')}`;
+      // O total fica totalmente invisível/vazio
+      document.getElementById("summaryTotal").textContent = ""; 
     }
 
     const dateInput = document.getElementById("date").value;
@@ -405,7 +407,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     tenantId,
     professionalId: selectedProfessionalId,
     serviceName: service.name,
-    servicePrice: service.price,
+    servicePrice: service.price, // Salvamos no banco o valor original por histórico, mas não mostramos
     date,
     startTime: time,
     endTime: addMinutes(time, service.durationMinutes),
@@ -421,15 +423,12 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     // Converte a data de YYYY-MM-DD para DD/MM/YYYY
     const dataFormatada = date.split("-").reverse().join("/");
 
-    // =========================================
-    // MÁGICA DO LINK DE CANCELAMENTO AUTOMÁTICO
-    // =========================================
-    // Pega o link atual limpo de forma segura (ignorando coisas como ?tenant=...)
+    // Pega o link atual limpo de forma segura
     const currentUrl = new URL(window.location.href);
     const baseUrl = currentUrl.origin + currentUrl.pathname.replace('booking.html', '');
     const linkCancelamento = `${baseUrl}cancelar.html?id=${code}`;
 
-    // Monta a mensagem rica com o novo link dinâmico no final
+    // MENSAGEM DO WHATSAPP 100% LIMPA, SÓ COM O NOME DO CORTE
     const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
                 `👥 CLIENTE: *${clientName} *\n` +
                 `📞 TELEFONE: ${cleanPhone}\n` +
@@ -439,7 +438,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `💇‍♂️ PROFISSIONAL\n` +
                 `${selectedProfessionalName}\n\n` +
                 `✂️ SERVIÇO\n` +
-                `${service.name} - R$ ${service.price.toFixed(2).replace('.', ',')}\n\n` +
+                `${service.name}\n\n` +
                 `Olá seu horário foi agendado com sucesso 👍\n` +
                 `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n` +
                 `CASO DESEJE CANCELAR O AGENDAMENTO:\n` +
@@ -447,14 +446,13 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `${linkCancelamento}\n\n` +
                 `COMPROVANTE DE AGENDAMENTO`;
 
-    // Link oficial da API do WhatsApp (mais estável para Desktop e Mobile)
+    // Link oficial da API do WhatsApp
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`;
     
     // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
 
     // 2. O Truque Mágico: Recarrega a página após 2 segundos 
-    // (Isso limpa a tela para quando o cliente voltar do WhatsApp pro Safari)
     setTimeout(() => {
       window.location.reload();
     }, 2000);
@@ -465,7 +463,6 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     } else {
       alert("❌ Erro ao agendar: " + e.message);
     }
-    // O erro fará os horários recarregarem e removerá o texto "Agendando..."
     await renderSlots();
   } finally {
     setButtonsDisabled(false);
@@ -516,5 +513,4 @@ function renderDateCards() {
   }
 }
 
-// Inicia a roleta de datas na tela
 renderDateCards();
