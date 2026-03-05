@@ -40,7 +40,9 @@
       
       <input type="hidden" id="adminDate" />
 
-      <div style="background: rgba(255,60,60,0.05); padding: 18px; border-radius: 16px; margin-top: 16px; border: 1px dashed rgba(255,60,60,0.25);">
+      <button id="btnToggleBloqueio" class="btn btn--primary" style="width: 100%; margin-top: 16px; background: #222; color: #fff; padding: 14px; border-radius: 12px; border: 1px solid #333; cursor: pointer; font-weight: bold; transition: 0.3s;">🔒 Gerenciar Horários de Bloqueio</button>
+
+      <div id="secaoBloqueio" style="display: none; background: rgba(255,60,60,0.05); padding: 18px; border-radius: 16px; margin-top: 10px; border: 1px dashed rgba(255,60,60,0.25);">
         <h3 style="margin-top: 0; color: #ff5555; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">Bloquear Horário Livre</h3>
         
         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">

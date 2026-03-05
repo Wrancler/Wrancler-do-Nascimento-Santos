@@ -1,9 +1,8 @@
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Adicionado o deleteDoc aqui na importação!
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
-
-// ❌ REMOVEMOS O slotGenerator.js externo. Vamos usar um motor blindado interno!
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -116,9 +115,6 @@ function renderAdminDateCards() {
 // ==========================================
 // 3. BUSCA OS AGENDAMENTOS NA NUVEM
 // ==========================================
-// ==========================================
-// 3. BUSCA OS AGENDAMENTOS NA NUVEM
-// ==========================================
 async function loadAppointments(dateStr) {
   listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
   totalHead.textContent = "Carregando...";
@@ -134,17 +130,15 @@ async function loadAppointments(dateStr) {
     allAppointmentsForDay = []; 
     snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    // 🧹 MÁGICA DA LIMPEZA VISUAL: Filtro seguro que SOME com os bloqueios desbloqueados
     allAppointmentsForDay = allAppointmentsForDay.filter(a => {
       if (!a || !a.startTime) return false;
-      // Se for um Bloqueio Manual que foi cancelado, ESCONDE da tela!
       if (a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled") return false;
       return true;
     });
     
     allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
-    renderBlockSlots(); // Chama nosso gerador blindado interno
+    renderBlockSlots(); 
 
     listDiv.innerHTML = "";
 
@@ -161,12 +155,23 @@ async function loadAppointments(dateStr) {
       item.className = "admin-item";
 
       const isCancelled = app.status === "cancelled";
+      const isCompleted = app.status === "completed"; // Verifica se está finalizado
       const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
+      
       let timeColor = "#e0b976"; 
       let timeText = app.startTime;
 
-      if (isCancelled) { timeColor = "#ff5555"; timeText = `${app.startTime} (Cancelado)`; } 
-      else if (isBlock) { timeColor = "#888888"; }
+      if (isCancelled) { 
+          timeColor = "#ff5555"; 
+          timeText = `${app.startTime} (Cancelado)`; 
+      } else if (isCompleted) {
+          timeColor = "#4CAF50"; // Verde para finalizado
+          timeText = `${app.startTime} (Finalizado)`;
+          item.style.opacity = "0.6"; // Fica mais apagadinho
+          item.style.borderLeft = "4px solid #4CAF50";
+      } else if (isBlock) { 
+          timeColor = "#888888"; 
+      }
 
       const profIdSeguro = app.professionalId || "desconhecido";
       const profName = profIdSeguro.charAt(0).toUpperCase() + profIdSeguro.slice(1);
@@ -189,16 +194,62 @@ async function loadAppointments(dateStr) {
             <div class="admin-item__prof">${profName}</div>
           </div>
           <div class="admin-item__client">${app.clientName || 'Sem Nome'} <br> <span style="font-size: 0.85rem; color: #aaa;">${app.clientPhone || ''}</span></div>
-          <div class="admin-item__service">${app.serviceName || 'Serviço'} • R$ ${app.servicePrice || '0'}</div>
+          <div class="admin-item__service">${app.serviceName || 'Serviço'}</div> 
         `;
       }
 
-      if (!isCancelled) {
-        const actionsDiv = document.createElement("div");
-        actionsDiv.className = "admin-item__actions";
+      // BOTÕES DE AÇÃO
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "admin-item__actions";
+      actionsDiv.style.display = "flex";
+      actionsDiv.style.gap = "8px";
+
+      if (isCompleted) {
+        // Se já finalizou, mostra apenas um texto
+        actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
+      } 
+      else if (isCancelled) {
+        // Se cancelou, mostra o botão de excluir
+        const btnExcluir = document.createElement("button");
+        btnExcluir.className = "btn-admin btn-admin--cancel";
+        btnExcluir.style.background = "#ff3333";
+        btnExcluir.style.color = "white";
+        btnExcluir.style.flex = "1";
+        btnExcluir.textContent = "🗑️ Excluir da Tela";
+        
+        btnExcluir.onclick = async () => {
+          if (confirm("Tem certeza que deseja limpar este horário cancelado da tela?")) {
+            btnExcluir.textContent = "Excluindo...";
+            await deleteDoc(doc(db, "appointments", app.id));
+            loadAppointments(dateInput.value); 
+          }
+        };
+        actionsDiv.appendChild(btnExcluir);
+      } 
+      else {
+        // Se for ativo, mostra FINALIZAR e CANCELAR
+        if (!isBlock) {
+          const btnFinalizar = document.createElement("button");
+          btnFinalizar.className = "btn-admin";
+          btnFinalizar.style.background = "#4CAF50"; 
+          btnFinalizar.style.color = "white";
+          btnFinalizar.style.flex = "1";
+          btnFinalizar.textContent = "✅ Finalizar";
+          
+          btnFinalizar.onclick = async () => {
+            if (confirm("Marcar este atendimento como concluído?")) {
+              btnFinalizar.textContent = "Aguarde...";
+              await updateDoc(doc(db, "appointments", app.id), { status: "completed" });
+              loadAppointments(dateInput.value); 
+            }
+          };
+          actionsDiv.appendChild(btnFinalizar);
+        }
+
         const btnCancel = document.createElement("button");
         btnCancel.className = "btn-admin btn-admin--cancel";
-        btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar Horário";
+        btnCancel.style.flex = "1";
+        btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar";
         
         btnCancel.onclick = async () => {
           const msg = isBlock 
@@ -211,8 +262,9 @@ async function loadAppointments(dateStr) {
           }
         };
         actionsDiv.appendChild(btnCancel);
-        item.appendChild(actionsDiv);
       }
+      
+      item.appendChild(actionsDiv);
       listDiv.appendChild(item);
     });
 
@@ -224,17 +276,16 @@ async function loadAppointments(dateStr) {
 }
 
 // ==========================================
-// 4. MOTOR BLINDADO DE HORÁRIOS (NOVO)
+// 4. MOTOR BLINDADO DE HORÁRIOS
 // ==========================================
 function generateAdminSlots(workHours, apps) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
 
-  // Extrai ocupações com segurança extrema
   const occupied = apps.map(app => {
     if (!app || !app.startTime) return null;
     let end = app.endTime;
-    if (!end) { // Se não tiver horário de término salvo, chuta 40 min pra frente pra não quebrar
+    if (!end) { 
       try {
         const [h, m] = String(app.startTime).split(":").map(Number);
         const t = h * 60 + m + 40;
@@ -244,7 +295,6 @@ function generateAdminSlots(workHours, apps) {
     return { start: String(app.startTime), end: String(end) };
   }).filter(Boolean);
 
-  // Desenha os blocos livres
   workHours.forEach(period => {
     if (!period || typeof period !== "string" || !period.includes("-")) return;
     const parts = period.split("-");
@@ -254,13 +304,12 @@ function generateAdminSlots(workHours, apps) {
     const [endH, endM] = parts[1].split(":").map(Number);
     let currentTotal = currH * 60 + currM;
     const endTotal = endH * 60 + endM;
-    const duration = 30; // Blocos de 30 minutos
+    const duration = 30; 
 
     while (currentTotal + duration <= endTotal) {
       const slotTime = `${String(Math.floor(currentTotal/60)).padStart(2,"0")}:${String(currentTotal%60).padStart(2,"0")}`;
       const slotEndTotal = currentTotal + duration;
 
-      // Checa colisão
       let hasCollision = false;
       for (let occ of occupied) {
         try {
@@ -271,7 +320,7 @@ function generateAdminSlots(workHours, apps) {
           if (currentTotal < occEnd && slotEndTotal > occStart) {
             hasCollision = true; break;
           }
-        } catch(e) { } // Ignora erro individual
+        } catch(e) { } 
       }
 
       if (!hasCollision) slots.push(slotTime);
@@ -301,17 +350,15 @@ function renderBlockSlots() {
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
 
-  // Usa o NOSSO gerador blindado local
   let slots = generateAdminSlots(workingHours, profAppointments);
 
-  // Remove horários que já passaram hoje
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   if (dateStr === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     slots = slots.filter(time => {
-      if (!time || typeof time !== "string") return false; // Trava extra!
+      if (!time || typeof time !== "string") return false; 
       const parts = time.split(":");
       if (parts.length < 2) return false;
       return (Number(parts[0]) * 60 + Number(parts[1])) > currentMinutes;
@@ -383,3 +430,15 @@ if (btnConfirmBlock) {
     }
   });
 }
+
+// Lógica da Gaveta
+document.getElementById('btnToggleBloqueio').addEventListener('click', function() {
+    const secao = document.getElementById('secaoBloqueio');
+    if (secao.style.display === 'none') {
+        secao.style.display = 'block';
+        this.innerHTML = '🔼 Ocultar Horários de Bloqueio';
+    } else {
+        secao.style.display = 'none';
+        this.innerHTML = '🔒 Gerenciar Horários de Bloqueio';
+    }
+});
