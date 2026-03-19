@@ -2,6 +2,7 @@ import { generateAvailableSlots } from "../services/slotGenerator.js";
 import { getAppointments } from "../firebase/appointments.js";
 import { createAppointment } from "../firebase/createAppointment.js";
 import { getTenantConfig } from "../firebase/tenants.js";
+import { db } from "../firebase/config.js";
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
