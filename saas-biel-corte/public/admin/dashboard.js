@@ -8,7 +8,7 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-const tenantId = getParam("tenant") || "tenant-demo";
+const tenantId = getParam("tenant") || "biel-do-corte";
 const auth = getAuth();
 
 let workingHours = [];

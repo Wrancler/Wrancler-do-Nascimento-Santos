@@ -10,7 +10,7 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-const tenant = getParam("tenant") || "tenant-demo"; // mantém multi-tenant no admin também
+const tenant = getParam("tenant") || "biel-do-corte"; // mantém multi-tenant no admin também
 const auth = getAuth();
 
 const emailEl = document.getElementById("email");
