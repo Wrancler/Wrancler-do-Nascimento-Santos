@@ -163,7 +163,6 @@ clientPhoneInput.addEventListener("input", (e) => {
 // =========================================
 // CORREÇÃO DA ROLAGEM SUAVE (UX PREMIUM)
 // =========================================
-// Agora a função aceita um segundo parâmetro "blockPos" (por padrão é 'start' = topo)
 function smoothScrollTo(el, blockPos = "start") {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: blockPos });
@@ -261,7 +260,6 @@ professionalsDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedServiceId) renderSlots();
 
-  // AQUI: Volta a alinhar pelo TOPO ('start') para o título não sumir da tela
   smoothScrollToId("servicesSection", "start");
   updateSummaryCard();
 });
@@ -284,7 +282,8 @@ servicesDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
-  // AQUI: Removi completamente qualquer tipo de rolagem! O cliente rola com o dedo se quiser.
+  // AQUI: Devolvi a rolagem correta. Ele desliza para alinhar "SEUS DADOS" no topo da tela.
+  smoothScrollToId("clientSection", "start");
   
   updateSummaryCard();
 });
@@ -330,7 +329,6 @@ async function renderSlots() {
 
     if (finalSlots.length === 0) {
       slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
-      // AQUI: Mantém o 'center' que ficou suave
       smoothScrollTo(slotsDiv, "center");
       return;
     }
@@ -354,13 +352,11 @@ async function renderSlots() {
       slotsDiv.appendChild(btn);
     });
 
-    // AQUI: Mantém o 'center' que ficou suave
     smoothScrollTo(slotsDiv, "center");
 
   } catch (e) {
     console.error(e);
     slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
-    // AQUI: Mantém o 'center' que ficou suave
     smoothScrollTo(slotsDiv, "center");
   }
 }
