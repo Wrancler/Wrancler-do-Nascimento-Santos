@@ -168,25 +168,25 @@ clientPhoneInput.addEventListener("input", (e) => {
 });
 
 // =========================================
-// FUNÇÕES DE UTILIDADE E FLUXO
+// CORREÇÃO DA ROLAGEM SUAVE (UX PREMIUM)
 // =========================================
-
-// Scroll helpers
-function smoothScrollTo(el) {
+function smoothScrollTo(el, blockPos = "start") {
   if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-function smoothScrollToId(id) {
-  smoothScrollTo(document.getElementById(id));
+  el.scrollIntoView({ behavior: "smooth", block: blockPos });
 }
 
-// Foco suave
-function focusAfterScroll(inputEl, delayMs = 350) {
-  if (!inputEl) return;
-  window.setTimeout(() => {
-    inputEl.focus({ preventScroll: true });
-  }, delayMs);
+function smoothScrollToId(id, blockPos = "start") {
+  smoothScrollTo(document.getElementById(id), blockPos);
 }
+
+// NOVO: Corrige o pulo agressivo do iPhone ao usar Autocomplete ou botão "Avançar"
+clientNameInput.addEventListener("focus", () => {
+  setTimeout(() => smoothScrollTo(clientNameInput, "center"), 300);
+});
+
+clientPhoneInput.addEventListener("focus", () => {
+  setTimeout(() => smoothScrollTo(clientPhoneInput, "center"), 300);
+});
 
 function addMinutes(time, minutes) {
   const [h, m] = time.split(":").map(Number);
@@ -277,7 +277,7 @@ professionalsDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedServiceId) renderSlots();
 
-  smoothScrollToId("servicesSection");
+  smoothScrollToId("servicesSection", "start");
   updateSummaryCard();
 });
 
@@ -300,8 +300,7 @@ servicesDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
-  smoothScrollToId("clientSection");
-  focusAfterScroll(clientNameInput, 350);
+  smoothScrollToId("clientSection", "start");
   
   updateSummaryCard();
 });
@@ -350,7 +349,7 @@ async function renderSlots() {
 
     if (finalSlots.length === 0) {
       slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
-      smoothScrollTo(slotsDiv);
+      smoothScrollTo(slotsDiv, "center");
       return;
     }
 
@@ -374,11 +373,11 @@ async function renderSlots() {
       slotsDiv.appendChild(btn);
     });
 
-    smoothScrollTo(slotsDiv);
+    smoothScrollTo(slotsDiv, "center");
   } catch (e) {
     console.error(e);
     slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
-    smoothScrollTo(slotsDiv);
+    smoothScrollTo(slotsDiv, "center");
   }
 }
 
