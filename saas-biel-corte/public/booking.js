@@ -190,7 +190,7 @@ function smoothScrollToId(id) {
   smoothScrollTo(document.getElementById(id));
 }
 
-// Foco suave
+// Foco suave (Mantida na estrutura, mas não vamos mais chamar ela para não pular a tela)
 function focusAfterScroll(inputEl, delayMs = 350) {
   if (!inputEl) return;
   window.setTimeout(() => {
@@ -311,7 +311,8 @@ servicesDiv.addEventListener("click", (e) => {
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
   smoothScrollToId("clientSection");
-  focusAfterScroll(clientNameInput, 350);
+  
+  // AQUI: Removi a linha focusAfterScroll(clientNameInput, 350); para não pular o teclado na cara do cliente.
   
   updateSummaryCard();
 });
@@ -360,7 +361,7 @@ async function renderSlots() {
 
     if (finalSlots.length === 0) {
       slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
-      smoothScrollTo(slotsDiv);
+      // AQUI: Removi o scroll forçado caso não tenha horário.
       return;
     }
 
@@ -384,11 +385,11 @@ async function renderSlots() {
       slotsDiv.appendChild(btn);
     });
 
-    smoothScrollTo(slotsDiv);
+    // AQUI: Removi o scroll forçado quando carrega os horários com sucesso.
   } catch (e) {
     console.error(e);
     slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
-    smoothScrollTo(slotsDiv);
+    // AQUI: Removi o scroll forçado quando dá erro.
   }
 }
 
