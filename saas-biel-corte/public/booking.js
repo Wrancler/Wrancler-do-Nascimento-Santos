@@ -14,6 +14,7 @@ const tenantId = getParam("tenant") || "biel-do-corte";
 let barberWhatsapp = "";
 let workingHours = [];
 let servicesById = {};
+let showPrices = false; // NOVO: Variável para controlar os preços
 
 // Função que inicia o sistema buscando os dados do SaaS
 async function initTenant() {
@@ -23,6 +24,7 @@ async function initTenant() {
     // 1. Carrega as configurações gerais
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
+    showPrices = config.showPrices === true; // NOVO: Puxa o interruptor do banco
     
     // ==========================================
     // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE
@@ -75,7 +77,9 @@ async function initTenant() {
       
       const imgCaminho = s.image || `assets/services/${s.id}.png`;
 
-      // Os botões agora mostram APENAS a duração, sem menção a preços
+      // NOVO: A mágica condicional do preço
+      const textoPreco = showPrices && s.price ? ` • R$ ${s.price},00` : "";
+
       btn.innerHTML = `
         <div class="card__media">
           <img src="${imgCaminho}" alt="${s.name}" loading="lazy">
@@ -83,7 +87,7 @@ async function initTenant() {
         </div>
         <div class="card__body">
           <div class="card__title">${s.name}</div>
-          <div class="card__meta">${s.duration} min</div>
+          <div class="card__meta">${s.duration} min${textoPreco}</div>
         </div>
       `;
       servicesDiv.appendChild(btn);
@@ -111,8 +115,13 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      // O total fica totalmente invisível/vazio
-      document.getElementById("summaryTotal").textContent = ""; 
+      
+      // NOVO: Mostra o total apenas se o cliente permitir
+      if (showPrices && servico.price) {
+        document.getElementById("summaryTotal").textContent = `R$ ${servico.price},00`; 
+      } else {
+        document.getElementById("summaryTotal").textContent = ""; 
+      }
     }
 
     const dateInput = document.getElementById("date").value;
