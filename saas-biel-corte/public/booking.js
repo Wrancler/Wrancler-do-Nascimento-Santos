@@ -172,6 +172,15 @@ function smoothScrollToId(id, blockPos = "start") {
   smoothScrollTo(document.getElementById(id), blockPos);
 }
 
+// NOVO: Corrige o pulo agressivo do iPhone ao usar Autocomplete ou botão "Avançar"
+clientNameInput.addEventListener("focus", () => {
+  setTimeout(() => smoothScrollTo(clientNameInput, "center"), 300);
+});
+
+clientPhoneInput.addEventListener("focus", () => {
+  setTimeout(() => smoothScrollTo(clientPhoneInput, "center"), 300);
+});
+
 function addMinutes(time, minutes) {
   const [h, m] = time.split(":").map(Number);
   const total = h * 60 + m + minutes;
@@ -282,7 +291,6 @@ servicesDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
-  // AQUI: Devolvi a rolagem correta. Ele desliza para alinhar "SEUS DADOS" no topo da tela.
   smoothScrollToId("clientSection", "start");
   
   updateSummaryCard();
