@@ -163,14 +163,14 @@ clientPhoneInput.addEventListener("input", (e) => {
 // =========================================
 // CORREÇÃO DA ROLAGEM SUAVE (UX PREMIUM)
 // =========================================
-function smoothScrollTo(el) {
+// Agora a função aceita um segundo parâmetro "blockPos" (por padrão é 'start' = topo)
+function smoothScrollTo(el, blockPos = "start") {
   if (!el) return;
-  // A mágica acontece aqui: 'center' centraliza o bloco na tela de forma elegante
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.scrollIntoView({ behavior: "smooth", block: blockPos });
 }
 
-function smoothScrollToId(id) {
-  smoothScrollTo(document.getElementById(id));
+function smoothScrollToId(id, blockPos = "start") {
+  smoothScrollTo(document.getElementById(id), blockPos);
 }
 
 function addMinutes(time, minutes) {
@@ -261,7 +261,8 @@ professionalsDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedServiceId) renderSlots();
 
-  smoothScrollToId("servicesSection");
+  // AQUI: Volta a alinhar pelo TOPO ('start') para o título não sumir da tela
+  smoothScrollToId("servicesSection", "start");
   updateSummaryCard();
 });
 
@@ -283,8 +284,7 @@ servicesDiv.addEventListener("click", (e) => {
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
 
-  // Desliza suavemente até centralizar o Nome e WhatsApp na tela
-  smoothScrollToId("clientSection");
+  // AQUI: Removi completamente qualquer tipo de rolagem! O cliente rola com o dedo se quiser.
   
   updateSummaryCard();
 });
@@ -330,8 +330,8 @@ async function renderSlots() {
 
     if (finalSlots.length === 0) {
       slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
-      // Rolagem suave ativada para erro
-      smoothScrollTo(slotsDiv);
+      // AQUI: Mantém o 'center' que ficou suave
+      smoothScrollTo(slotsDiv, "center");
       return;
     }
 
@@ -354,14 +354,14 @@ async function renderSlots() {
       slotsDiv.appendChild(btn);
     });
 
-    // Rolagem curtinha e suave ativada para a grade de horários
-    smoothScrollTo(slotsDiv);
+    // AQUI: Mantém o 'center' que ficou suave
+    smoothScrollTo(slotsDiv, "center");
 
   } catch (e) {
     console.error(e);
     slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
-    // Rolagem suave ativada para erro
-    smoothScrollTo(slotsDiv);
+    // AQUI: Mantém o 'center' que ficou suave
+    smoothScrollTo(slotsDiv, "center");
   }
 }
 
