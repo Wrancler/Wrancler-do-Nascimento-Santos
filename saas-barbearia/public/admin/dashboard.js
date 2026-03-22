@@ -1,5 +1,4 @@
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// Adicionado o deleteDoc aqui na importação!
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
@@ -442,3 +441,47 @@ document.getElementById('btnToggleBloqueio').addEventListener('click', function(
         this.innerHTML = '🔒 Gerenciar Horários de Bloqueio';
     }
 });
+
+// ==========================================
+// 6. BLOQUEIO DO DIA INTEIRO
+// ==========================================
+const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
+if (btnBlockWholeDay) {
+  btnBlockWholeDay.addEventListener("click", async () => {
+    const profId = blockProfSelect.value;
+    const dateStr = dateInput.value;
+
+    if (!profId) return alert("Aguarde os profissionais carregarem.");
+
+    // Pede confirmação para não bloquear sem querer
+    if (confirm(`Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`)) {
+      
+      btnBlockWholeDay.textContent = "Bloqueando o dia...";
+      btnBlockWholeDay.disabled = true;
+
+      try {
+        await addDoc(collection(db, "appointments"), {
+          tenantId: tenantId,
+          professionalId: profId,
+          date: dateStr,
+          startTime: "00:00", // Começa meia-noite
+          endTime: "23:59",   // Vai até o fim do dia
+          clientName: "⛔ BLOQUEIO DE AGENDA",
+          clientPhone: "00000000000",
+          serviceName: "Dia Inteiro Fechado",
+          servicePrice: 0,
+          status: "confirmed"
+        });
+
+        alert("Dia inteiro bloqueado com sucesso!");
+        loadAppointments(dateStr); 
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao bloquear o dia.");
+      } finally {
+        btnBlockWholeDay.textContent = "🛑 Bloquear o Dia Inteiro";
+        btnBlockWholeDay.disabled = false;
+      }
+    }
+  });
+}
