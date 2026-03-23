@@ -1,5 +1,4 @@
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// Adicionado o deleteDoc aqui na importação!
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
@@ -35,6 +34,31 @@ if (btnLogout) {
   });
 }
 
+// NOVO: Acesso ao Financeiro com Senha PIN
+const btnFinanceiro = document.getElementById("btnFinanceiro");
+if (btnFinanceiro) {
+  btnFinanceiro.addEventListener("click", async () => {
+    // 1. Busca a senha verdadeira lá do Firebase
+    const config = await getTenantConfig(tenantId);
+    
+    // 2. Pede para a pessoa digitar a senha
+    const pinDigitado = prompt("🔒 Digite o PIN do Gestor para acessar o Financeiro:");
+    
+    if (pinDigitado === null) return; // Se a pessoa clicar em Cancelar, não faz nada
+    
+    // 3. Confere se a senha bate com o banco de dados
+    if (config.financePin && pinDigitado === String(config.financePin)) {
+      // Senha correta! Dá um "crachá" temporário e abre a porta
+      sessionStorage.setItem("crachaFinanceiro", pinDigitado);
+      window.location.href = `financeiro.html?tenant=${encodeURIComponent(tenantId)}`;
+    } else {
+      // Senha errada!
+      alert("❌ Senha incorreta! Acesso negado.");
+    }
+  });
+}
+
+
 // ==========================================
 // 2. INICIALIZAÇÃO E ROLETA
 // ==========================================
@@ -46,6 +70,20 @@ const blockProfSelect = document.getElementById("blockProf");
 async function initDashboard() {
   try {
     const config = await getTenantConfig(tenantId);
+
+         // ---------------------------------------------------------
+    // NOVO: VERIFICAÇÃO DE GESTOR (DONO) PARA MOSTRAR O BOTÃO
+    // ---------------------------------------------------------
+    const btnFinanceiro = document.getElementById("btnFinanceiro");
+    if (btnFinanceiro && auth.currentUser) {
+      // Confere se o email que fez login é exatamente igual ao ownerEmail do banco
+      if (config.ownerEmail && auth.currentUser.email === config.ownerEmail) {
+        btnFinanceiro.style.display = "block"; // Revela o botão apenas para o dono
+      }
+    }
+    // ---------------------------------------------------------
+
+
     workingHours = config.workingHours || [];
     
     blockProfSelect.innerHTML = "";
@@ -155,7 +193,7 @@ async function loadAppointments(dateStr) {
       item.className = "admin-item";
 
       const isCancelled = app.status === "cancelled";
-      const isCompleted = app.status === "completed"; // Verifica se está finalizado
+      const isCompleted = app.status === "completed"; 
       const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
       
       let timeColor = "#e0b976"; 
@@ -165,9 +203,9 @@ async function loadAppointments(dateStr) {
           timeColor = "#ff5555"; 
           timeText = `${app.startTime} (Cancelado)`; 
       } else if (isCompleted) {
-          timeColor = "#4CAF50"; // Verde para finalizado
+          timeColor = "#4CAF50"; 
           timeText = `${app.startTime} (Finalizado)`;
-          item.style.opacity = "0.6"; // Fica mais apagadinho
+          item.style.opacity = "0.6"; 
           item.style.borderLeft = "4px solid #4CAF50";
       } else if (isBlock) { 
           timeColor = "#888888"; 
@@ -205,11 +243,9 @@ async function loadAppointments(dateStr) {
       actionsDiv.style.gap = "8px";
 
       if (isCompleted) {
-        // Se já finalizou, mostra apenas um texto
         actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
       } 
       else if (isCancelled) {
-        // Se cancelou, mostra o botão de excluir
         const btnExcluir = document.createElement("button");
         btnExcluir.className = "btn-admin btn-admin--cancel";
         btnExcluir.style.background = "#ff3333";
@@ -227,7 +263,6 @@ async function loadAppointments(dateStr) {
         actionsDiv.appendChild(btnExcluir);
       } 
       else {
-        // Se for ativo, mostra FINALIZAR e CANCELAR
         if (!isBlock) {
           const btnFinalizar = document.createElement("button");
           btnFinalizar.className = "btn-admin";
@@ -442,3 +477,46 @@ document.getElementById('btnToggleBloqueio').addEventListener('click', function(
         this.innerHTML = '🔒 Gerenciar Horários de Bloqueio';
     }
 });
+
+// ==========================================
+// 6. BLOQUEIO DO DIA INTEIRO
+// ==========================================
+const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
+if (btnBlockWholeDay) {
+  btnBlockWholeDay.addEventListener("click", async () => {
+    const profId = blockProfSelect.value;
+    const dateStr = dateInput.value;
+
+    if (!profId) return alert("Aguarde os profissionais carregarem.");
+
+    if (confirm(`Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`)) {
+      
+      btnBlockWholeDay.textContent = "Bloqueando o dia...";
+      btnBlockWholeDay.disabled = true;
+
+      try {
+        await addDoc(collection(db, "appointments"), {
+          tenantId: tenantId,
+          professionalId: profId,
+          date: dateStr,
+          startTime: "00:00", 
+          endTime: "23:59",   
+          clientName: "⛔ BLOQUEIO DE AGENDA",
+          clientPhone: "00000000000",
+          serviceName: "Dia Inteiro Fechado",
+          servicePrice: 0,
+          status: "confirmed"
+        });
+
+        alert("Dia inteiro bloqueado com sucesso!");
+        loadAppointments(dateStr); 
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao bloquear o dia.");
+      } finally {
+        btnBlockWholeDay.textContent = "🛑 Bloquear o Dia Inteiro";
+        btnBlockWholeDay.disabled = false;
+      }
+    }
+  });
+}

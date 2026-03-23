@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel Financeiro - Gestão</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    /* Estilos específicos para os cartões financeiros */
+    .finance-cards { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .fin-card { background: #222; border: 1px solid #333; border-radius: 16px; padding: 16px; flex: 1; min-width: 140px; text-align: center; }
+    .fin-card h4 { margin: 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+    .fin-card .value { font-size: 24px; font-weight: bold; color: #fff; margin-top: 8px; }
+    .fin-card.highlight { border-color: #4CAF50; background: rgba(76, 175, 80, 0.05); }
+    .fin-card.highlight .value { color: #4CAF50; }
+    .filter-group { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-group .input { flex: 1; min-width: 120px; }
+  </style>
+</head>
+
+<body>
+  <header class="hero" style="padding-bottom: 10px;">
+    <div class="hero__bg"></div>
+    <div class="container hero__content">
+      <div class="topbar">
+        <div class="brand" style="justify-content: space-between; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="brand__info">
+              <div class="brand__name">Painel Financeiro</div>
+              <div class="brand__tag">Gestão de Faturação</div>
+            </div>
+          </div>
+          <button id="btnVoltar" class="btn btn--ghost" style="padding: 8px 16px; font-size: 12px; border-radius: 12px;">⬅ Voltar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main">
+    <section class="section">
+      <div class="section__head">
+        <h2>Filtros de Pesquisa</h2>
+        <p>Selecione o período e o barbeiro para calcular.</p>
+      </div>
+      
+      <div class="filter-group">
+        <input type="date" id="dateStart" class="input" />
+        <input type="date" id="dateEnd" class="input" />
+      </div>
+      
+      <div class="filter-group">
+        <select id="profFilter" class="input">
+          <option value="todos">Todos os Barbeiros</option>
+        </select>
+        <button id="btnFiltrar" class="btn btn--primary" style="flex: 1;">🔍 Calcular</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="finance-cards">
+        <div class="fin-card">
+          <h4>✂️ Cortes Finalizados</h4>
+          <div id="totCortes" class="value">0</div>
+        </div>
+        <div class="fin-card highlight">
+          <h4>💰 Faturação Bruta</h4>
+          <div id="totValor" class="value">R$ 0,00</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section__head">
+        <h2>Histórico de Serviços</h2>
+      </div>
+      <div id="financeList" class="admin-list">
+        <p style='color: #888; text-align: center; padding: 20px;'>Clique em Calcular para ver os resultados.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="financeiro.js"></script>
+</body>
+</html>

@@ -10,9 +10,6 @@
     <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
     <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
 
-
-
-
   <link rel="stylesheet" href="../styles.css" />
 </head>
 
@@ -31,7 +28,10 @@
               <div class="brand__tag">Gestão de Agenda</div>
             </div>
           </div>
-          <button id="btnLogout" class="btn btn--ghost" style="padding: 8px 16px; font-size: 12px; border-radius: 12px;">Sair</button>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnFinanceiro" class="btn btn--primary" style="padding: 8px 12px; font-size: 12px; border-radius: 12px; background: #4CAF50; border: none; color: white;">💰 Financeiro</button>
+            <button id="btnLogout" class="btn btn--ghost" style="padding: 8px 12px; font-size: 12px; border-radius: 12px;">Sair</button>
+          </div>
         </div>
       </div>
     </div>
@@ -60,6 +60,8 @@
           </select>
           <button id="btnConfirmBlock" class="btn-admin btn-admin--cancel" style="flex: 1; min-width: 120px;" disabled>Bloquear Selecionado</button>
         </div>
+
+        <button id="btnBlockWholeDay" class="btn-admin" style="width: 100%; margin-bottom: 14px; background: #ff3333; color: white; border: none;">🛑 Bloquear o Dia Inteiro</button>
 
         <div id="blockSlots" class="slots"></div>
       </div>
