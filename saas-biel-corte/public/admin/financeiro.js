@@ -40,23 +40,16 @@ async function initFinanceiro() {
   try {
     const config = await getTenantConfig(tenantId);
     
-    // ---------------------------------------------------------
-    // NOVO: BARREIRA DE SEGURANÇA POR PIN
-    // ---------------------------------------------------------
-    // Puxa o "crachá" que salvamos na aba anterior
+    // BARREIRA DE SEGURANÇA POR PIN
     const cracha = sessionStorage.getItem("crachaFinanceiro");
-    
-    // Se não tem crachá, ou se o crachá é diferente da senha oficial: RUA!
     if (!config.financePin || cracha !== String(config.financePin)) {
       alert("⚠️ Acesso Restrito: Digite o PIN correto no painel para acessar.");
       window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
       return; 
     }
-    // ---------------------------------------------------------
 
     // Preenche a lista de barbeiros
     if (config.professionals) {
-// ... (o resto do código continua igualzinho)
       config.professionals.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.id;
@@ -84,7 +77,11 @@ async function initFinanceiro() {
 // ==========================================
 // 3. MOTOR DE CÁLCULO FINANCEIRO
 // ==========================================
+// NOVO: Atualiza sozinho sempre que mexer na data ou no barbeiro!
 btnFiltrar.addEventListener("click", calcularFinancas);
+profFilter.addEventListener("change", calcularFinancas);
+dateStart.addEventListener("change", calcularFinancas);
+dateEnd.addEventListener("change", calcularFinancas);
 
 async function calcularFinancas() {
   financeList.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>A calcular finanças...</p>";
@@ -109,7 +106,7 @@ async function calcularFinancas() {
       const app = d.data();
       
       // Regras para entrar na conta:
-      // 1. Tem de estar "completed" (finalizado pelo administrador)
+      // 1. Tem de estar "completed"
       // 2. A data tem de estar dentro do período escolhido
       // 3. O barbeiro tem de corresponder (ou se for "todos")
       if (
@@ -120,7 +117,6 @@ async function calcularFinancas() {
       ) {
         agendamentosValidos.push(app);
         
-        // Soma o valor do serviço garantindo que é um número
         const preco = parseFloat(app.servicePrice) || 0;
         valorAcumulado += preco;
       }
@@ -149,7 +145,6 @@ async function calcularFinancas() {
       item.className = "admin-item";
       item.style.borderLeft = "4px solid #4CAF50";
 
-      // Converte YYYY-MM-DD para DD/MM/YYYY
       const dataFormatada = app.date.split("-").reverse().join("/");
       const profName = (app.professionalId || "desconhecido").charAt(0).toUpperCase() + (app.professionalId || "").slice(1);
       const precoFormatado = parseFloat(app.servicePrice || 0).toFixed(2).replace('.', ',');
