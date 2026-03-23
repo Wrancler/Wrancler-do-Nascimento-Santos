@@ -6,15 +6,29 @@
   <title>Painel Financeiro - Gestão</title>
   <link rel="stylesheet" href="../styles.css" />
   <style>
-    /* Estilos específicos para os cartões financeiros */
-    .finance-cards { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-    .fin-card { background: #222; border: 1px solid #333; border-radius: 16px; padding: 16px; flex: 1; min-width: 140px; text-align: center; }
-    .fin-card h4 { margin: 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
-    .fin-card .value { font-size: 24px; font-weight: bold; color: #fff; margin-top: 8px; }
-    .fin-card.highlight { border-color: #4CAF50; background: rgba(76, 175, 80, 0.05); }
-    .fin-card.highlight .value { color: #4CAF50; }
-    .filter-group { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter-group .input { flex: 1; min-width: 120px; }
+    /* Estilos Premium dos Cards Financeiros */
+    .finance-cards { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+    .fin-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 20px; padding: 24px; flex: 1; min-width: 140px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .fin-card h4 { margin: 0; font-size: 13px; color: #888; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+    .fin-card .value { font-size: 32px; font-weight: 700; color: #fff; margin-top: 8px; }
+    .fin-card.highlight { border-color: #e0b976; background: linear-gradient(145deg, #1a1a1a 0%, #111 100%); }
+    .fin-card.highlight .value { color: #e0b976; }
+    
+    /* Inputs e Filtros */
+    .premium-input { background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 12px; padding: 14px 16px; font-size: 14px; outline: none; transition: 0.3s; flex: 1; min-width: 130px; width: 100%; box-sizing: border-box;}
+    .premium-input:focus { border-color: #e0b976; }
+    .filter-group { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    
+    /* Estilo Premium para o Slider de Datas */
+    .date-slider { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 12px; margin-bottom: 24px; scrollbar-width: none; -ms-overflow-style: none; }
+    .date-slider::-webkit-scrollbar { display: none; }
+    .date-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 16px; padding: 14px 10px; min-width: 72px; text-align: center; cursor: pointer; transition: 0.3s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .date-card:active { transform: scale(0.95); }
+    .date-card.is-selected { border-color: #e0b976; background: rgba(224,185,118,0.08); }
+    .date-card__weekday { display: block; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px; }
+    .date-card__day { display: block; font-size: 26px; color: #fff; font-weight: 700; margin-bottom: 4px; }
+    .date-card__month { display: block; font-size: 11px; color: #555; text-transform: uppercase; font-weight: 600; }
+    .date-card.is-selected .date-card__weekday, .date-card.is-selected .date-card__day, .date-card.is-selected .date-card__month { color: #e0b976; }
   </style>
 </head>
 
@@ -26,11 +40,11 @@
         <div class="brand" style="justify-content: space-between; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div class="brand__info">
-              <div class="brand__name">Painel Financeiro</div>
-              <div class="brand__tag">Gestão de Faturação</div>
+              <div class="brand__name">Relatório Financeiro</div>
+              <div class="brand__tag" style="color: #e0b976;">Gestão Diária</div>
             </div>
           </div>
-          <button id="btnVoltar" class="btn btn--ghost" style="padding: 8px 16px; font-size: 12px; border-radius: 12px;">⬅ Voltar</button>
+          <button id="btnVoltar" style="background: #222; color: #fff; border: 1px solid #333; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer;">Voltar</button>
         </div>
       </div>
     </div>
@@ -38,32 +52,35 @@
 
   <main class="container main">
     <section class="section">
-      <div class="section__head">
-        <h2>Filtros de Pesquisa</h2>
-        <p>Selecione o período e o barbeiro para calcular.</p>
-      </div>
       
-      <div class="filter-group">
-        <input type="date" id="dateStart" class="input" />
-        <input type="date" id="dateEnd" class="input" />
-      </div>
-      
-      <div class="filter-group">
-        <select id="profFilter" class="input">
+      <div id="financeDateSlider" class="date-slider"></div>
+
+      <div style="margin-bottom: 16px;">
+        <select id="profFilter" class="premium-input">
           <option value="todos">Todos os Barbeiros</option>
         </select>
-        <button id="btnFiltrar" class="btn btn--primary" style="flex: 1;">🔍 Calcular</button>
       </div>
+
+      <details style="cursor: pointer; margin-bottom: 24px;">
+        <summary style="color: #888; font-size: 13px; font-weight: 500; outline: none; display: flex; align-items: center; gap: 8px;">
+          <span>⚙️ Pesquisa por Período Personalizado</span>
+        </summary>
+        <div class="filter-group" style="margin-top: 12px;">
+          <input type="date" id="dateStart" class="premium-input" />
+          <input type="date" id="dateEnd" class="premium-input" />
+        </div>
+      </details>
+      
     </section>
 
     <section class="section">
       <div class="finance-cards">
         <div class="fin-card">
-          <h4>✂️ Cortes Finalizados</h4>
+          <h4>Cortes Finalizados</h4>
           <div id="totCortes" class="value">0</div>
         </div>
         <div class="fin-card highlight">
-          <h4>💰 Faturação Bruta</h4>
+          <h4>Faturação Bruta</h4>
           <div id="totValor" class="value">R$ 0,00</div>
         </div>
       </div>
@@ -74,7 +91,7 @@
         <h2>Histórico de Serviços</h2>
       </div>
       <div id="financeList" class="admin-list">
-        <p style='color: #888; text-align: center; padding: 20px;'>Clique em Calcular para ver os resultados.</p>
+        <p style='color: #888; text-align: center; padding: 20px;'>Aguardando dados...</p>
       </div>
     </section>
   </main>

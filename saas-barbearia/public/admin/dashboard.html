@@ -3,14 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Painel do Barbeiro - Biel do Corte</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="La Barber">
-    <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
-    <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
-
+  <title>Painel do Barbeiro - La Barber Clube</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="La Barber">
+  <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
+  <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
   <link rel="stylesheet" href="../styles.css" />
+  <style>
+    /* Estilos Premium para os novos elementos do Dashboard */
+    .premium-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 20px; padding: 24px; margin-top: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .premium-card h3 { color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 20px 0; letter-spacing: 0.5px; }
+    .premium-btn-main { width: 100%; margin-top: 24px; background: #e0b976; color: #111; padding: 16px; border-radius: 16px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    .premium-btn-main:active { transform: scale(0.98); }
+    .premium-btn-secondary { width: 100%; margin-top: 12px; background: transparent; color: #888; padding: 16px; border-radius: 16px; border: 1px solid #333; font-weight: 500; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    .premium-btn-secondary:active { transform: scale(0.98); background: #222; }
+    .premium-input { background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 12px; padding: 14px 16px; width: 100%; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s; }
+    .premium-input:focus { border-color: #e0b976; }
+    .premium-btn-danger { background: rgba(255, 60, 60, 0.1); color: #ff5555; border: 1px solid rgba(255, 60, 60, 0.2); border-radius: 12px; padding: 14px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 8px; transition: 0.2s; }
+  </style>
 </head>
 
 <body>
@@ -21,16 +32,16 @@
         <div class="brand" style="justify-content: space-between; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div class="brand__mark">
-              <img src="../assets/brand/logo001.png" alt="La Barber Clube">
+              <img src="../assets/brand/logo.png" alt="La Barber Clube">
             </div>
             <div class="brand__info">
               <div class="brand__name">Painel Admin</div>
-              <div class="brand__tag">Gestão de Agenda</div>
+              <div class="brand__tag" style="color: #e0b976;">Gestão de Agenda</div>
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button id="btnFinanceiro" class="btn btn--primary" style="padding: 8px 12px; font-size: 12px; border-radius: 12px; background: #4CAF50; border: none; color: white;">💰 Financeiro</button>
-            <button id="btnLogout" class="btn btn--ghost" style="padding: 8px 12px; font-size: 12px; border-radius: 12px;">Sair</button>
+            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">Financeiro</button>
+            <button id="btnLogout" style="background: transparent; color: #888; border: none; padding: 8px; font-size: 13px; cursor: pointer;">Sair</button>
           </div>
         </div>
       </div>
@@ -48,54 +59,54 @@
       <div id="adminDateSlider" class="date-slider"></div>
       <input type="hidden" id="adminDate" />
 
-      <button id="btnToggleManual" class="btn btn--primary" style="width: 100%; margin-top: 16px; background: #4CAF50; color: #fff; padding: 14px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s;">➕ Novo Agendamento (Balcão)</button>
+      <button id="btnToggleManual" class="premium-btn-main">Novo Agendamento</button>
 
-      <div id="secaoManual" style="display: none; background: rgba(76,175,80,0.05); padding: 18px; border-radius: 16px; margin-top: 10px; border: 1px dashed rgba(76,175,80,0.25);">
-        <h3 style="margin-top: 0; color: #4CAF50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">Agendar Cliente Manualmente</h3>
+      <div id="secaoManual" class="premium-card" style="display: none;">
+        <h3>Detalhes do Agendamento</h3>
         
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
-          <input type="text" id="manualClientName" class="input" placeholder="Nome do Cliente" style="padding: 12px;">
-          <input type="text" id="manualClientPhone" class="input" placeholder="WhatsApp (Opcional)" style="padding: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <input type="text" id="manualClientName" class="premium-input" placeholder="Nome do Cliente">
+          <input type="text" id="manualClientPhone" class="premium-input" placeholder="WhatsApp (Opcional)">
           
-          <select id="manualProf" class="input" style="padding: 12px;">
+          <select id="manualProf" class="premium-input">
             <option value="">Selecione o Barbeiro...</option>
           </select>
           
-          <select id="manualService" class="input" style="padding: 12px;">
+          <select id="manualService" class="premium-input">
             <option value="">Selecione o Serviço...</option>
           </select>
 
-          <select id="manualTime" class="input" style="padding: 12px;" disabled>
-            <option value="">Escolha o Barbeiro e Serviço primeiro...</option>
+          <select id="manualTime" class="premium-input" disabled>
+            <option value="">Escolha o Barbeiro e Serviço...</option>
           </select>
 
-          <button id="btnConfirmManual" class="btn-admin" style="width: 100%; background: #4CAF50; color: white; border: none; margin-top: 5px;" disabled>Confirmar Agendamento</button>
+          <button id="btnConfirmManual" class="premium-btn-main" style="margin-top: 8px;" disabled>Confirmar Horário</button>
         </div>
       </div>
 
-      <button id="btnToggleBloqueio" class="btn btn--primary" style="width: 100%; margin-top: 10px; background: #222; color: #fff; padding: 14px; border-radius: 12px; border: 1px solid #333; cursor: pointer; font-weight: bold; transition: 0.3s;">🔒 Gerenciar Horários de Bloqueio</button>
+      <button id="btnToggleBloqueio" class="premium-btn-secondary">Gerenciar Bloqueios</button>
 
-      <div id="secaoBloqueio" style="display: none; background: rgba(255,60,60,0.05); padding: 18px; border-radius: 16px; margin-top: 10px; border: 1px dashed rgba(255,60,60,0.25);">
-        <h3 style="margin-top: 0; color: #ff5555; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">Bloquear Horário Livre</h3>
+      <div id="secaoBloqueio" class="premium-card" style="display: none;">
+        <h3>Bloqueio de Agenda</h3>
         
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-          <select id="blockProf" class="input" style="flex: 1; min-width: 120px; padding: 12px;">
-            <option value="">Carregando profissionais...</option>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+          <select id="blockProf" class="premium-input" style="flex: 1; min-width: 140px;">
+            <option value="">Barbeiro...</option>
           </select>
-          <button id="btnConfirmBlock" class="btn-admin btn-admin--cancel" style="flex: 1; min-width: 120px;" disabled>Bloquear Selecionado</button>
+          <button id="btnConfirmBlock" style="background: #333; color: #fff; border: none; border-radius: 12px; padding: 0 20px; font-weight: 600; cursor: pointer;" disabled>Bloquear</button>
         </div>
 
-        <button id="btnBlockWholeDay" class="btn-admin" style="width: 100%; margin-bottom: 14px; background: #ff3333; color: white; border: none;">🛑 Bloquear o Dia Inteiro</button>
+        <button id="btnBlockWholeDay" class="premium-btn-danger">Fechar o Dia Inteiro</button>
 
-        <div id="blockSlots" class="slots"></div>
+        <div id="blockSlots" class="slots" style="margin-top: 16px;"></div>
       </div>
     </section>
 
     <section class="section">
       <div class="section__head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <h2 id="totalAppointments">Carregando horários...</h2>
-        <select id="mainProfFilter" class="input" style="max-width: 180px; padding: 8px 12px; border-radius: 8px;">
-          <option value="todos">Todos os Barbeiros</option>
+        <select id="mainProfFilter" class="premium-input" style="max-width: 160px; padding: 8px 12px; font-size: 13px; background: transparent;">
+          <option value="todos">Todos Barbeiros</option>
         </select>
       </div>
 
