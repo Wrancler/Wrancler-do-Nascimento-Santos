@@ -617,7 +617,7 @@ document.getElementById('btnToggleBloqueio').addEventListener('click', function(
 });
 
 // ==========================================
-// 7. BLOQUEIO DO DIA INTEIRO
+// 7. BLOQUEIO DO DIA INTEIRO (INTELIGENTE)
 // ==========================================
 const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
 if (btnBlockWholeDay) {
@@ -627,7 +627,24 @@ if (btnBlockWholeDay) {
 
     if (!profId) return alert("Aguarde os profissionais carregarem.");
 
-    if (confirm(`Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`)) {
+    // --- NOVO: VERIFICAÇÃO INTELIGENTE DE CLIENTES ---
+    // Filtra para ver se tem cliente real agendado e "confirmado" para este barbeiro no dia
+    const clientesAgendados = allAppointmentsForDay.filter(a => 
+      a.professionalId === profId && 
+      a.status === "confirmed" && 
+      a.clientName !== "⛔ BLOQUEIO DE AGENDA"
+    );
+
+    // Mensagem padrão (se a agenda estiver vazia)
+    let mensagemConfirmacao = `Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`;
+
+    // Mensagem de Alerta (se a agenda tiver clientes)
+    if (clientesAgendados.length > 0) {
+      mensagemConfirmacao = `⚠️ ALERTA CRÍTICO: Existem ${clientesAgendados.length} cliente(s) já agendado(s) para este barbeiro neste dia!\n\nBloquear o dia inteiro NÃO cancela os agendamentos já feitos. Você precisará cancelar manualmente ou avisar os clientes.\n\nTem CERTEZA ABSOLUTA que deseja fechar a agenda mesmo assim?`;
+    }
+    // -------------------------------------------------
+
+    if (confirm(mensagemConfirmacao)) {
       
       btnBlockWholeDay.textContent = "Bloqueando o dia...";
       btnBlockWholeDay.disabled = true;

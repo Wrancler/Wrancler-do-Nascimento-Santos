@@ -1,5 +1,5 @@
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
 
@@ -13,6 +13,8 @@ const auth = getAuth();
 let workingHours = [];
 let allAppointmentsForDay = []; 
 let selectedBlockTime = null; 
+let currentSnapshotUnsubscribe = null;
+let servicesData = []; // NOVO: Para guardar os serviços e preços
 
 // ==========================================
 // 1. PROTEÇÃO DE ROTA E LOGOUT
@@ -34,6 +36,21 @@ if (btnLogout) {
   });
 }
 
+const btnFinanceiro = document.getElementById("btnFinanceiro");
+if (btnFinanceiro) {
+  btnFinanceiro.addEventListener("click", async () => {
+    const config = await getTenantConfig(tenantId);
+    const pinDigitado = prompt("🔒 Digite o PIN do Gestor para acessar o Financeiro:");
+    if (pinDigitado === null) return; 
+    if (config.financePin && pinDigitado === String(config.financePin)) {
+      sessionStorage.setItem("crachaFinanceiro", pinDigitado);
+      window.location.href = `financeiro.html?tenant=${encodeURIComponent(tenantId)}`;
+    } else {
+      alert("❌ Senha incorreta! Acesso negado.");
+    }
+  });
+}
+
 // ==========================================
 // 2. INICIALIZAÇÃO E ROLETA
 // ==========================================
@@ -41,24 +58,64 @@ const dateInput = document.getElementById("adminDate");
 const listDiv = document.getElementById("appointmentsList");
 const totalHead = document.getElementById("totalAppointments");
 const blockProfSelect = document.getElementById("blockProf");
+const mainProfFilter = document.getElementById("mainProfFilter"); 
+
+// NOVO: Elementos do Agendamento Manual
+const manualProfSelect = document.getElementById("manualProf");
+const manualServiceSelect = document.getElementById("manualService");
+const manualTimeSelect = document.getElementById("manualTime");
+const btnConfirmManual = document.getElementById("btnConfirmManual");
+const manualClientName = document.getElementById("manualClientName");
+const manualClientPhone = document.getElementById("manualClientPhone");
 
 async function initDashboard() {
   try {
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
+    servicesData = config.services || []; // Guarda os serviços
     
-    blockProfSelect.innerHTML = "";
+    blockProfSelect.innerHTML = '<option value="">Carregando profissionais...</option>';
+    if (mainProfFilter) mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
+    manualProfSelect.innerHTML = '<option value="">Selecione o Barbeiro...</option>';
+    manualServiceSelect.innerHTML = '<option value="">Selecione o Serviço...</option>';
+
     if (config.professionals) {
+      blockProfSelect.innerHTML = "";
       config.professionals.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = p.name;
-        blockProfSelect.appendChild(opt);
+        const opt1 = document.createElement("option"); opt1.value = p.id; opt1.textContent = p.name;
+        blockProfSelect.appendChild(opt1);
+
+        if (mainProfFilter) {
+          const opt2 = document.createElement("option"); opt2.value = p.id; opt2.textContent = p.name;
+          mainProfFilter.appendChild(opt2);
+        }
+
+        const opt3 = document.createElement("option"); opt3.value = p.id; opt3.textContent = p.name;
+        manualProfSelect.appendChild(opt3);
       });
     }
+
+    if (config.services) {
+      config.services.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.duration} min) - R$${s.price}`;
+        manualServiceSelect.appendChild(opt);
+      });
+    }
+
   } catch(e) { console.error("Erro config", e); }
 
   blockProfSelect.addEventListener("change", renderBlockSlots);
+  if (mainProfFilter) mainProfFilter.addEventListener("change", renderAppointmentsList);
+  
+  // Gatilhos para o formulário manual calcular horários automaticamente
+  manualProfSelect.addEventListener("change", updateManualSlots);
+  manualServiceSelect.addEventListener("change", updateManualSlots);
+  manualTimeSelect.addEventListener("change", () => {
+    btnConfirmManual.disabled = !manualTimeSelect.value;
+  });
+
   renderAdminDateCards();
 }
 
@@ -112,11 +169,15 @@ function renderAdminDateCards() {
 }
 
 // ==========================================
-// 3. BUSCA OS AGENDAMENTOS NA NUVEM
+// 3. BUSCA EM TEMPO REAL (O RADAR)
 // ==========================================
-async function loadAppointments(dateStr) {
+function loadAppointments(dateStr) {
   listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
-  totalHead.textContent = "Carregando...";
+  totalHead.textContent = "Aguarde...";
+
+  if (currentSnapshotUnsubscribe) {
+    currentSnapshotUnsubscribe();
+  }
 
   try {
     const q = query(
@@ -125,159 +186,165 @@ async function loadAppointments(dateStr) {
       where("date", "==", dateStr)
     );
 
-    const snap = await getDocs(q);
-    allAppointmentsForDay = []; 
-    snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
+    currentSnapshotUnsubscribe = onSnapshot(q, (snap) => {
+      allAppointmentsForDay = []; 
+      snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    allAppointmentsForDay = allAppointmentsForDay.filter(a => {
-      if (!a || !a.startTime) return false;
-      if (a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled") return false;
-      return true;
-    });
-    
-    allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
-
-    renderBlockSlots(); 
-
-    listDiv.innerHTML = "";
-
-    if (allAppointmentsForDay.length === 0) {
-      totalHead.textContent = "Nenhum agendamento.";
-      listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>A agenda está livre neste dia!</p>";
-      return;
-    }
-
-    totalHead.textContent = `${allAppointmentsForDay.length} agendamento(s)`;
-
-    allAppointmentsForDay.forEach(app => {
-      const item = document.createElement("div");
-      item.className = "admin-item";
-
-      const isCancelled = app.status === "cancelled";
-      const isCompleted = app.status === "completed"; // Verifica se está finalizado
-      const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
+      allAppointmentsForDay = allAppointmentsForDay.filter(a => {
+        if (!a || !a.startTime) return false;
+        if (a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled") return false;
+        return true;
+      });
       
-      let timeColor = "#e0b976"; 
-      let timeText = app.startTime;
+      allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
-      if (isCancelled) { 
-          timeColor = "#ff5555"; 
-          timeText = `${app.startTime} (Cancelado)`; 
-      } else if (isCompleted) {
-          timeColor = "#4CAF50"; // Verde para finalizado
-          timeText = `${app.startTime} (Finalizado)`;
-          item.style.opacity = "0.6"; // Fica mais apagadinho
-          item.style.borderLeft = "4px solid #4CAF50";
-      } else if (isBlock) { 
-          timeColor = "#888888"; 
-      }
-
-      const profIdSeguro = app.professionalId || "desconhecido";
-      const profName = profIdSeguro.charAt(0).toUpperCase() + profIdSeguro.slice(1);
-
-      if (isBlock) {
-        item.style.borderLeft = "4px solid #888";
-        item.style.opacity = "0.8";
-        item.innerHTML = `
-          <div class="admin-item__top">
-            <div class="admin-item__time" style="color: ${timeColor};">${timeText} - ${app.endTime || '--:--'}</div>
-            <div class="admin-item__prof">${profName}</div>
-          </div>
-          <div class="admin-item__client" style="color: #ff5555; font-weight: bold;">⛔ HORÁRIO FECHADO</div>
-          <div class="admin-item__service">Bloqueado manualmente pelo Admin</div>
-        `;
-      } else {
-        item.innerHTML = `
-          <div class="admin-item__top">
-            <div class="admin-item__time" style="color: ${timeColor};">${timeText}</div>
-            <div class="admin-item__prof">${profName}</div>
-          </div>
-          <div class="admin-item__client">${app.clientName || 'Sem Nome'} <br> <span style="font-size: 0.85rem; color: #aaa;">${app.clientPhone || ''}</span></div>
-          <div class="admin-item__service">${app.serviceName || 'Serviço'}</div> 
-        `;
-      }
-
-      // BOTÕES DE AÇÃO
-      const actionsDiv = document.createElement("div");
-      actionsDiv.className = "admin-item__actions";
-      actionsDiv.style.display = "flex";
-      actionsDiv.style.gap = "8px";
-
-      if (isCompleted) {
-        // Se já finalizou, mostra apenas um texto
-        actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
-      } 
-      else if (isCancelled) {
-        // Se cancelou, mostra o botão de excluir
-        const btnExcluir = document.createElement("button");
-        btnExcluir.className = "btn-admin btn-admin--cancel";
-        btnExcluir.style.background = "#ff3333";
-        btnExcluir.style.color = "white";
-        btnExcluir.style.flex = "1";
-        btnExcluir.textContent = "🗑️ Excluir da Tela";
-        
-        btnExcluir.onclick = async () => {
-          if (confirm("Tem certeza que deseja limpar este horário cancelado da tela?")) {
-            btnExcluir.textContent = "Excluindo...";
-            await deleteDoc(doc(db, "appointments", app.id));
-            loadAppointments(dateInput.value); 
-          }
-        };
-        actionsDiv.appendChild(btnExcluir);
-      } 
-      else {
-        // Se for ativo, mostra FINALIZAR e CANCELAR
-        if (!isBlock) {
-          const btnFinalizar = document.createElement("button");
-          btnFinalizar.className = "btn-admin";
-          btnFinalizar.style.background = "#4CAF50"; 
-          btnFinalizar.style.color = "white";
-          btnFinalizar.style.flex = "1";
-          btnFinalizar.textContent = "✅ Finalizar";
-          
-          btnFinalizar.onclick = async () => {
-            if (confirm("Marcar este atendimento como concluído?")) {
-              btnFinalizar.textContent = "Aguarde...";
-              await updateDoc(doc(db, "appointments", app.id), { status: "completed" });
-              loadAppointments(dateInput.value); 
-            }
-          };
-          actionsDiv.appendChild(btnFinalizar);
-        }
-
-        const btnCancel = document.createElement("button");
-        btnCancel.className = "btn-admin btn-admin--cancel";
-        btnCancel.style.flex = "1";
-        btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar";
-        
-        btnCancel.onclick = async () => {
-          const msg = isBlock 
-            ? `Tem certeza que deseja LIBERAR o horário das ${app.startTime}?`
-            : `Tem certeza que deseja cancelar o horário de ${app.clientName} às ${app.startTime}?`;
-          if (confirm(msg)) {
-            btnCancel.textContent = "Aguarde...";
-            await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" });
-            loadAppointments(dateInput.value); 
-          }
-        };
-        actionsDiv.appendChild(btnCancel);
-      }
-      
-      item.appendChild(actionsDiv);
-      listDiv.appendChild(item);
+      renderBlockSlots(); 
+      updateManualSlots(); // Atualiza os horários livres no formulário manual
+      renderAppointmentsList(); 
+    }, (error) => {
+      console.error("Erro no tempo real:", error);
+      listDiv.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro: ${error.message}</p>`;
     });
 
   } catch (error) {
     console.error("Erro:", error);
-    totalHead.textContent = "Erro de Leitura";
-    listDiv.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro: ${error.message}</p>`;
   }
 }
 
+function renderAppointmentsList() {
+  listDiv.innerHTML = "";
+  const profFiltro = mainProfFilter ? mainProfFilter.value : "todos";
+
+  let appsToRender = allAppointmentsForDay;
+  if (profFiltro !== "todos") {
+    appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
+  }
+
+  if (appsToRender.length === 0) {
+    totalHead.textContent = "Nenhum agendamento.";
+    listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Nenhum horário encontrado para este filtro.</p>";
+    return;
+  }
+
+  totalHead.textContent = `${appsToRender.length} agendamento(s)`;
+
+  appsToRender.forEach(app => {
+    const item = document.createElement("div");
+    item.className = "admin-item";
+
+    const isCancelled = app.status === "cancelled";
+    const isCompleted = app.status === "completed"; 
+    const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
+    
+    let timeColor = "#e0b976"; 
+    let timeText = app.startTime;
+
+    if (isCancelled) { 
+        timeColor = "#ff5555"; 
+        timeText = `${app.startTime} (Cancelado)`; 
+    } else if (isCompleted) {
+        timeColor = "#4CAF50"; 
+        timeText = `${app.startTime} (Finalizado)`;
+        item.style.opacity = "0.6"; 
+        item.style.borderLeft = "4px solid #4CAF50";
+    } else if (isBlock) { 
+        timeColor = "#888888"; 
+    }
+
+    const profIdSeguro = app.professionalId || "desconhecido";
+    const profName = profIdSeguro.charAt(0).toUpperCase() + profIdSeguro.slice(1);
+
+    if (isBlock) {
+      item.style.borderLeft = "4px solid #888";
+      item.style.opacity = "0.8";
+      item.innerHTML = `
+        <div class="admin-item__top">
+          <div class="admin-item__time" style="color: ${timeColor};">${timeText} - ${app.endTime || '--:--'}</div>
+          <div class="admin-item__prof">${profName}</div>
+        </div>
+        <div class="admin-item__client" style="color: #ff5555; font-weight: bold;">⛔ HORÁRIO FECHADO</div>
+        <div class="admin-item__service">Bloqueado manualmente pelo Admin</div>
+      `;
+    } else {
+      item.innerHTML = `
+        <div class="admin-item__top">
+          <div class="admin-item__time" style="color: ${timeColor};">${timeText}</div>
+          <div class="admin-item__prof">${profName}</div>
+        </div>
+        <div class="admin-item__client">${app.clientName || 'Sem Nome'} <br> <span style="font-size: 0.85rem; color: #aaa;">${app.clientPhone || ''}</span></div>
+        <div class="admin-item__service">${app.serviceName || 'Serviço'}</div> 
+      `;
+    }
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "admin-item__actions";
+    actionsDiv.style.display = "flex";
+    actionsDiv.style.gap = "8px";
+
+    if (isCompleted) {
+      actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
+    } 
+    else if (isCancelled) {
+      const btnExcluir = document.createElement("button");
+      btnExcluir.className = "btn-admin btn-admin--cancel";
+      btnExcluir.style.background = "#ff3333";
+      btnExcluir.style.color = "white";
+      btnExcluir.style.flex = "1";
+      btnExcluir.textContent = "🗑️ Excluir da Tela";
+      
+      btnExcluir.onclick = async () => {
+        if (confirm("Tem certeza que deseja limpar este horário cancelado da tela?")) {
+          btnExcluir.textContent = "Excluindo...";
+          await deleteDoc(doc(db, "appointments", app.id));
+        }
+      };
+      actionsDiv.appendChild(btnExcluir);
+    } 
+    else {
+      if (!isBlock) {
+        const btnFinalizar = document.createElement("button");
+        btnFinalizar.className = "btn-admin";
+        btnFinalizar.style.background = "#4CAF50"; 
+        btnFinalizar.style.color = "white";
+        btnFinalizar.style.flex = "1";
+        btnFinalizar.textContent = "✅ Finalizar";
+        
+        btnFinalizar.onclick = async () => {
+          if (confirm("Marcar este atendimento como concluído?")) {
+            btnFinalizar.textContent = "Aguarde...";
+            await updateDoc(doc(db, "appointments", app.id), { status: "completed" });
+          }
+        };
+        actionsDiv.appendChild(btnFinalizar);
+      }
+
+      const btnCancel = document.createElement("button");
+      btnCancel.className = "btn-admin btn-admin--cancel";
+      btnCancel.style.flex = "1";
+      btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar";
+      
+      btnCancel.onclick = async () => {
+        const msg = isBlock 
+          ? `Tem certeza que deseja LIBERAR o horário das ${app.startTime}?`
+          : `Tem certeza que deseja cancelar o horário de ${app.clientName} às ${app.startTime}?`;
+        if (confirm(msg)) {
+          btnCancel.textContent = "Aguarde...";
+          await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" });
+        }
+      };
+      actionsDiv.appendChild(btnCancel);
+    }
+    
+    item.appendChild(actionsDiv);
+    listDiv.appendChild(item);
+  });
+}
+
 // ==========================================
-// 4. MOTOR BLINDADO DE HORÁRIOS
+// 4. MOTOR BLINDADO DE HORÁRIOS (Dinâmico)
 // ==========================================
-function generateAdminSlots(workHours, apps) {
+// NOVO: Adicionei o parâmetro durationMinutes para servir tanto para bloqueios quanto serviços
+function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
 
@@ -303,11 +370,10 @@ function generateAdminSlots(workHours, apps) {
     const [endH, endM] = parts[1].split(":").map(Number);
     let currentTotal = currH * 60 + currM;
     const endTotal = endH * 60 + endM;
-    const duration = 30; 
 
-    while (currentTotal + duration <= endTotal) {
+    while (currentTotal + durationMinutes <= endTotal) {
       const slotTime = `${String(Math.floor(currentTotal/60)).padStart(2,"0")}:${String(currentTotal%60).padStart(2,"0")}`;
-      const slotEndTotal = currentTotal + duration;
+      const slotEndTotal = currentTotal + durationMinutes;
 
       let hasCollision = false;
       for (let occ of occupied) {
@@ -323,7 +389,7 @@ function generateAdminSlots(workHours, apps) {
       }
 
       if (!hasCollision) slots.push(slotTime);
-      currentTotal += duration;
+      currentTotal += 10; // Avança de 10 em 10 minutos para dar mais flexibilidade no encaixe
     }
   });
 
@@ -331,7 +397,123 @@ function generateAdminSlots(workHours, apps) {
 }
 
 // ==========================================
-// 5. GERA BOTÕES NA TELA
+// 5. LÓGICA DO AGENDAMENTO MANUAL (NOVO)
+// ==========================================
+function updateManualSlots() {
+  const profId = manualProfSelect.value;
+  const serviceId = manualServiceSelect.value;
+  const dateStr = dateInput.value;
+
+  manualTimeSelect.innerHTML = '<option value="">Selecione o Horário...</option>';
+  manualTimeSelect.disabled = true;
+  btnConfirmManual.disabled = true;
+
+  if (!profId || !serviceId || !workingHours.length) return;
+
+  const service = servicesData.find(s => s.id === serviceId);
+  if (!service) return;
+
+  const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
+  
+  // Usa o motor dinâmico com a duração real do serviço!
+  let slots = generateDynamicSlots(workingHours, profAppointments, service.duration);
+
+  // Filtra horários que já passaram se for hoje
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  if (dateStr === todayStr) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    slots = slots.filter(time => {
+      if (!time) return false;
+      const parts = time.split(":");
+      return (Number(parts[0]) * 60 + Number(parts[1])) > currentMinutes;
+    });
+  }
+
+  if (slots.length === 0) {
+    manualTimeSelect.innerHTML = '<option value="">Sem horários livres</option>';
+    return;
+  }
+
+  slots.forEach(time => {
+    const opt = document.createElement("option");
+    opt.value = time;
+    opt.textContent = time;
+    manualTimeSelect.appendChild(opt);
+  });
+
+  manualTimeSelect.disabled = false;
+}
+
+btnConfirmManual.addEventListener("click", async () => {
+  const clientName = manualClientName.value.trim() || "Cliente Balcão";
+  const clientPhone = manualClientPhone.value.trim().replace(/[^\d]/g, "") || "";
+  const profId = manualProfSelect.value;
+  const serviceId = manualServiceSelect.value;
+  const time = manualTimeSelect.value;
+  const dateStr = dateInput.value;
+
+  if (!profId || !serviceId || !time) return alert("Preencha Barbeiro, Serviço e Horário.");
+
+  const service = servicesData.find(s => s.id === serviceId);
+
+  btnConfirmManual.textContent = "Agendando...";
+  btnConfirmManual.disabled = true;
+
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + service.duration; 
+  const endH = String(Math.floor(total / 60)).padStart(2, "0");
+  const endM = String(total % 60).padStart(2, "0");
+  const endTime = `${endH}:${endM}`;
+
+  try {
+    await addDoc(collection(db, "appointments"), {
+      tenantId: tenantId,
+      professionalId: profId,
+      date: dateStr,
+      startTime: time,
+      endTime: endTime,
+      clientName: clientName,
+      clientPhone: clientPhone,
+      serviceName: service.name,
+      servicePrice: service.price,
+      status: "confirmed"
+    });
+
+    // Limpa o formulário após o sucesso
+    manualClientName.value = "";
+    manualClientPhone.value = "";
+    manualProfSelect.value = "";
+    manualServiceSelect.value = "";
+    updateManualSlots();
+    
+    document.getElementById('secaoManual').style.display = 'none';
+    document.getElementById('btnToggleManual').innerHTML = '➕ Novo Agendamento (Balcão)';
+
+  } catch (error) {
+    console.error(error);
+    alert("Erro ao criar agendamento manual.");
+  } finally {
+    btnConfirmManual.textContent = "Confirmar Agendamento";
+    btnConfirmManual.disabled = false;
+  }
+});
+
+document.getElementById('btnToggleManual').addEventListener('click', function() {
+  const secao = document.getElementById('secaoManual');
+  if (secao.style.display === 'none') {
+      secao.style.display = 'block';
+      this.innerHTML = '🔼 Ocultar Formulário';
+  } else {
+      secao.style.display = 'none';
+      this.innerHTML = '➕ Novo Agendamento (Balcão)';
+  }
+});
+
+
+// ==========================================
+// 6. GERAÇÃO DE BLOQUEIOS (MANTIDO)
 // ==========================================
 function renderBlockSlots() {
   const profId = blockProfSelect.value;
@@ -348,24 +530,20 @@ function renderBlockSlots() {
   }
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
-
-  let slots = generateAdminSlots(workingHours, profAppointments);
+  let slots = generateDynamicSlots(workingHours, profAppointments, 30); // Bloqueio padrão de 30 min
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  
   if (dateStr === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     slots = slots.filter(time => {
-      if (!time || typeof time !== "string") return false; 
+      if (!time) return false; 
       const parts = time.split(":");
-      if (parts.length < 2) return false;
       return (Number(parts[0]) * 60 + Number(parts[1])) > currentMinutes;
     });
   }
 
   blockSlotsDiv.innerHTML = "";
-
   if (slots.length === 0) {
     blockSlotsDiv.innerHTML = "<p style='color:#888; font-size:13px;'>Sem horários livres para bloquear.</p>";
     return;
@@ -418,9 +596,6 @@ if (btnConfirmBlock) {
         servicePrice: 0,
         status: "confirmed"
       });
-
-      alert("Horário bloqueado com sucesso!");
-      loadAppointments(dateStr); 
     } catch (error) {
       console.error(error);
       alert("Erro ao bloquear a agenda.");
@@ -430,7 +605,6 @@ if (btnConfirmBlock) {
   });
 }
 
-// Lógica da Gaveta
 document.getElementById('btnToggleBloqueio').addEventListener('click', function() {
     const secao = document.getElementById('secaoBloqueio');
     if (secao.style.display === 'none') {
@@ -443,7 +617,7 @@ document.getElementById('btnToggleBloqueio').addEventListener('click', function(
 });
 
 // ==========================================
-// 6. BLOQUEIO DO DIA INTEIRO
+// 7. BLOQUEIO DO DIA INTEIRO (INTELIGENTE)
 // ==========================================
 const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
 if (btnBlockWholeDay) {
@@ -453,8 +627,24 @@ if (btnBlockWholeDay) {
 
     if (!profId) return alert("Aguarde os profissionais carregarem.");
 
-    // Pede confirmação para não bloquear sem querer
-    if (confirm(`Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`)) {
+    // --- NOVO: VERIFICAÇÃO INTELIGENTE DE CLIENTES ---
+    // Filtra para ver se tem cliente real agendado e "confirmado" para este barbeiro no dia
+    const clientesAgendados = allAppointmentsForDay.filter(a => 
+      a.professionalId === profId && 
+      a.status === "confirmed" && 
+      a.clientName !== "⛔ BLOQUEIO DE AGENDA"
+    );
+
+    // Mensagem padrão (se a agenda estiver vazia)
+    let mensagemConfirmacao = `Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`;
+
+    // Mensagem de Alerta (se a agenda tiver clientes)
+    if (clientesAgendados.length > 0) {
+      mensagemConfirmacao = `⚠️ ALERTA CRÍTICO: Existem ${clientesAgendados.length} cliente(s) já agendado(s) para este barbeiro neste dia!\n\nBloquear o dia inteiro NÃO cancela os agendamentos já feitos. Você precisará cancelar manualmente ou avisar os clientes.\n\nTem CERTEZA ABSOLUTA que deseja fechar a agenda mesmo assim?`;
+    }
+    // -------------------------------------------------
+
+    if (confirm(mensagemConfirmacao)) {
       
       btnBlockWholeDay.textContent = "Bloqueando o dia...";
       btnBlockWholeDay.disabled = true;
@@ -464,17 +654,14 @@ if (btnBlockWholeDay) {
           tenantId: tenantId,
           professionalId: profId,
           date: dateStr,
-          startTime: "00:00", // Começa meia-noite
-          endTime: "23:59",   // Vai até o fim do dia
+          startTime: "00:00", 
+          endTime: "23:59",   
           clientName: "⛔ BLOQUEIO DE AGENDA",
           clientPhone: "00000000000",
           serviceName: "Dia Inteiro Fechado",
           servicePrice: 0,
           status: "confirmed"
         });
-
-        alert("Dia inteiro bloqueado com sucesso!");
-        loadAppointments(dateStr); 
       } catch (error) {
         console.error(error);
         alert("Erro ao bloquear o dia.");

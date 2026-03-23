@@ -7,8 +7,7 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-// CORRIGIDO: Tenant do Biel!
-const tenantId = getParam("tenant") || "biel-do-corte";
+const tenantId = getParam("tenant") || "tenant-demo";
 const auth = getAuth();
 
 // ==========================================
@@ -78,6 +77,7 @@ async function initFinanceiro() {
 // ==========================================
 // 3. MOTOR DE CÁLCULO FINANCEIRO
 // ==========================================
+// NOVO: Atualiza sozinho sempre que mexer na data ou no barbeiro!
 btnFiltrar.addEventListener("click", calcularFinancas);
 profFilter.addEventListener("change", calcularFinancas);
 dateStart.addEventListener("change", calcularFinancas);
