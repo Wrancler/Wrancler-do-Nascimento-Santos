@@ -382,6 +382,7 @@ async function renderSlots() {
 }
 
 // Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
+// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
 async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
@@ -445,8 +446,26 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `${linkCancelamento}\n\n` +
                 `COMPROVANTE DE AGENDAMENTO`;
 
-    // Link oficial da API do WhatsApp
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`;
+    // =========================================
+    // NOVO: LÓGICA DO WHATSAPP DINÂMICO
+    // =========================================
+    // 1. Pega as configurações gerais que foram guardadas no Firebase
+    const config = await getTenantConfig(tenantId);
+    
+    // 2. Procura os dados do barbeiro que o cliente selecionou
+    const barbeiroEscolhido = config.professionals.find(p => p.id === selectedProfessionalId);
+    
+    // 3. Define para quem enviar a mensagem:
+    // Tenta pegar o telefone ('phone') do barbeiro. Se ele não tiver, usa o telefone geral ('whatsapp') da barbearia
+    let telefoneDestino = barberWhatsapp; // Inicia com o fallback da loja
+    
+    if (barbeiroEscolhido && barbeiroEscolhido.phone) {
+      telefoneDestino = barbeiroEscolhido.phone.replace(/[^\d]/g, ""); // Limpa qualquer traço ou espaço que tenha no firebase
+    }
+
+    // Monta o link final com o telefone correto
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${telefoneDestino}&text=${encodeURIComponent(msg)}`;
+    // =========================================
     
     // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
@@ -462,7 +481,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     } else {
       alert("❌ Erro ao agendar: " + e.message);
     }
-    await renderSlots();
+    await renderSlots(); // O renderSlots recarrega sem precisar passar parâmetro no código atual
   } finally {
     setButtonsDisabled(false);
   }
