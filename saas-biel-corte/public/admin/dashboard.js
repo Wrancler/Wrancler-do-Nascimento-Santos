@@ -1,14 +1,11 @@
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
 
-function getParam(name) {
-  return new URLSearchParams(window.location.search).get(name);
-}
+function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
 
 const tenantId = getParam("tenant") || "biel-do-corte";
-const auth = getAuth();
 
 let workingHours = [];
 let allAppointmentsForDay = []; 
@@ -18,16 +15,13 @@ let profissionaisConfig = [];
 let adminPinConfig = "";
 
 // Variáveis de Controle de Acesso
-let loggedRole = sessionStorage.getItem("loggedRole") || null; // 'admin' ou o 'ID do barbeiro'
+let loggedRole = sessionStorage.getItem("loggedRole") || null; 
 let loggedName = sessionStorage.getItem("loggedName") || null;
 
 // ==========================================
 // 1. INÍCIO DIRETO (SISTEMA DE PIN)
 // ==========================================
-// Removemos a trava do Firebase Auth para agilizar o uso no balcão
-initDashboard(); // ATENÇÃO: Use initFinanceiro() no arquivo do financeiro!
-
-
+initDashboard();
 
 document.getElementById("btnSwitchUser").addEventListener("click", () => {
   sessionStorage.removeItem("loggedRole");
@@ -35,11 +29,10 @@ document.getElementById("btnSwitchUser").addEventListener("click", () => {
   window.location.reload();
 });
 
-// Acesso ao Financeiro
 const btnFinanceiro = document.getElementById("btnFinanceiro");
 if (btnFinanceiro) {
   btnFinanceiro.addEventListener("click", () => {
-    sessionStorage.setItem("crachaFinanceiro", adminPinConfig); // Passa direto pois ele já digitou o PIN para entrar
+    sessionStorage.setItem("crachaFinanceiro", adminPinConfig); 
     window.location.href = `financeiro.html?tenant=${encodeURIComponent(tenantId)}`;
   });
 }
@@ -61,13 +54,8 @@ async function initDashboard() {
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
 
-    // Preenche a tela de login APENAS com os colaboradores reais
     profissionaisConfig.forEach(p => {
-      // O Pulo do Gato: Se o profissional tiver "isOwner: true" no Firebase, o sistema ignora ele aqui!
-      if (p.isOwner === true) {
-        return; 
-      }
-
+      if (p.isOwner === true) return; 
       const opt = document.createElement("option");
       opt.value = p.id;
       opt.textContent = `✂️ Colaborador: ${p.name}`;
@@ -87,12 +75,8 @@ btnUnlock.addEventListener("click", () => {
   const userSelecionado = loginUserSelect.value;
   const pinDigitado = loginPinInput.value;
 
-  if (userSelecionado === "admin") {
-    if (pinDigitado === adminPinConfig) {
-      liberarAcesso("admin", "Gestor Geral");
-    } else {
-      loginError.style.display = "block";
-    }
+  if (userSelecionado === "admin" && pinDigitado === adminPinConfig) {
+    liberarAcesso("admin", "Gestor Geral");
   } else {
     const barbeiro = profissionaisConfig.find(p => p.id === userSelecionado);
     if (barbeiro && barbeiro.pin && pinDigitado === barbeiro.pin) {
@@ -106,32 +90,27 @@ btnUnlock.addEventListener("click", () => {
 function liberarAcesso(role, name) {
   sessionStorage.setItem("loggedRole", role);
   sessionStorage.setItem("loggedName", name);
-  loggedRole = role;
-  loggedName = name;
+  loggedRole = role; loggedName = name;
   lockScreen.style.opacity = "0";
-  setTimeout(() => {
-    lockScreen.style.display = "none";
-    aplicarPermissoesDeAcesso();
-  }, 300);
+  setTimeout(() => { lockScreen.style.display = "none"; aplicarPermissoesDeAcesso(); }, 300);
 }
 
 // ==========================================
-// 3. O MOTOR DE PERMISSÕES (VISÃO CHEFE VS COLABORADOR)
+// 3. MOTOR DE PERMISSÕES E CONFIGURAÇÕES
 // ==========================================
 const blockProfSelect = document.getElementById("blockProf");
 const mainProfFilter = document.getElementById("mainProfFilter"); 
 const manualProfSelect = document.getElementById("manualProf");
+const btnConfig = document.getElementById("btnConfig");
 
 function aplicarPermissoesDeAcesso() {
   document.getElementById("tagCargo").textContent = loggedRole === "admin" ? "Acesso Gestor" : `Acesso: ${loggedName}`;
 
-  blockProfSelect.innerHTML = "";
-  manualProfSelect.innerHTML = "";
-  mainProfFilter.innerHTML = "";
+  blockProfSelect.innerHTML = ""; manualProfSelect.innerHTML = ""; mainProfFilter.innerHTML = "";
 
   if (loggedRole === "admin") {
-    // VISÃO DO CHEFE (Vê tudo)
     btnFinanceiro.style.display = "block";
+    btnConfig.style.display = "block"; // MOSTRA BOTÃO DE CONFIGURAÇÕES PARA O CHEFE
     mainProfFilter.style.display = "block";
     
     mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
@@ -144,38 +123,113 @@ function aplicarPermissoesDeAcesso() {
       blockProfSelect.appendChild(new Option(p.name, p.id));
     });
 
+    renderConfigPanel(); // Prepara o painel de configurações
   } else {
-    // VISÃO DO COLABORADOR (Limitado)
-    btnFinanceiro.style.display = "none"; // Some com o botão de dinheiro
-    mainProfFilter.style.display = "none"; // Esconde o filtro de ver outros barbeiros
-    
-    // Trava os selectbox só no nome dele
+    btnFinanceiro.style.display = "none"; btnConfig.style.display = "none"; mainProfFilter.style.display = "none";
     mainProfFilter.appendChild(new Option(loggedName, loggedRole));
     manualProfSelect.appendChild(new Option(loggedName, loggedRole));
     blockProfSelect.appendChild(new Option(loggedName, loggedRole));
   }
 
-  // Preenche os serviços no formulário manual
   document.getElementById("manualService").innerHTML = '<option value="">Selecione o Serviço...</option>';
-  servicesData.forEach(s => {
-    document.getElementById("manualService").appendChild(new Option(`${s.name} - R$${s.price}`, s.id));
-  });
+  servicesData.forEach(s => { document.getElementById("manualService").appendChild(new Option(`${s.name} - R$${s.price}`, s.id)); });
 
-  // Dá os gatilhos dos botões
   blockProfSelect.addEventListener("change", renderBlockSlots);
   mainProfFilter.addEventListener("change", renderAppointmentsList);
   manualProfSelect.addEventListener("change", updateManualSlots);
   document.getElementById("manualService").addEventListener("change", updateManualSlots);
-  document.getElementById("manualTime").addEventListener("change", () => {
-    document.getElementById("btnConfirmManual").disabled = !document.getElementById("manualTime").value;
-  });
+  document.getElementById("manualTime").addEventListener("change", () => { document.getElementById("btnConfirmManual").disabled = !document.getElementById("manualTime").value; });
 
   renderAdminDateCards();
 }
 
 // ==========================================
-// 4. ROLETA DE DATAS E RADAR (TEMPO REAL)
+// 4. LÓGICA DA ABA DE CONFIGURAÇÕES (NOVO)
 // ==========================================
+const configSection = document.getElementById("configSection");
+const agendaSection = document.getElementById("agendaSection");
+const listaSection = document.getElementById("listaSection");
+
+btnConfig.addEventListener("click", () => {
+  agendaSection.style.display = "none";
+  listaSection.style.display = "none";
+  configSection.style.display = "block";
+});
+
+document.getElementById("btnCloseConfig").addEventListener("click", () => {
+  configSection.style.display = "none";
+  agendaSection.style.display = "block";
+  listaSection.style.display = "block";
+});
+
+function renderConfigPanel() {
+  const servicesList = document.getElementById("configServicesList");
+  const teamList = document.getElementById("configTeamList");
+  servicesList.innerHTML = ""; teamList.innerHTML = "";
+
+  // Renderiza a Equipa (Visualização)
+  profissionaisConfig.forEach(p => {
+    teamList.innerHTML += `
+      <div class="config-list-item">
+        <div><strong>${p.name}</strong><br><span>${p.isOwner ? '👑 Gestor' : '✂️ Colaborador'}</span></div>
+        <div style="color: #4CAF50; font-size: 12px;">Ativo</div>
+      </div>`;
+  });
+
+  // Renderiza os Serviços com capacidade de Excluir
+  servicesData.forEach((s, index) => {
+    servicesList.innerHTML += `
+      <div class="config-list-item">
+        <div><strong>${s.name}</strong><br><span>${s.duration} min • R$ ${s.price}</span></div>
+        <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer;">❌</button>
+      </div>`;
+  });
+
+  // Lógica de Remover Serviço
+  document.querySelectorAll(".btnRemoverServico").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      if(!confirm("Remover este serviço do site?")) return;
+      const index = e.target.getAttribute("data-index");
+      servicesData.splice(index, 1); // Remove da lista
+      await salvarConfiguracoes();
+    });
+  });
+}
+
+document.getElementById("btnAddNewService").addEventListener("click", async () => {
+  const nome = prompt("Nome do novo serviço (ex: Platinado):");
+  if (!nome) return;
+  const preco = prompt("Preço (ex: 70):");
+  if (!preco) return;
+  const duracao = prompt("Duração em minutos (ex: 60):");
+  if (!duracao) return;
+
+  const newId = nome.toLowerCase().replace(/\s+/g, '-');
+  servicesData.push({ id: newId, name: nome, price: Number(preco), duration: Number(duracao) });
+  
+  await salvarConfiguracoes();
+});
+
+async function salvarConfiguracoes() {
+  try {
+    document.getElementById("btnAddNewService").textContent = "A gravar...";
+    // Atualiza o documento principal do Firebase com os novos serviços
+    await updateDoc(doc(db, "tenants", tenantId), {
+      services: servicesData
+    });
+    alert("Configurações atualizadas com sucesso!");
+    document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
+    renderConfigPanel(); // Atualiza a tela
+  } catch(e) {
+    alert("Erro ao gravar. Tente novamente.");
+    console.error(e);
+  }
+}
+
+// ==========================================
+// 5. ROLETA DE DATAS E RADAR (TEMPO REAL)
+// ==========================================
+// ... (Todo o restante do código da agenda, listas e slots continua igual a partir daqui!)
 const dateInput = document.getElementById("adminDate");
 const listDiv = document.getElementById("appointmentsList");
 const totalHead = document.getElementById("totalAppointments");
@@ -244,7 +298,6 @@ function renderAppointmentsList() {
   listDiv.innerHTML = "";
   const profFiltro = mainProfFilter.value;
 
-  // Filtra dependendo se é o Gestor ou o Colaborador
   let appsToRender = allAppointmentsForDay;
   if (profFiltro !== "todos") {
     appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
@@ -298,14 +351,10 @@ function renderAppointmentsList() {
   });
 }
 
-// Funções Globais para os botões dos cards
 window.excluirApp = async (id) => { if (confirm("Limpar da tela?")) await deleteDoc(doc(db, "appointments", id)); };
 window.finalizarApp = async (id) => { if (confirm("Marcar como concluído?")) await updateDoc(doc(db, "appointments", id), { status: "completed" }); };
 window.cancelarApp = async (id, isBlock) => { if (confirm(isBlock ? "Liberar horário?" : "Cancelar cliente?")) await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); };
 
-// ==========================================
-// 5. MOTOR DE SLOTS (BLOQUEIO E MANUAL)
-// ==========================================
 function generateDynamicSlots(workHours, apps, durationMinutes) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
@@ -412,7 +461,6 @@ document.getElementById("btnBlockWholeDay").addEventListener("click", async () =
   }
 });
 
-// Lógica das gavetas premium
 document.getElementById('btnToggleManual').onclick = function() {
   const s = document.getElementById('secaoManual'); s.style.display = s.style.display === 'none' ? 'block' : 'none';
 };

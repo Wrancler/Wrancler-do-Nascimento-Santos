@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Painel do Barbeiro - Biel do Corte</title>
+  <title>Painel do Barbeiro - Gestão</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Biel do Corte">
+  <meta name="apple-mobile-web-app-title" content="Gestão">
   <link rel="stylesheet" href="../styles.css" />
   <style>
     .premium-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 20px; padding: 24px; margin-top: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
@@ -20,6 +20,11 @@
     /* ESTILOS DA TELA DE BLOQUEIO */
     #lockScreen { position: fixed; inset: 0; background: rgba(10,10,10,0.98); backdrop-filter: blur(10px); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; transition: opacity 0.3s; }
     .lock-box { background: #161616; border: 1px solid #e0b976; border-radius: 24px; padding: 32px 24px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 20px 50px rgba(224,185,118,0.1); }
+    
+    /* ESTILOS DE LISTA DE CONFIGURAÇÕES */
+    .config-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; border: 1px solid #222; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; }
+    .config-list-item strong { color: #fff; font-size: 14px; }
+    .config-list-item span { color: #888; font-size: 12px; }
   </style>
 </head>
 
@@ -31,7 +36,7 @@
       
       <select id="loginUserSelect" class="premium-input" style="margin-bottom: 16px; text-align: center;">
         <option value="admin">👑 Gestor Geral</option>
-        </select>
+      </select>
       
       <input type="password" id="loginPinInput" class="premium-input" placeholder="****" style="text-align: center; font-size: 24px; letter-spacing: 10px; margin-bottom: 24px;" maxlength="6">
       
@@ -51,9 +56,10 @@
               <div id="tagCargo" class="brand__tag" style="color: #e0b976;">Carregando...</div>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">Financeiro</button>
-            <button id="btnSwitchUser" style="background: transparent; color: #888; border: none; padding: 8px; font-size: 13px; cursor: pointer;">Trocar Usuário</button>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+            <button id="btnConfig" style="background: transparent; color: #888; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; font-size: 12px; cursor: pointer; display: none;">⚙️ Config</button>
+            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: none;">💰 Finanças</button>
+            <button id="btnSwitchUser" style="background: transparent; color: #888; border: none; padding: 8px; font-size: 12px; cursor: pointer;">Sair</button>
           </div>
         </div>
       </div>
@@ -61,7 +67,29 @@
   </header>
 
   <main class="container main">
-    <section class="section">
+    
+    <section id="configSection" class="section" style="display: none;">
+      <div class="section__head">
+        <h2 style="color: #e0b976;">⚙️ Configurações da Barbearia</h2>
+        <p>Ajuste os serviços, preços e profissionais ativos.</p>
+      </div>
+
+      <div class="premium-card">
+        <h3>Meus Serviços (Preços e Duração)</h3>
+        <div id="configServicesList"></div>
+        <button id="btnAddNewService" class="premium-btn-secondary" style="margin-top: 16px;">+ Adicionar Novo Serviço</button>
+      </div>
+
+      <div class="premium-card">
+        <h3>Minha Equipa</h3>
+        <div id="configTeamList"></div>
+        <p style="color: #555; font-size: 12px; margin-top: 12px; text-align: center;">*Para gerir senhas ou adicionar barbeiros, contacte o Suporte Técnico.</p>
+      </div>
+      
+      <button id="btnCloseConfig" class="premium-btn-main">Voltar à Agenda</button>
+    </section>
+
+    <section id="agendaSection" class="section">
       <div class="section__head">
         <h2>Agenda do Dia</h2>
         <p>Deslize para ver outras datas.</p>
@@ -97,7 +125,7 @@
       </div>
     </section>
 
-    <section class="section">
+    <section id="listaSection" class="section">
       <div class="section__head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <h2 id="totalAppointments">Carregando...</h2>
         <select id="mainProfFilter" class="premium-input" style="max-width: 160px; padding: 8px 12px; font-size: 13px; background: transparent;">
