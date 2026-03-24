@@ -12,15 +12,11 @@ const tenantId = getParam("tenant") || "biel-do-corte";
 const auth = getAuth();
 
 // ==========================================
-// 1. SEGURANÇA E NAVEGAÇÃO
+// 1. INÍCIO DIRETO (SISTEMA DE PIN)
 // ==========================================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = `login.html?tenant=${encodeURIComponent(tenantId)}`;
-  } else {
-    initFinanceiro();
-  }
-});
+// Removemos a trava do Firebase Auth para agilizar o uso no balcão
+initDashboard(); // ATENÇÃO: Use initFinanceiro() no arquivo do financeiro!
+
 
 document.getElementById("btnVoltar").addEventListener("click", () => {
   window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
