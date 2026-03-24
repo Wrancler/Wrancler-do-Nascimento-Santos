@@ -64,8 +64,13 @@ async function initDashboard() {
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
 
-    // Preenche a tela de login com os barbeiros
+    // Preenche a tela de login APENAS com os colaboradores reais
     profissionaisConfig.forEach(p => {
+      // O Pulo do Gato: Se o profissional tiver "isOwner: true" no Firebase, o sistema ignora ele aqui!
+      if (p.isOwner === true) {
+        return; 
+      }
+
       const opt = document.createElement("option");
       opt.value = p.id;
       opt.textContent = `✂️ Colaborador: ${p.name}`;
