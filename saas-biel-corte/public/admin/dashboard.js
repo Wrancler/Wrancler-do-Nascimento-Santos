@@ -22,15 +22,12 @@ let loggedRole = sessionStorage.getItem("loggedRole") || null; // 'admin' ou o '
 let loggedName = sessionStorage.getItem("loggedName") || null;
 
 // ==========================================
-// 1. PROTEÇÃO DE ROTA
+// 1. INÍCIO DIRETO (SISTEMA DE PIN)
 // ==========================================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = `login.html?tenant=${encodeURIComponent(tenantId)}`;
-  } else {
-    initDashboard();
-  }
-});
+// Removemos a trava do Firebase Auth para agilizar o uso no balcão
+initDashboard(); // ATENÇÃO: Use initFinanceiro() no arquivo do financeiro!
+
+
 
 document.getElementById("btnSwitchUser").addEventListener("click", () => {
   sessionStorage.removeItem("loggedRole");
