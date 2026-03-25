@@ -180,8 +180,11 @@ function renderConfigPanel() {
   servicesData.forEach((s, index) => {
     servicesList.innerHTML += `
       <div class="config-list-item">
-        <div><strong>${s.name}</strong><br><span>${s.duration} min • R$ ${s.price}</span></div>
-        <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer;">❌</button>
+        <div style="display:flex; align-items:center; gap:12px;">
+            ${s.image ? `<img src="${s.image}" style="width:36px; height:36px; border-radius:8px; object-fit:cover;">` : ''}
+            <div><strong>${s.name}</strong><br><span>${s.duration} min • R$ ${s.price}</span></div>
+        </div>
+        <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer; font-size:18px;">❌</button>
       </div>`;
   });
 
@@ -191,12 +194,19 @@ function renderConfigPanel() {
       if(!confirm("Remover este serviço do site?")) return;
       const index = e.target.getAttribute("data-index");
       servicesData.splice(index, 1); // Remove da lista
-      await salvarConfiguracoes();
+      await salvarConfiguracoes(true);
     });
   });
 }
 
-// A MÁGICA DE ABRIR A GALERIA DO CELULAR (100% A PROVA DE BUGS NO IPHONE):
+// ==========================================
+// 🚀 LÓGICA DO MODAL DA GALERIA (IPHONE FIX)
+// ==========================================
+const imageSheetOverlay = document.getElementById("imageSheetOverlay");
+const sheetBtnGaleria = document.getElementById("sheetBtnGaleria");
+const sheetBtnPadrao = document.getElementById("sheetBtnPadrao");
+let currentNewServiceId = null;
+
 document.getElementById("btnAddNewService").addEventListener("click", async () => {
   const nome = prompt("Nome do novo serviço (ex: Platinado):");
   if (!nome) return;
@@ -207,74 +217,70 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
 
   document.getElementById("btnAddNewService").textContent = "A preparar...";
 
-  // 1. Cria o serviço com a imagem padrão primeiro
+  // 1. Cria com a imagem padrão
   const newId = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+  currentNewServiceId = newId; 
   const imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
 
-  const novoServico = { 
-    id: newId, 
-    name: nome, 
-    price: Number(preco), 
-    duration: Number(duracao),
-    image: imageUrl 
-  };
-
-  servicesData.push(novoServico);
+  servicesData.push({ 
+    id: newId, name: nome, price: Number(preco), duration: Number(duracao), image: imageUrl 
+  });
   
-  // Salva silenciosamente no Firebase (sem dar o alert ainda)
+  // 2. Salva em silêncio e abre o modal premium
   await salvarConfiguracoes(false);
-
-  // 2. AGORA pergunta se quer a foto
-  const querFoto = confirm("✅ Serviço criado!\n\nDeseja alterar a imagem padrão e escolher uma foto da sua galeria para este corte?");
-
-  if (querFoto) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*'; 
-
-    // Se ele escolher a foto
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      document.getElementById("btnAddNewService").textContent = "A processar imagem...";
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 300; 
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          const base64Image = canvas.toDataURL('image/jpeg', 0.7); 
-          
-          // 3. Atualiza o serviço que criamos agora com a foto nova
-          const index = servicesData.findIndex(s => s.id === newId);
-          if (index !== -1) {
-            servicesData[index].image = base64Image;
-            await salvarConfiguracoes(true); // Agora salva e dá o alerta final
-          }
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    };
-
-    // Abre a galeria do telemóvel
-    input.click(); 
-  } else {
-    // Se ele não quiser foto, apenas avisa que terminou o processo
-    alert("Configurações atualizadas com sucesso!");
-  }
+  imageSheetOverlay.classList.add("is-open");
+  document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
 });
 
-// A função de salvar atualizada para aceitar o "modo silencioso"
+// Botão: Escolher da Galeria
+sheetBtnGaleria.addEventListener("click", () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*'; 
+
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    sheetBtnGaleria.textContent = "A processar...";
+    imageSheetOverlay.classList.remove("is-open"); 
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300; 
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const base64Image = canvas.toDataURL('image/jpeg', 0.7); 
+        
+        // Atualiza a foto e salva de verdade
+        const index = servicesData.findIndex(s => s.id === currentNewServiceId);
+        if (index !== -1) {
+          servicesData[index].image = base64Image;
+          await salvarConfiguracoes(true); 
+        }
+        sheetBtnGaleria.textContent = "🖼️ Escolher da Galeria";
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click(); 
+});
+
+// Botão: Usar Padrão
+sheetBtnPadrao.addEventListener("click", () => {
+  imageSheetOverlay.classList.remove("is-open");
+  alert("Configurações atualizadas com sucesso!");
+});
+
 async function salvarConfiguracoes(mostrarAlerta = true) {
   try {
     document.getElementById("btnAddNewService").textContent = "A gravar...";
