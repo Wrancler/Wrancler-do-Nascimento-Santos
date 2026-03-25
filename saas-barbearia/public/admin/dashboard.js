@@ -14,7 +14,7 @@ let workingHours = [];
 let allAppointmentsForDay = []; 
 let selectedBlockTime = null; 
 let currentSnapshotUnsubscribe = null;
-let servicesData = []; // NOVO: Para guardar os serviços e preços
+let servicesData = []; 
 
 // ==========================================
 // 1. PROTEÇÃO DE ROTA E LOGOUT
@@ -60,7 +60,6 @@ const totalHead = document.getElementById("totalAppointments");
 const blockProfSelect = document.getElementById("blockProf");
 const mainProfFilter = document.getElementById("mainProfFilter"); 
 
-// NOVO: Elementos do Agendamento Manual
 const manualProfSelect = document.getElementById("manualProf");
 const manualServiceSelect = document.getElementById("manualService");
 const manualTimeSelect = document.getElementById("manualTime");
@@ -72,7 +71,7 @@ async function initDashboard() {
   try {
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
-    servicesData = config.services || []; // Guarda os serviços
+    servicesData = config.services || []; 
     
     blockProfSelect.innerHTML = '<option value="">Carregando profissionais...</option>';
     if (mainProfFilter) mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
@@ -109,7 +108,6 @@ async function initDashboard() {
   blockProfSelect.addEventListener("change", renderBlockSlots);
   if (mainProfFilter) mainProfFilter.addEventListener("change", renderAppointmentsList);
   
-  // Gatilhos para o formulário manual calcular horários automaticamente
   manualProfSelect.addEventListener("change", updateManualSlots);
   manualServiceSelect.addEventListener("change", updateManualSlots);
   manualTimeSelect.addEventListener("change", () => {
@@ -199,7 +197,7 @@ function loadAppointments(dateStr) {
       allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
       renderBlockSlots(); 
-      updateManualSlots(); // Atualiza os horários livres no formulário manual
+      updateManualSlots(); 
       renderAppointmentsList(); 
     }, (error) => {
       console.error("Erro no tempo real:", error);
@@ -343,7 +341,6 @@ function renderAppointmentsList() {
 // ==========================================
 // 4. MOTOR BLINDADO DE HORÁRIOS (Dinâmico)
 // ==========================================
-// NOVO: Adicionei o parâmetro durationMinutes para servir tanto para bloqueios quanto serviços
 function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
@@ -360,6 +357,11 @@ function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
     }
     return { start: String(app.startTime), end: String(end) };
   }).filter(Boolean);
+
+  // ==========================================
+  // O PULO DO GATO: Guilherme quer a visão igual a do cliente
+  // ==========================================
+  const saltoDaAgenda = 40; 
 
   workHours.forEach(period => {
     if (!period || typeof period !== "string" || !period.includes("-")) return;
@@ -389,7 +391,9 @@ function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
       }
 
       if (!hasCollision) slots.push(slotTime);
-      currentTotal += 10; // Avança de 10 em 10 minutos para dar mais flexibilidade no encaixe
+      
+      // MUDANÇA AQUI: Avança de 40 em 40 minutos!
+      currentTotal += saltoDaAgenda; 
     }
   });
 
@@ -415,10 +419,8 @@ function updateManualSlots() {
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
   
-  // Usa o motor dinâmico com a duração real do serviço!
   let slots = generateDynamicSlots(workingHours, profAppointments, service.duration);
 
-  // Filtra horários que já passaram se for hoje
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
@@ -481,7 +483,6 @@ btnConfirmManual.addEventListener("click", async () => {
       status: "confirmed"
     });
 
-    // Limpa o formulário após o sucesso
     manualClientName.value = "";
     manualClientPhone.value = "";
     manualProfSelect.value = "";
@@ -530,7 +531,7 @@ function renderBlockSlots() {
   }
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
-  let slots = generateDynamicSlots(workingHours, profAppointments, 30); // Bloqueio padrão de 30 min
+  let slots = generateDynamicSlots(workingHours, profAppointments, 30); 
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -627,22 +628,17 @@ if (btnBlockWholeDay) {
 
     if (!profId) return alert("Aguarde os profissionais carregarem.");
 
-    // --- NOVO: VERIFICAÇÃO INTELIGENTE DE CLIENTES ---
-    // Filtra para ver se tem cliente real agendado e "confirmado" para este barbeiro no dia
     const clientesAgendados = allAppointmentsForDay.filter(a => 
       a.professionalId === profId && 
       a.status === "confirmed" && 
       a.clientName !== "⛔ BLOQUEIO DE AGENDA"
     );
 
-    // Mensagem padrão (se a agenda estiver vazia)
     let mensagemConfirmacao = `Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`;
 
-    // Mensagem de Alerta (se a agenda tiver clientes)
     if (clientesAgendados.length > 0) {
       mensagemConfirmacao = `⚠️ ALERTA CRÍTICO: Existem ${clientesAgendados.length} cliente(s) já agendado(s) para este barbeiro neste dia!\n\nBloquear o dia inteiro NÃO cancela os agendamentos já feitos. Você precisará cancelar manualmente ou avisar os clientes.\n\nTem CERTEZA ABSOLUTA que deseja fechar a agenda mesmo assim?`;
     }
-    // -------------------------------------------------
 
     if (confirm(mensagemConfirmacao)) {
       
