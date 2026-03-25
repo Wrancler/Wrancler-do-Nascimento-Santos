@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
   <title>Painel do Barbeiro - La Barber Clube</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,6 +21,18 @@
     .premium-input { background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 12px; padding: 14px 16px; width: 100%; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s; }
     .premium-input:focus { border-color: #e0b976; }
     .premium-btn-danger { background: rgba(255, 60, 60, 0.1); color: #ff5555; border: 1px solid rgba(255, 60, 60, 0.2); border-radius: 12px; padding: 14px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 8px; transition: 0.2s; }
+    
+    /* ESTILOS DE LISTA DE CONFIGURAÇÕES */
+    .config-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; border: 1px solid #222; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; }
+    .config-list-item strong { color: #fff; font-size: 14px; }
+    .config-list-item span { color: #888; font-size: 12px; }
+
+    /* ESTILOS DO MODAL PREMIUM (SHEET) DA GALERIA */
+    .premium-sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s; align-items: flex-end; }
+    .premium-sheet-overlay.is-open { display: flex; opacity: 1; }
+    .premium-sheet { background: #161616; width: 100%; border-radius: 24px 24px 0 0; padding: 32px 24px 40px 24px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease-out; border-top: 1px solid #e0b976; box-shadow: 0 -10px 40px rgba(224,185,118,0.1); }
+    .premium-sheet-overlay.is-open .premium-sheet { transform: translateY(0); }
+    .premium-sheet__handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 24px auto; }
   </style>
 </head>
 
@@ -39,8 +51,9 @@
               <div class="brand__tag" style="color: #e0b976;">Gestão de Agenda</div>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">Financeiro</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <button id="btnConfig" style="background: transparent; color: #888; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">⚙️ Config</button>
+            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">💰 Financeiro</button>
             <button id="btnLogout" style="background: transparent; color: #888; border: none; padding: 8px; font-size: 13px; cursor: pointer;">Sair</button>
           </div>
         </div>
@@ -50,7 +63,27 @@
 
   <main class="container main">
     
-    <section class="section">
+    <section id="configSection" class="section" style="display: none;">
+      <div class="section__head">
+        <h2 style="color: #e0b976;">⚙️ Configurações da Barbearia</h2>
+        <p>Ajuste os serviços, preços e profissionais ativos.</p>
+      </div>
+
+      <div class="premium-card">
+        <h3>Meus Serviços (Preços e Duração)</h3>
+        <div id="configServicesList"></div>
+        <button id="btnAddNewService" class="premium-btn-secondary" style="margin-top: 16px;">+ Adicionar Novo Serviço</button>
+      </div>
+
+      <div class="premium-card">
+        <h3>Minha Equipa</h3>
+        <div id="configTeamList"></div>
+      </div>
+      
+      <button id="btnCloseConfig" class="premium-btn-main">Voltar à Agenda</button>
+    </section>
+
+    <section id="agendaSection" class="section">
       <div class="section__head">
         <h2>Agenda do Dia</h2>
         <p>Deslize para ver outras datas.</p>
@@ -102,7 +135,7 @@
       </div>
     </section>
 
-    <section class="section">
+    <section id="listaSection" class="section">
       <div class="section__head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <h2 id="totalAppointments">Carregando horários...</h2>
         <select id="mainProfFilter" class="premium-input" style="max-width: 160px; padding: 8px 12px; font-size: 13px; background: transparent;">
@@ -114,6 +147,17 @@
     </section>
 
   </main>
+
+  <div id="imageSheetOverlay" class="premium-sheet-overlay">
+    <div class="premium-sheet">
+      <div class="premium-sheet__handle"></div>
+      <h2 style="color: #e0b976; margin-top: 0; margin-bottom: 12px; text-align: center;">✅ Serviço Criado!</h2>
+      <p style="color: #ccc; font-size: 14px; text-align: center; margin-bottom: 32px; line-height: 1.5;">O serviço foi salvo. Deseja adicionar uma foto da sua galeria ou usar a imagem padrão?</p>
+      
+      <button id="sheetBtnGaleria" class="premium-btn-main" style="margin-top: 0; background: #fff; color: #111;">🖼️ Escolher da Galeria</button>
+      <button id="sheetBtnPadrao" class="premium-btn-secondary" style="color: #e0b976; border-color: #333;">✂️ Usar Imagem Padrão</button>
+    </div>
+  </div>
 
   <script type="module" src="dashboard.js"></script>
 </body>

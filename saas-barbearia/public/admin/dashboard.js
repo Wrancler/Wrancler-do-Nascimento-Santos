@@ -15,6 +15,7 @@ let allAppointmentsForDay = [];
 let selectedBlockTime = null; 
 let currentSnapshotUnsubscribe = null;
 let servicesData = []; 
+let profissionaisConfig = []; // Para a aba de equipe
 
 // ==========================================
 // 1. PROTEÇÃO DE ROTA E LOGOUT
@@ -72,6 +73,7 @@ async function initDashboard() {
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
     servicesData = config.services || []; 
+    profissionaisConfig = config.professionals || []; // Guarda os profissionais
     
     blockProfSelect.innerHTML = '<option value="">Carregando profissionais...</option>';
     if (mainProfFilter) mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
@@ -102,6 +104,9 @@ async function initDashboard() {
         manualServiceSelect.appendChild(opt);
       });
     }
+    
+    // Prepara a tela de configurações para quando ele clicar
+    renderConfigPanel();
 
   } catch(e) { console.error("Erro config", e); }
 
@@ -117,6 +122,155 @@ async function initDashboard() {
   renderAdminDateCards();
 }
 
+// ==========================================
+// 3. LÓGICA DA ABA DE CONFIGURAÇÕES E GALERIA
+// ==========================================
+const configSection = document.getElementById("configSection");
+const agendaSection = document.getElementById("agendaSection");
+const listaSection = document.getElementById("listaSection");
+const btnConfig = document.getElementById("btnConfig");
+
+btnConfig.addEventListener("click", () => {
+  agendaSection.style.display = "none";
+  listaSection.style.display = "none";
+  configSection.style.display = "block";
+});
+
+document.getElementById("btnCloseConfig").addEventListener("click", () => {
+  configSection.style.display = "none";
+  agendaSection.style.display = "block";
+  listaSection.style.display = "block";
+});
+
+function renderConfigPanel() {
+  const servicesList = document.getElementById("configServicesList");
+  const teamList = document.getElementById("configTeamList");
+  servicesList.innerHTML = ""; teamList.innerHTML = "";
+
+  // Equipe
+  profissionaisConfig.forEach(p => {
+    teamList.innerHTML += `
+      <div class="config-list-item">
+        <div><strong>${p.name}</strong><br><span>👑 Gestor/Barbeiro</span></div>
+        <div style="color: #4CAF50; font-size: 12px;">Ativo</div>
+      </div>`;
+  });
+
+  // Serviços
+  servicesData.forEach((s, index) => {
+    servicesList.innerHTML += `
+      <div class="config-list-item">
+        <div style="display:flex; align-items:center; gap:12px;">
+            ${s.image ? `<img src="${s.image}" style="width:36px; height:36px; border-radius:8px; object-fit:cover;">` : ''}
+            <div><strong>${s.name}</strong><br><span>${s.duration} min • R$ ${s.price}</span></div>
+        </div>
+        <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer; font-size:18px;">❌</button>
+      </div>`;
+  });
+
+  document.querySelectorAll(".btnRemoverServico").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      if(!confirm("Remover este serviço do site?")) return;
+      const index = e.target.getAttribute("data-index");
+      servicesData.splice(index, 1); 
+      await salvarConfiguracoes(true);
+    });
+  });
+}
+
+// MODAL DA GALERIA (IPHONE FIX)
+const imageSheetOverlay = document.getElementById("imageSheetOverlay");
+const sheetBtnGaleria = document.getElementById("sheetBtnGaleria");
+const sheetBtnPadrao = document.getElementById("sheetBtnPadrao");
+let currentNewServiceId = null;
+
+document.getElementById("btnAddNewService").addEventListener("click", async () => {
+  const nome = prompt("Nome do novo serviço (ex: Platinado):");
+  if (!nome) return;
+  const preco = prompt("Preço (ex: 70):");
+  if (!preco) return;
+  const duracao = prompt("Duração em minutos (ex: 60):");
+  if (!duracao) return;
+
+  document.getElementById("btnAddNewService").textContent = "A preparar...";
+
+  const newId = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+  currentNewServiceId = newId; 
+  const imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
+
+  servicesData.push({ 
+    id: newId, name: nome, price: Number(preco), duration: Number(duracao), image: imageUrl 
+  });
+  
+  await salvarConfiguracoes(false);
+  imageSheetOverlay.classList.add("is-open");
+  document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
+});
+
+sheetBtnGaleria.addEventListener("click", () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*'; 
+
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    sheetBtnGaleria.textContent = "A processar...";
+    imageSheetOverlay.classList.remove("is-open"); 
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300; 
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const base64Image = canvas.toDataURL('image/jpeg', 0.7); 
+        
+        const index = servicesData.findIndex(s => s.id === currentNewServiceId);
+        if (index !== -1) {
+          servicesData[index].image = base64Image;
+          await salvarConfiguracoes(true); 
+        }
+        sheetBtnGaleria.textContent = "🖼️ Escolher da Galeria";
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click(); 
+});
+
+sheetBtnPadrao.addEventListener("click", () => {
+  imageSheetOverlay.classList.remove("is-open");
+  alert("Configurações atualizadas com sucesso!");
+});
+
+async function salvarConfiguracoes(mostrarAlerta = true) {
+  try {
+    document.getElementById("btnAddNewService").textContent = "A gravar...";
+    await updateDoc(doc(db, "tenants", tenantId), {
+      services: servicesData
+    });
+    if (mostrarAlerta) alert("Configurações atualizadas com sucesso!");
+    document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
+    renderConfigPanel(); 
+  } catch(e) {
+    alert("Erro ao gravar. Tente novamente.");
+    console.error(e);
+  }
+}
+
+// ==========================================
+// 4. DATE SLIDER E REALTIME BUSCA
+// ==========================================
 function renderAdminDateCards() {
   const dateSlider = document.getElementById("adminDateSlider");
   if (!dateSlider) return;
@@ -166,9 +320,6 @@ function renderAdminDateCards() {
   }, 100);
 }
 
-// ==========================================
-// 3. BUSCA EM TEMPO REAL (O RADAR)
-// ==========================================
 function loadAppointments(dateStr) {
   listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
   totalHead.textContent = "Aguarde...";
@@ -339,7 +490,7 @@ function renderAppointmentsList() {
 }
 
 // ==========================================
-// 4. MOTOR BLINDADO DE HORÁRIOS (Dinâmico)
+// 5. MOTOR BLINDADO DE HORÁRIOS (Dinâmico)
 // ==========================================
 function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
   const slots = [];
@@ -401,7 +552,7 @@ function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
 }
 
 // ==========================================
-// 5. LÓGICA DO AGENDAMENTO MANUAL (NOVO)
+// 6. LÓGICA DO AGENDAMENTO MANUAL E BLOQUEIOS
 // ==========================================
 function updateManualSlots() {
   const profId = manualProfSelect.value;
@@ -512,10 +663,6 @@ document.getElementById('btnToggleManual').addEventListener('click', function() 
   }
 });
 
-
-// ==========================================
-// 6. GERAÇÃO DE BLOQUEIOS (MANTIDO)
-// ==========================================
 function renderBlockSlots() {
   const profId = blockProfSelect.value;
   const blockSlotsDiv = document.getElementById("blockSlots");
@@ -617,9 +764,6 @@ document.getElementById('btnToggleBloqueio').addEventListener('click', function(
     }
 });
 
-// ==========================================
-// 7. BLOQUEIO DO DIA INTEIRO (INTELIGENTE)
-// ==========================================
 const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
 if (btnBlockWholeDay) {
   btnBlockWholeDay.addEventListener("click", async () => {
