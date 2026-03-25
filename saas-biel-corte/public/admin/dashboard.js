@@ -196,6 +196,7 @@ function renderConfigPanel() {
   });
 }
 
+// A MÁGICA DE ABRIR A GALERIA DO CELULAR ESTÁ AQUI EMBAIXO:
 document.getElementById("btnAddNewService").addEventListener("click", async () => {
   const nome = prompt("Nome do novo serviço (ex: Platinado):");
   if (!nome) return;
@@ -204,9 +205,74 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
   const duracao = prompt("Duração em minutos (ex: 60):");
   if (!duracao) return;
 
-  const newId = nome.toLowerCase().replace(/\s+/g, '-');
-  servicesData.push({ id: newId, name: nome, price: Number(preco), duration: Number(duracao) });
+  // 1. Pergunta se ele quer abrir a galeria
+  const querFoto = confirm("Deseja colocar uma foto da sua galeria neste serviço?\n(Clique em OK para abrir a galeria ou Cancelar para usar a imagem padrão)");
+
+  // 2. Imagem padrão (Se ele não quiser colocar foto)
+  let imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
+
+  // 3. A MAGIA DA GALERIA
+  if (querFoto) {
+    document.getElementById("btnAddNewService").textContent = "A abrir galeria...";
+    
+    imageUrl = await new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*'; // Força a mostrar apenas imagens
+
+      // Quando o barbeiro escolhe a foto
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) { resolve(imageUrl); return; }
+
+        document.getElementById("btnAddNewService").textContent = "A processar imagem...";
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            // COMPRESSOR DE IMAGEM (Reduz a foto do telemóvel para não pesar no banco de dados)
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 300; // Tamanho perfeito para o cartão do cliente
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Converte a imagem comprimida em Texto (Base64 JPEG)
+            resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% de qualidade
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Se ele abrir a galeria mas desistir (clicar em voltar)
+      window.addEventListener('focus', () => {
+        setTimeout(() => { if (!input.value) resolve(imageUrl); }, 1000);
+      }, { once: true });
+
+      // Clica no botão invisível para abrir a galeria nativa do telemóvel!
+      input.click(); 
+    });
+  }
+
+  document.getElementById("btnAddNewService").textContent = "A guardar serviço...";
+
+  // Limpa o nome para virar ID (tira acentos e espaços)
+  const newId = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
   
+  const novoServico = { 
+    id: newId, 
+    name: nome, 
+    price: Number(preco), 
+    duration: Number(duracao),
+    image: imageUrl // Guarda a imagem comprimida ou a padrão!
+  };
+
+  servicesData.push(novoServico);
   await salvarConfiguracoes();
 });
 
@@ -229,7 +295,6 @@ async function salvarConfiguracoes() {
 // ==========================================
 // 5. ROLETA DE DATAS E RADAR (TEMPO REAL)
 // ==========================================
-// ... (Todo o restante do código da agenda, listas e slots continua igual a partir daqui!)
 const dateInput = document.getElementById("adminDate");
 const listDiv = document.getElementById("appointmentsList");
 const totalHead = document.getElementById("totalAppointments");
