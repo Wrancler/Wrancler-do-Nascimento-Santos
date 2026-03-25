@@ -1,4 +1,4 @@
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
@@ -7,27 +7,25 @@ function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-// ATENÇÃO: Corrigido para o Biel!
 const tenantId = getParam("tenant") || "biel-do-corte";
-const auth = getAuth();
+let profSelecionadoAtual = "todos"; // Variável global para saber quem está selecionado
 
 // ==========================================
-// 1. INÍCIO DIRETO (SISTEMA DE PIN)
+// 1. NAVEGAÇÃO E INÍCIO DIRETO
 // ==========================================
-// Removemos a trava do Firebase Auth para agilizar o uso no balcão
-initDashboard(); // ATENÇÃO: Use initFinanceiro() no arquivo do financeiro!
-
+// AQUI ESTAVA O BUG: Chamámos a função correta agora!
+initFinanceiro();
 
 document.getElementById("btnVoltar").addEventListener("click", () => {
   window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
 });
 
 // ==========================================
-// 2. INICIALIZAÇÃO DOS DADOS
+// 2. INICIALIZAÇÃO DOS DADOS E ABAS
 // ==========================================
 const dateStart = document.getElementById("dateStart");
 const dateEnd = document.getElementById("dateEnd");
-const profFilter = document.getElementById("profFilter");
+const profPills = document.getElementById("profPills"); 
 const financeList = document.getElementById("financeList");
 const totCortes = document.getElementById("totCortes");
 const totValor = document.getElementById("totValor");
@@ -43,6 +41,7 @@ async function initFinanceiro() {
   try {
     const config = await getTenantConfig(tenantId);
     
+    // Verificação de segurança pelo PIN
     const cracha = sessionStorage.getItem("crachaFinanceiro");
     if (!config.financePin || cracha !== String(config.financePin)) {
       alert("⚠️ Acesso Restrito: Digite o PIN correto no painel para acessar.");
@@ -50,25 +49,40 @@ async function initFinanceiro() {
       return; 
     }
 
+    // GERA OS BOTÕES DAS ABAS (PILLS) DINAMICAMENTE
+    profPills.innerHTML = `<button class="pill-btn active" data-id="todos">💰 Todos (Geral)</button>`;
+    
     if (config.professionals) {
       config.professionals.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = p.name;
-        profFilter.appendChild(opt);
+        profPills.innerHTML += `<button class="pill-btn" data-id="${p.id}">✂️ ${p.name}</button>`;
       });
     }
+
+    // Adiciona a ação de clique nas Abas
+    document.querySelectorAll(".pill-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        // Tira a cor dourada de todos
+        document.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
+        // Coloca a cor dourada no botão clicado
+        e.target.classList.add("active");
+        
+        // Atualiza a variável e recalcula a matemática!
+        profSelecionadoAtual = e.target.getAttribute("data-id");
+        calcularFinancas();
+      });
+    });
 
     // Renderiza a roleta de datas nova!
     renderFinanceDateCards();
 
   } catch(e) { 
     console.error("Erro ao carregar configurações:", e); 
+    financeList.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro ao carregar. Verifique a internet.</p>`;
   }
 }
 
 // ==========================================
-// 3. ROLETA DE DATAS (NOVO SLIDER PREMIUM)
+// 3. ROLETA DE DATAS (SLIDER PREMIUM)
 // ==========================================
 function definirFiltro(inicio, fim) {
   dateStart.value = inicio;
@@ -135,7 +149,7 @@ function renderFinanceDateCards() {
   }
 }
 
-// Se o utilizador alterar o input ou o barbeiro manualmente, limpa a seleção dourada da roleta
+// Atualiza ao usar as datas personalizadas
 dateStart.addEventListener("change", () => { 
   document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
   calcularFinancas(); 
@@ -144,7 +158,6 @@ dateEnd.addEventListener("change", () => {
   document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
   calcularFinancas(); 
 });
-profFilter.addEventListener("change", calcularFinancas);
 
 
 // ==========================================
@@ -157,7 +170,6 @@ async function calcularFinancas() {
 
   const start = dateStart.value;
   const end = dateEnd.value;
-  const profSelecionado = profFilter.value;
 
   if (!start || !end) return;
 
@@ -174,7 +186,7 @@ async function calcularFinancas() {
         app.status === "completed" &&
         app.date >= start &&
         app.date <= end &&
-        (profSelecionado === "todos" || app.professionalId === profSelecionado)
+        (profSelecionadoAtual === "todos" || app.professionalId === profSelecionadoAtual)
       ) {
         agendamentosValidos.push(app);
         const preco = parseFloat(app.servicePrice) || 0;

@@ -428,6 +428,9 @@ window.excluirApp = async (id) => { if (confirm("Limpar da tela?")) await delete
 window.finalizarApp = async (id) => { if (confirm("Marcar como concluído?")) await updateDoc(doc(db, "appointments", id), { status: "completed" }); };
 window.cancelarApp = async (id, isBlock) => { if (confirm(isBlock ? "Liberar horário?" : "Cancelar cliente?")) await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); };
 
+// ==========================================
+// MOTOR BLINDADO DE HORÁRIOS (Atualizado para 40 min)
+// ==========================================
 function generateDynamicSlots(workHours, apps, durationMinutes) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
@@ -436,6 +439,9 @@ function generateDynamicSlots(workHours, apps, durationMinutes) {
     if (!end) { const [h, m] = String(app.startTime).split(":").map(Number); const t = h * 60 + m + 40; end = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; }
     return { start: String(app.startTime), end: String(end) };
   });
+
+  // O PULO DO GATO: Alinhado com o site do cliente!
+  const saltoDaAgenda = 40; 
 
   workHours.forEach(period => {
     const parts = period.split("-"); if (parts.length < 2) return;
@@ -451,11 +457,14 @@ function generateDynamicSlots(workHours, apps, durationMinutes) {
         if (currentTotal < (oEh * 60 + oEm) && slotEndTotal > (oSh * 60 + oSm)) { hasCollision = true; break; }
       }
       if (!hasCollision) slots.push(slotTime);
-      currentTotal += 10; 
+      
+      // Avança de 40 em 40 minutos
+      currentTotal += saltoDaAgenda; 
     }
   });
   return slots;
 }
+
 
 function updateManualSlots() {
   const profId = manualProfSelect.value; const serviceId = document.getElementById("manualService").value;
