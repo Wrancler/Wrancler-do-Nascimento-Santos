@@ -196,7 +196,7 @@ function renderConfigPanel() {
   });
 }
 
-// A MÁGICA DE ABRIR A GALERIA DO CELULAR ESTÁ AQUI EMBAIXO:
+// A MÁGICA DE ABRIR A GALERIA DO CELULAR (100% A PROVA DE BUGS NO IPHONE):
 document.getElementById("btnAddNewService").addEventListener("click", async () => {
   const nome = prompt("Nome do novo serviço (ex: Platinado):");
   if (!nome) return;
@@ -205,87 +205,89 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
   const duracao = prompt("Duração em minutos (ex: 60):");
   if (!duracao) return;
 
-  // 1. Pergunta se ele quer abrir a galeria
-  const querFoto = confirm("Deseja colocar uma foto da sua galeria neste serviço?\n(Clique em OK para abrir a galeria ou Cancelar para usar a imagem padrão)");
+  document.getElementById("btnAddNewService").textContent = "A preparar...";
 
-  // 2. Imagem padrão (Se ele não quiser colocar foto)
-  let imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
-
-  // 3. A MAGIA DA GALERIA
-  if (querFoto) {
-    document.getElementById("btnAddNewService").textContent = "A abrir galeria...";
-    
-    imageUrl = await new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*'; // Força a mostrar apenas imagens
-
-      // Quando o barbeiro escolhe a foto
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) { resolve(imageUrl); return; }
-
-        document.getElementById("btnAddNewService").textContent = "A processar imagem...";
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            // COMPRESSOR DE IMAGEM (Reduz a foto do telemóvel para não pesar no banco de dados)
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 300; // Tamanho perfeito para o cartão do cliente
-            const scaleSize = MAX_WIDTH / img.width;
-            canvas.width = MAX_WIDTH;
-            canvas.height = img.height * scaleSize;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            // Converte a imagem comprimida em Texto (Base64 JPEG)
-            resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% de qualidade
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      };
-
-      // CORREÇÃO PARA O IPHONE: Usando o evento nativo de 'cancel'
-      input.addEventListener('cancel', () => {
-        resolve(imageUrl); // Volta para a imagem padrão se ele fechar a galeria
-      });
-
-      // Clica no botão invisível para abrir a galeria nativa do telemóvel!
-      input.click(); 
-    });
-  }
-
-  document.getElementById("btnAddNewService").textContent = "A guardar serviço...";
-
-  // Limpa o nome para virar ID (tira acentos e espaços)
+  // 1. Cria o serviço com a imagem padrão primeiro
   const newId = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
-  
+  const imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
+
   const novoServico = { 
     id: newId, 
     name: nome, 
     price: Number(preco), 
     duration: Number(duracao),
-    image: imageUrl // Guarda a imagem comprimida ou a padrão!
+    image: imageUrl 
   };
 
   servicesData.push(novoServico);
-  await salvarConfiguracoes();
+  
+  // Salva silenciosamente no Firebase (sem dar o alert ainda)
+  await salvarConfiguracoes(false);
+
+  // 2. AGORA pergunta se quer a foto
+  const querFoto = confirm("✅ Serviço criado!\n\nDeseja alterar a imagem padrão e escolher uma foto da sua galeria para este corte?");
+
+  if (querFoto) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*'; 
+
+    // Se ele escolher a foto
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById("btnAddNewService").textContent = "A processar imagem...";
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300; 
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          const base64Image = canvas.toDataURL('image/jpeg', 0.7); 
+          
+          // 3. Atualiza o serviço que criamos agora com a foto nova
+          const index = servicesData.findIndex(s => s.id === newId);
+          if (index !== -1) {
+            servicesData[index].image = base64Image;
+            await salvarConfiguracoes(true); // Agora salva e dá o alerta final
+          }
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Abre a galeria do telemóvel
+    input.click(); 
+  } else {
+    // Se ele não quiser foto, apenas avisa que terminou o processo
+    alert("Configurações atualizadas com sucesso!");
+  }
 });
 
-async function salvarConfiguracoes() {
+// A função de salvar atualizada para aceitar o "modo silencioso"
+async function salvarConfiguracoes(mostrarAlerta = true) {
   try {
     document.getElementById("btnAddNewService").textContent = "A gravar...";
-    // Atualiza o documento principal do Firebase com os novos serviços
     await updateDoc(doc(db, "tenants", tenantId), {
       services: servicesData
     });
-    alert("Configurações atualizadas com sucesso!");
+    
+    if (mostrarAlerta) {
+        alert("Configurações atualizadas com sucesso!");
+    }
+    
     document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
-    renderConfigPanel(); // Atualiza a tela
+    renderConfigPanel(); 
   } catch(e) {
     alert("Erro ao gravar. Tente novamente.");
     console.error(e);
