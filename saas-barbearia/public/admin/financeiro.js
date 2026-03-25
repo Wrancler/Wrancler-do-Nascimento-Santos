@@ -10,6 +10,8 @@ function getParam(name) {
 const tenantId = getParam("tenant") || "tenant-demo";
 const auth = getAuth();
 
+let profSelecionadoAtual = "todos"; // Variável global para saber quem está selecionado
+
 // ==========================================
 // 1. SEGURANÇA E NAVEGAÇÃO
 // ==========================================
@@ -26,11 +28,11 @@ document.getElementById("btnVoltar").addEventListener("click", () => {
 });
 
 // ==========================================
-// 2. INICIALIZAÇÃO DOS DADOS
+// 2. INICIALIZAÇÃO DOS DADOS E ABAS
 // ==========================================
 const dateStart = document.getElementById("dateStart");
 const dateEnd = document.getElementById("dateEnd");
-const profFilter = document.getElementById("profFilter");
+const profPills = document.getElementById("profPills"); // Mudou para Pills
 const financeList = document.getElementById("financeList");
 const totCortes = document.getElementById("totCortes");
 const totValor = document.getElementById("totValor");
@@ -53,16 +55,30 @@ async function initFinanceiro() {
       return; 
     }
 
+    // GERA OS BOTÕES DAS ABAS (PILLS) DINAMICAMENTE
+    profPills.innerHTML = `<button class="pill-btn active" data-id="todos">💰 Todos (Geral)</button>`;
+    
     if (config.professionals) {
       config.professionals.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = p.name;
-        profFilter.appendChild(opt);
+        profPills.innerHTML += `<button class="pill-btn" data-id="${p.id}">✂️ ${p.name}</button>`;
       });
     }
 
-    // Renderiza a roleta de datas nova!
+    // Adiciona a ação de clique nas Abas
+    document.querySelectorAll(".pill-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        // Tira a cor dourada de todos
+        document.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
+        // Coloca a cor dourada no botão clicado
+        e.target.classList.add("active");
+        
+        // Atualiza a variável e recalcula a matemática!
+        profSelecionadoAtual = e.target.getAttribute("data-id");
+        calcularFinancas();
+      });
+    });
+
+    // Renderiza a roleta de datas nova
     renderFinanceDateCards();
 
   } catch(e) { 
@@ -71,7 +87,7 @@ async function initFinanceiro() {
 }
 
 // ==========================================
-// 3. ROLETA DE DATAS (NOVO SLIDER PREMIUM)
+// 3. ROLETA DE DATAS
 // ==========================================
 function definirFiltro(inicio, fim) {
   dateStart.value = inicio;
@@ -107,7 +123,7 @@ function renderFinanceDateCards() {
   });
   dateSlider.appendChild(cardMes);
 
-  // Cartões de Dias (De hoje para trás, 15 dias)
+  // Cartões de Dias
   for (let i = 0; i >= -15; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
@@ -116,7 +132,6 @@ function renderFinanceDateCards() {
     const card = document.createElement("div");
     card.className = "date-card";
     
-    // Deixa o dia de "HOJE" selecionado por padrão ao abrir
     if (i === 0) {
       card.classList.add("is-selected");
       definirFiltro(isoDate, isoDate); 
@@ -138,7 +153,6 @@ function renderFinanceDateCards() {
   }
 }
 
-// Se o utilizador alterar o input ou o barbeiro manualmente, limpa a seleção dourada da roleta
 dateStart.addEventListener("change", () => { 
   document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
   calcularFinancas(); 
@@ -147,7 +161,6 @@ dateEnd.addEventListener("change", () => {
   document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
   calcularFinancas(); 
 });
-profFilter.addEventListener("change", calcularFinancas);
 
 
 // ==========================================
@@ -160,7 +173,6 @@ async function calcularFinancas() {
 
   const start = dateStart.value;
   const end = dateEnd.value;
-  const profSelecionado = profFilter.value;
 
   if (!start || !end) return;
 
@@ -173,11 +185,12 @@ async function calcularFinancas() {
 
     snap.forEach(d => {
       const app = d.data();
+      // MUDANÇA: Agora usamos a variável profSelecionadoAtual em vez de profFilter.value
       if (
         app.status === "completed" &&
         app.date >= start &&
         app.date <= end &&
-        (profSelecionado === "todos" || app.professionalId === profSelecionado)
+        (profSelecionadoAtual === "todos" || app.professionalId === profSelecionadoAtual)
       ) {
         agendamentosValidos.push(app);
         const preco = parseFloat(app.servicePrice) || 0;
