@@ -249,10 +249,10 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
         reader.readAsDataURL(file);
       };
 
-      // Se ele abrir a galeria mas desistir (clicar em voltar)
-      window.addEventListener('focus', () => {
-        setTimeout(() => { if (!input.value) resolve(imageUrl); }, 1000);
-      }, { once: true });
+      // CORREÇÃO PARA O IPHONE: Usando o evento nativo de 'cancel'
+      input.addEventListener('cancel', () => {
+        resolve(imageUrl); // Volta para a imagem padrão se ele fechar a galeria
+      });
 
       // Clica no botão invisível para abrir a galeria nativa do telemóvel!
       input.click(); 
