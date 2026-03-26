@@ -44,15 +44,16 @@ async function initTenant() {
       }
 
       const headerLobo = document.createElement("div");
-      headerLobo.style = "display: flex; align-items: center; gap: 16px; background: #161616; padding: 20px; border-radius: 16px; border: 1px solid #e0b976; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);";
+      // 🔥 AJUSTE SÊNIOR: Aumentei o padding, o gap e o border-radius para equilibrar a imagem grande
+      headerLobo.style = "display: flex; align-items: center; gap: 24px; background: #161616; padding: 32px; border-radius: 24px; border: 1px solid #e0b976; margin-bottom: 32px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);";
       
       const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
       
       headerLobo.innerHTML = `
-        <img src="${imgCaminho}" alt="${p.name}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #e0b976;">
+        <img src="${imgCaminho}" alt="${p.name}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #e0b976; box-shadow: 0 0 15px rgba(224, 185, 118, 0.3);">
         <div>
-          <h2 style="margin: 0; color: #fff; font-size: 20px;">${p.name}</h2>
-          <p style="margin: 4px 0 0 0; color: #888; font-size: 14px;">Especialista pronto para te atender</p>
+          <h2 style="margin: 0; color: #fff; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">${p.name}</h2>
+          <p style="margin: 8px 0 0 0; color: #bbb; font-size: 16px; font-weight: 400; line-height: 1.4;">Seu especialista dedicado e pronto<br>para te atender.</p>
         </div>
       `;
       
@@ -188,7 +189,7 @@ clientNameInput.addEventListener("input", (e) => {
 });
 
 clientPhoneInput.addEventListener("input", (e) => {
-  let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+  let x = e.target.value.replace(/\\D/g, '').match(/(\\d{0,2})(\\d{0,5})(\\d{0,4})/);
   e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
 });
 
@@ -222,7 +223,7 @@ function setButtonsDisabled(disabled) {
 }
 
 function formatPhoneDigits(phone) {
-  return (phone || "").replace(/[^\d]/g, "");
+  return (phone || "").replace(/[^\\d]/g, "");
 }
 
 function updateScheduleLockState() {
