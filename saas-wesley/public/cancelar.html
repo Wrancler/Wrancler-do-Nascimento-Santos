@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cancelar Agendamento - La Barber Clube</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .cancel-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .cancel-details {
+      background: #252525;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 20px 0;
+      text-align: left;
+      border-left: 4px solid #e0b976;
+    }
+    .btn-danger {
+      background: #ff5555;
+      color: white;
+      border: none;
+      padding: 14px;
+      width: 100%;
+      border-radius: 12px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .btn-keep {
+      background: transparent;
+      color: #aaa;
+      border: 1px solid #555;
+      padding: 14px;
+      width: 100%;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero" style="padding-bottom: 20px;">
+    <div class="hero__bg"></div>
+    <div class="container hero__content" style="text-align: center;">
+      <img src="assets/brand/logo.png" alt="La Barber Clube" style="max-width: 80px; margin: 0 auto;">
+    </div>
+  </header>
+
+  <main class="container main">
+    <div class="cancel-card" id="cancelCard">
+      <h2 style="color: #fff; margin-top: 0;">Cancelar Agendamento</h2>
+      <p id="loadingText" style="color: #aaa;">Buscando dados do seu agendamento...</p>
+      
+      <div id="appointmentInfo" style="display: none;">
+        <p style="color: #ccc; font-size: 15px;">Deseja realmente cancelar este horário?</p>
+        
+        <div class="cancel-details">
+          <p style="margin: 0; color: #fff;"><strong>Serviço:</strong> <span id="lblService">...</span></p>
+          <p style="margin: 8px 0; color: #fff;"><strong>Data:</strong> <span id="lblDate">...</span> às <span id="lblTime">...</span></p>
+          <p style="margin: 0; color: #fff;"><strong>Profissional:</strong> <span id="lblProf">...</span></p>
+        </div>
+
+        <button id="btnConfirmCancel" class="btn-danger">Sim, quero cancelar</button>
+        <button id="btnKeep" class="btn-keep">Não, manter agendamento</button>
+      </div>
+      
+      <div id="successMessage" style="display: none;">
+        <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+        <h3 style="color: #4CAF50;">Cancelado com sucesso!</h3>
+        <p style="color: #aaa;">Seu horário foi liberado. Agradecemos por avisar!</p>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module" src="cancelar.js"></script>
+</body>
+</html>

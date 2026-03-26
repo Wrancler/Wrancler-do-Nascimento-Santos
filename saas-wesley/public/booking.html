@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Biel do Corte</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Biel do Corte">
+    <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
+    <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
+
+
+
+
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__content">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand__mark">
+            <img src="assets/brand/logo001.png" alt="La Barber Clube">
+        </div>
+
+          <div class="brand__info">
+            <div class="brand__name">Barbearia Biel do Corte</div>
+            <div class="brand__tag">Agendamento premium</div>
+          </div>
+        </div>
+
+        <div class="hero__title">
+          <h1>AGENDAMENTO</h1>
+          <p id="subtitle">Escolha o barbeiro e o serviço para liberar a agenda.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main">
+    
+    <section class="section">
+      <div class="section__head">
+        <h2>Escolha o barbeiro</h2>
+        <p>Selecione quem vai te atender.</p>
+      </div>
+
+      <div id="professionals" class="grid grid--2"></div>
+
+      <div class="pill" id="selectedProfessionalText"></div>
+    </section>
+
+    <section class="section" id="servicesSection">
+      <div class="section__head">
+        <h2>Escolha o serviço</h2>
+        <p>Todos os serviços têm 40 minutos.</p>
+      </div>
+
+      <div id="services" class="grid grid--3"></div>
+
+      <div class="pill" id="selectedServiceText"></div>
+    </section>
+
+    <section class="section" id="clientSection">
+      <div class="section__head">
+        <h2>Seus dados</h2>
+        <p>Só para confirmar seu horário.</p>
+      </div>
+
+      <div class="form">
+        <label class="label">Seu nome</label>
+        <input class="input" id="clientName" placeholder="Ex: João" autocomplete="name" />
+
+        <label class="label">Seu WhatsApp</label>
+        <input class="input" id="clientPhone" placeholder="Ex: 83999999999" autocomplete="tel" inputmode="numeric" />
+      </div>
+    </section>
+
+    <section class="section" id="scheduleSection" aria-disabled="true">
+      <div class="section__head">
+        <h2>Escolha o dia e o horário</h2>
+        <p id="hint">Selecione um barbeiro e um serviço para liberar a agenda.</p>
+      </div>
+
+      <div class="schedule">
+        <div class="schedule__left">
+          <div class="slots__title">Escolha o Dia</div>
+          
+          <div id="dateSlider" class="date-slider"></div>
+          
+          <input type="hidden" id="date" />
+        </div>
+
+        <div class="schedule__right">
+          <div class="slots__title">Horários disponíveis</div>
+          <div id="slots" class="slots"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="summarySection" style="display: none;">
+      <div class="section__head">
+        <h2>Resumo do Agendamento</h2>
+        <p>Confira os dados antes de finalizar.</p>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-item">
+          <span class="summary-label">Profissional:</span>
+          <span class="summary-value" id="summaryProf">---</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Serviço:</span>
+          <span class="summary-value" id="summaryService">---</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Data e Hora:</span>
+          <span class="summary-value" id="summaryDateTime">Escolha o dia e horário</span>
+        </div>
+        <div class="summary-item summary-total">
+          <span class="summary-label">Total a pagar:</span>
+          <span class="summary-value" id="summaryTotal">R$ 0,00</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> Biel do Corte</span>
+    </footer>
+  </main>
+
+  <script type="module" src="booking.js" charset="UTF-8"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
