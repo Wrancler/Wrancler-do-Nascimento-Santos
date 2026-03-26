@@ -465,6 +465,11 @@ function renderAppointmentsList() {
           }
         };
         actionsDiv.appendChild(btnFinalizar);
+        
+        // NOVO: BOTÃO DE LEMBRETE (Só aparece se o cliente tiver deixado o telefone)
+        if (app.clientPhone && app.clientPhone.replace(/\D/g, '').length >= 10) {
+          actionsDiv.innerHTML += `<button class="btn-admin" style="background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid #25D366; flex: 1;" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
+        }
       }
 
       const btnCancel = document.createElement("button");
@@ -488,6 +493,31 @@ function renderAppointmentsList() {
     listDiv.appendChild(item);
   });
 }
+
+// ==========================================
+// FUNÇÕES GLOBAIS DE AÇÃO (WHATSAPP, CANCELAR, FINALIZAR)
+// ==========================================
+window.lembrarApp = (nome, servico, data, hora, telefone) => {
+    let phoneLimpo = telefone.replace(/\D/g, '');
+    
+    // Adiciona o DDI do Brasil (55) caso não tenha
+    if (phoneLimpo.length <= 11) phoneLimpo = "55" + phoneLimpo;
+    
+    const dataFormatada = data.split("-").reverse().join("/");
+    
+    let msg = '';
+    const hoje = new Date();
+    const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    
+    // O texto muda se o agendamento for hoje ou num dia futuro
+    if (data === dataHojeStr) {
+        msg = `Olá *${nome}*! Passando para confirmar o seu horário de *${servico}* HOJE às *${hora}*. Tudo certo? 👍`;
+    } else {
+        msg = `Olá *${nome}*! Passando para lembrar do seu horário de *${servico}* amanhã (${dataFormatada}) às *${hora}*. Confirmado? 👍`;
+    }
+    
+    window.open(`https://api.whatsapp.com/send?phone=${phoneLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
+};
 
 // ==========================================
 // 5. MOTOR BLINDADO DE HORÁRIOS (Dinâmico)

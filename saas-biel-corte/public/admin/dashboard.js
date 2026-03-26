@@ -416,6 +416,11 @@ function renderAppointmentsList() {
     } else {
       if (!isBlock) {
         actionsDiv.innerHTML += `<button class="premium-btn-main" style="margin:0; padding:10px; background:#4CAF50; color:#fff;" onclick="finalizarApp('${app.id}')">✅ Finalizar</button>`;
+        
+        // NOVO: BOTÃO DE LEMBRETE
+        if (app.clientPhone && app.clientPhone.replace(/\D/g, '').length >= 10) {
+          actionsDiv.innerHTML += `<button class="premium-btn-secondary" style="margin:0; padding:10px; color:#25D366; border-color:#25D366; background: rgba(37, 211, 102, 0.05);" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
+        }
       }
       actionsDiv.innerHTML += `<button class="premium-btn-danger" style="margin:0; padding:10px;" onclick="cancelarApp('${app.id}', ${isBlock})">${isBlock ? 'Desbloquear' : 'Cancelar'}</button>`;
     }
@@ -424,9 +429,29 @@ function renderAppointmentsList() {
   });
 }
 
+// NOVO: A INTELIGÊNCIA DE CHAMAR NO WHATSAPP E AS AÇÕES ANTIGAS
 window.excluirApp = async (id) => { if (confirm("Limpar da tela?")) await deleteDoc(doc(db, "appointments", id)); };
 window.finalizarApp = async (id) => { if (confirm("Marcar como concluído?")) await updateDoc(doc(db, "appointments", id), { status: "completed" }); };
 window.cancelarApp = async (id, isBlock) => { if (confirm(isBlock ? "Liberar horário?" : "Cancelar cliente?")) await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); };
+
+window.lembrarApp = (nome, servico, data, hora, telefone) => {
+    let phoneLimpo = telefone.replace(/\D/g, '');
+    if (phoneLimpo.length <= 11) phoneLimpo = "55" + phoneLimpo; // Adiciona o DDI 55
+    
+    const dataFormatada = data.split("-").reverse().join("/");
+    let msg = '';
+    
+    const hoje = new Date();
+    const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    
+    if (data === dataHojeStr) {
+        msg = `Olá *${nome}*! Passando para confirmar o seu horário de *${servico}* HOJE às *${hora}*. Tudo certo? 👍`;
+    } else {
+        msg = `Olá *${nome}*! Passando para lembrar do seu horário de *${servico}* amanhã (${dataFormatada}) às *${hora}*. Confirmado? 👍`;
+    }
+    
+    window.open(`https://api.whatsapp.com/send?phone=${phoneLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
+};
 
 // ==========================================
 // MOTOR BLINDADO DE HORÁRIOS (Atualizado para 40 min)
@@ -464,7 +489,6 @@ function generateDynamicSlots(workHours, apps, durationMinutes) {
   });
   return slots;
 }
-
 
 function updateManualSlots() {
   const profId = manualProfSelect.value; const serviceId = document.getElementById("manualService").value;
