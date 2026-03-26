@@ -1,7 +1,10 @@
 import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
+// 🔥 IMPORTANTE: Agora o Admin usa o mesmo motor de criação do cliente para não quebrar as travas!
+import { createAppointment } from "../../firebase/createAppointment.js";
+import { generateAvailableSlots } from "../../services/slotGenerator.js"; 
 
 function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
 
@@ -110,7 +113,7 @@ function aplicarPermissoesDeAcesso() {
 
   if (loggedRole === "admin") {
     btnFinanceiro.style.display = "block";
-    btnConfig.style.display = "block"; // MOSTRA BOTÃO DE CONFIGURAÇÕES PARA O CHEFE
+    btnConfig.style.display = "block";
     mainProfFilter.style.display = "block";
     
     mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
@@ -123,7 +126,7 @@ function aplicarPermissoesDeAcesso() {
       blockProfSelect.appendChild(new Option(p.name, p.id));
     });
 
-    renderConfigPanel(); // Prepara o painel de configurações
+    renderConfigPanel();
   } else {
     btnFinanceiro.style.display = "none"; btnConfig.style.display = "none"; mainProfFilter.style.display = "none";
     mainProfFilter.appendChild(new Option(loggedName, loggedRole));
@@ -144,7 +147,7 @@ function aplicarPermissoesDeAcesso() {
 }
 
 // ==========================================
-// 4. LÓGICA DA ABA DE CONFIGURAÇÕES (NOVO)
+// 4. LÓGICA DA ABA DE CONFIGURAÇÕES
 // ==========================================
 const configSection = document.getElementById("configSection");
 const agendaSection = document.getElementById("agendaSection");
@@ -167,7 +170,6 @@ function renderConfigPanel() {
   const teamList = document.getElementById("configTeamList");
   servicesList.innerHTML = ""; teamList.innerHTML = "";
 
-  // Renderiza a Equipa (Visualização)
   profissionaisConfig.forEach(p => {
     teamList.innerHTML += `
       <div class="config-list-item">
@@ -176,7 +178,6 @@ function renderConfigPanel() {
       </div>`;
   });
 
-  // Renderiza os Serviços com capacidade de Excluir
   servicesData.forEach((s, index) => {
     servicesList.innerHTML += `
       <div class="config-list-item">
@@ -188,20 +189,17 @@ function renderConfigPanel() {
       </div>`;
   });
 
-  // Lógica de Remover Serviço
   document.querySelectorAll(".btnRemoverServico").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       if(!confirm("Remover este serviço do site?")) return;
       const index = e.target.getAttribute("data-index");
-      servicesData.splice(index, 1); // Remove da lista
+      servicesData.splice(index, 1);
       await salvarConfiguracoes(true);
     });
   });
 }
 
-// ==========================================
-// 🚀 LÓGICA DO MODAL DA GALERIA (IPHONE FIX)
-// ==========================================
+// LÓGICA DO MODAL DA GALERIA (IPHONE FIX)
 const imageSheetOverlay = document.getElementById("imageSheetOverlay");
 const sheetBtnGaleria = document.getElementById("sheetBtnGaleria");
 const sheetBtnPadrao = document.getElementById("sheetBtnPadrao");
@@ -217,7 +215,6 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
 
   document.getElementById("btnAddNewService").textContent = "A preparar...";
 
-  // 1. Cria com a imagem padrão
   const newId = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
   currentNewServiceId = newId; 
   const imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
@@ -226,13 +223,11 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
     id: newId, name: nome, price: Number(preco), duration: Number(duracao), image: imageUrl 
   });
   
-  // 2. Salva em silêncio e abre o modal premium
   await salvarConfiguracoes(false);
   imageSheetOverlay.classList.add("is-open");
   document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
 });
 
-// Botão: Escolher da Galeria
 sheetBtnGaleria.addEventListener("click", () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -260,7 +255,6 @@ sheetBtnGaleria.addEventListener("click", () => {
 
         const base64Image = canvas.toDataURL('image/jpeg', 0.7); 
         
-        // Atualiza a foto e salva de verdade
         const index = servicesData.findIndex(s => s.id === currentNewServiceId);
         if (index !== -1) {
           servicesData[index].image = base64Image;
@@ -275,7 +269,6 @@ sheetBtnGaleria.addEventListener("click", () => {
   input.click(); 
 });
 
-// Botão: Usar Padrão
 sheetBtnPadrao.addEventListener("click", () => {
   imageSheetOverlay.classList.remove("is-open");
   alert("Configurações atualizadas com sucesso!");
@@ -358,7 +351,7 @@ function loadAppointments(dateStr) {
     allAppointmentsForDay = []; 
     snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    allAppointmentsForDay = allAppointmentsForDay.filter(a => a && a.startTime && !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
+    // 🔥 FILTRO VITAL: Filtra cancelados, mas mostra no painel com cor diferente (tratado no render)
     allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
     renderBlockSlots(); 
@@ -375,6 +368,9 @@ function renderAppointmentsList() {
   if (profFiltro !== "todos") {
     appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
   }
+
+  // Oculta os cancelados da contagem e da tela principal se for um bloqueio cancelado
+  appsToRender = appsToRender.filter(a => !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
 
   if (appsToRender.length === 0) {
     totalHead.textContent = "Nenhum agendamento.";
@@ -417,7 +413,6 @@ function renderAppointmentsList() {
       if (!isBlock) {
         actionsDiv.innerHTML += `<button class="premium-btn-main" style="margin:0; padding:10px; background:#4CAF50; color:#fff;" onclick="finalizarApp('${app.id}')">✅ Finalizar</button>`;
         
-        // NOVO: BOTÃO DE LEMBRETE
         if (app.clientPhone && app.clientPhone.replace(/\D/g, '').length >= 10) {
           actionsDiv.innerHTML += `<button class="premium-btn-secondary" style="margin:0; padding:10px; color:#25D366; border-color:#25D366; background: rgba(37, 211, 102, 0.05);" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
         }
@@ -429,14 +424,52 @@ function renderAppointmentsList() {
   });
 }
 
-// NOVO: A INTELIGÊNCIA DE CHAMAR NO WHATSAPP E AS AÇÕES ANTIGAS
-window.excluirApp = async (id) => { if (confirm("Limpar da tela?")) await deleteDoc(doc(db, "appointments", id)); };
-window.finalizarApp = async (id) => { if (confirm("Marcar como concluído?")) await updateDoc(doc(db, "appointments", id), { status: "completed" }); };
-window.cancelarApp = async (id, isBlock) => { if (confirm(isBlock ? "Liberar horário?" : "Cancelar cliente?")) await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); };
+// ==========================================
+// 🚀 LÓGICA DE AÇÕES AVANÇADA (EXCLUIR / CANCELAR / FINALIZAR)
+// ==========================================
+
+async function limparTravasDoAgendamento(appointmentId) {
+  try {
+    const lockQuery = query(collection(db, "slotLocks"), where("appointmentId", "==", appointmentId));
+    const lockSnapshot = await getDocs(lockQuery);
+    lockSnapshot.forEach(async (documento) => {
+      await deleteDoc(doc(db, "slotLocks", documento.id));
+    });
+
+    const publicQuery = query(collection(db, "appointmentsPublic"), where("appointmentId", "==", appointmentId));
+    const publicSnapshot = await getDocs(publicQuery);
+    publicSnapshot.forEach(async (documento) => {
+      await deleteDoc(doc(db, "appointmentsPublic", documento.id));
+    });
+  } catch (error) {
+    console.error("Erro ao limpar travas do Firebase:", error);
+  }
+}
+
+window.excluirApp = async (id) => { 
+  if (confirm("Limpar da tela definitivamente?")) {
+    await deleteDoc(doc(db, "appointments", id)); 
+    await limparTravasDoAgendamento(id); 
+  }
+};
+
+window.finalizarApp = async (id) => { 
+  if (confirm("Marcar como concluído?")) {
+    await updateDoc(doc(db, "appointments", id), { status: "completed" }); 
+    await limparTravasDoAgendamento(id); 
+  }
+};
+
+window.cancelarApp = async (id, isBlock) => { 
+  if (confirm(isBlock ? "Liberar horário?" : "Cancelar cliente?")) {
+    await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); 
+    await limparTravasDoAgendamento(id); 
+  }
+};
 
 window.lembrarApp = (nome, servico, data, hora, telefone) => {
     let phoneLimpo = telefone.replace(/\D/g, '');
-    if (phoneLimpo.length <= 11) phoneLimpo = "55" + phoneLimpo; // Adiciona o DDI 55
+    if (phoneLimpo.length <= 11) phoneLimpo = "55" + phoneLimpo;
     
     const dataFormatada = data.split("-").reverse().join("/");
     let msg = '';
@@ -454,52 +487,28 @@ window.lembrarApp = (nome, servico, data, hora, telefone) => {
 };
 
 // ==========================================
-// MOTOR BLINDADO DE HORÁRIOS (Atualizado para 40 min)
+// MOTOR BLINDADO DE HORÁRIOS
 // ==========================================
-function generateDynamicSlots(workHours, apps, durationMinutes) {
-  const slots = [];
-  if (!workHours || !Array.isArray(workHours)) return slots;
-  const occupied = apps.map(app => {
-    let end = app.endTime;
-    if (!end) { const [h, m] = String(app.startTime).split(":").map(Number); const t = h * 60 + m + 40; end = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; }
-    return { start: String(app.startTime), end: String(end) };
-  });
-
-  // O PULO DO GATO: Alinhado com o site do cliente!
-  const saltoDaAgenda = 40; 
-
-  workHours.forEach(period => {
-    const parts = period.split("-"); if (parts.length < 2) return;
-    let [currH, currM] = parts[0].split(":").map(Number); const [endH, endM] = parts[1].split(":").map(Number);
-    let currentTotal = currH * 60 + currM; const endTotal = endH * 60 + endM;
-
-    while (currentTotal + durationMinutes <= endTotal) {
-      const slotTime = `${String(Math.floor(currentTotal/60)).padStart(2,"0")}:${String(currentTotal%60).padStart(2,"0")}`;
-      const slotEndTotal = currentTotal + durationMinutes;
-      let hasCollision = false;
-      for (let occ of occupied) {
-        const [oSh, oSm] = occ.start.split(":").map(Number); const [oEh, oEm] = occ.end.split(":").map(Number);
-        if (currentTotal < (oEh * 60 + oEm) && slotEndTotal > (oSh * 60 + oSm)) { hasCollision = true; break; }
-      }
-      if (!hasCollision) slots.push(slotTime);
-      
-      // Avança de 40 em 40 minutos
-      currentTotal += saltoDaAgenda; 
-    }
-  });
-  return slots;
+function addMinutes(time, minsToAdd) {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + minsToAdd;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 function updateManualSlots() {
-  const profId = manualProfSelect.value; const serviceId = document.getElementById("manualService").value;
-  const timeSelect = document.getElementById("manualTime"); timeSelect.innerHTML = '<option value="">Horário...</option>';
+  const profId = manualProfSelect.value; 
+  const serviceId = document.getElementById("manualService").value;
+  const timeSelect = document.getElementById("manualTime"); 
+  timeSelect.innerHTML = '<option value="">Horário...</option>';
   document.getElementById("btnConfirmManual").disabled = true;
 
   if (!profId || !serviceId) return;
   const service = servicesData.find(s => s.id === serviceId);
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
   
-  let slots = generateDynamicSlots(workingHours, profAppointments, service.duration);
+  // 🔥 AGORA O ADMIN USA A MESMA MATEMÁTICA DA TELA DO CLIENTE
+  let slots = generateAvailableSlots(workingHours, profAppointments, service.duration);
+  
   const now = new Date(); const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   if (dateInput.value === todayStr) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -515,18 +524,29 @@ document.getElementById("btnConfirmManual").addEventListener("click", async () =
   btn.disabled = true; btn.textContent = "Aguarde...";
   const service = servicesData.find(s => s.id === document.getElementById("manualService").value);
   const time = document.getElementById("manualTime").value;
-  const [h, m] = time.split(":").map(Number); const t = h * 60 + m + service.duration; 
 
-  await addDoc(collection(db, "appointments"), {
-    tenantId: tenantId, professionalId: manualProfSelect.value, date: dateInput.value, startTime: time,
-    endTime: `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`,
+  // 🔥 CHAMA A FUNÇÃO OFICIAL DO SAAS QUE CRIA AS TRAVAS
+  const payload = {
+    tenantId: tenantId,
+    professionalId: manualProfSelect.value,
+    serviceName: service.name,
+    servicePrice: service.price,
+    date: dateInput.value,
+    startTime: time,
+    endTime: addMinutes(time, service.duration),
     clientName: document.getElementById("manualClientName").value || "Cliente Balcão",
     clientPhone: document.getElementById("manualClientPhone").value.replace(/[^\d]/g, ""),
-    serviceName: service.name, servicePrice: service.price, status: "confirmed"
-  });
+    status: "confirmed"
+  };
 
-  document.getElementById('secaoManual').style.display = 'none';
-  btn.textContent = "Confirmar"; btn.disabled = false;
+  try {
+    await createAppointment(payload);
+    document.getElementById('secaoManual').style.display = 'none';
+  } catch (e) {
+    alert("Erro ao marcar manualmente: " + e.message);
+  } finally {
+    btn.textContent = "Confirmar"; btn.disabled = false;
+  }
 });
 
 function renderBlockSlots() {
@@ -535,7 +555,7 @@ function renderBlockSlots() {
   if (!profId) return;
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
-  let slots = generateDynamicSlots(workingHours, profAppointments, 30);
+  let slots = generateAvailableSlots(workingHours, profAppointments, 40); // Bloqueios de 40 min padrão
   
   slots.forEach(time => {
     const btn = document.createElement("button"); btn.className = "slot"; btn.textContent = time;
@@ -550,20 +570,38 @@ function renderBlockSlots() {
 
 document.getElementById("btnConfirmBlock").addEventListener("click", async () => {
   const time = document.getElementById("btnConfirmBlock").getAttribute("data-time");
-  const [h, m] = time.split(":").map(Number); const t = h * 60 + m + 30; 
-  await addDoc(collection(db, "appointments"), {
-    tenantId, professionalId: blockProfSelect.value, date: dateInput.value, startTime: time,
-    endTime: `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`,
-    clientName: "⛔ BLOQUEIO DE AGENDA", serviceName: "Bloqueio Manual", status: "confirmed"
-  });
+  
+  const payload = {
+    tenantId: tenantId,
+    professionalId: blockProfSelect.value,
+    serviceName: "Bloqueio Manual",
+    servicePrice: 0,
+    date: dateInput.value,
+    startTime: time,
+    endTime: addMinutes(time, 40),
+    clientName: "⛔ BLOQUEIO DE AGENDA",
+    clientPhone: "",
+    status: "confirmed"
+  };
+
+  await createAppointment(payload);
 });
 
 document.getElementById("btnBlockWholeDay").addEventListener("click", async () => {
   if (confirm("Fechar o dia inteiro?")) {
-    await addDoc(collection(db, "appointments"), {
-      tenantId, professionalId: blockProfSelect.value, date: dateInput.value, startTime: "00:00", endTime: "23:59",
-      clientName: "⛔ BLOQUEIO DE AGENDA", serviceName: "Dia Fechado", status: "confirmed"
-    });
+    const payload = {
+      tenantId: tenantId,
+      professionalId: blockProfSelect.value,
+      serviceName: "Dia Fechado",
+      servicePrice: 0,
+      date: dateInput.value,
+      startTime: "00:00",
+      endTime: "23:59",
+      clientName: "⛔ BLOQUEIO DE AGENDA",
+      clientPhone: "",
+      status: "confirmed"
+    };
+    await createAppointment(payload);
   }
 });
 
