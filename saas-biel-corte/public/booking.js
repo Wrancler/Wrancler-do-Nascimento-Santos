@@ -126,9 +126,6 @@ async function initTenant() {
   }
 }
 
-// =========================================
-// CORREÇÃO DO BUG: updateSummaryCard 🐛🔨
-// =========================================
 function updateSummaryCard() {
   const summarySection = document.getElementById("summarySection");
   if (!summarySection) return;
@@ -149,13 +146,11 @@ function updateSummaryCard() {
       }
     }
 
-    // AQUI ESTAVA O ERRO: Pegando o valor (.value) corretamente agora
     const dateInputVal = document.getElementById("date").value;
     const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
     
     let dateTimeText = "Escolha o dia e horário";
     
-    // Verificamos se é uma string válida antes de tentar dar o .split()
     if (dateInputVal && typeof dateInputVal === "string") {
       const dataFormatada = dateInputVal.split("-").reverse().join("/");
       if (selectedSlot) {
@@ -334,7 +329,13 @@ async function renderSlots() {
       date
     });
 
-    const slots = generateAvailableSlots(workingHours, appointments, service.durationMinutes);
+    // 🔥 O FILTRO DE INTELIGÊNCIA: Remove os horários cancelados da contagem
+    const activeAppointments = appointments.filter(app => 
+      app.status !== "cancelled" && app.status !== "cancelado"
+    );
+
+    // Passamos apenas os agendamentos "ativos" para bloquear a agenda
+    const slots = generateAvailableSlots(workingHours, activeAppointments, service.durationMinutes);
 
     let finalSlots = slots;
     const now = new Date();
