@@ -24,33 +24,71 @@ async function initTenant() {
     workingHours = config.workingHours;
     showPrices = config.showPrices === true;
     
-    // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE
+    // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE (COM INTELIGÊNCIA DE SAAS)
     const professionalsDiv = document.getElementById("professionals");
+    const professionalsSection = document.getElementById("professionalsSection"); // Tenta buscar a seção inteira
     professionalsDiv.innerHTML = ""; 
 
     const profs = config.professionals || []; 
     
-    profs.forEach(p => {
-      const btn = document.createElement("button");
-      btn.className = "card card--person";
-      btn.type = "button";
-      btn.setAttribute("data-prof", p.id);
-      btn.setAttribute("data-prof-name", p.name);
+    // 🧠 A MÁGICA DA RENDERIZAÇÃO CONDICIONAL
+    if (profs.length === 1) {
+      // --- CENÁRIO: LOBO SOLITÁRIO 🐺 ---
+      const p = profs[0];
+      
+      // 1. Seleciona o profissional automaticamente nos bastidores
+      selectedProfessionalId = p.id;
+      selectedProfessionalName = p.name;
+      
+      // 2. Esconde a seção de escolha de profissionais
+      if (professionalsSection) {
+        professionalsSection.style.display = "none";
+      } else {
+        professionalsDiv.style.display = "none";
+      }
+
+      // 3. Desenha um Cabeçalho Premium Fixo
+      const headerLobo = document.createElement("div");
+      headerLobo.style = "display: flex; align-items: center; gap: 16px; background: #161616; padding: 20px; border-radius: 16px; border: 1px solid #e0b976; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);";
       
       const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
-
-      btn.innerHTML = `
-        <div class="card__media">
-          <img src="${imgCaminho}" alt="${p.name}" loading="lazy">
-          <div class="card__fade"></div>
-        </div>
-        <div class="card__body">
-          <div class="card__title">${p.name}</div>
-          <div class="card__meta">Toque para selecionar</div>
+      
+      headerLobo.innerHTML = `
+        <img src="${imgCaminho}" alt="${p.name}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #e0b976;">
+        <div>
+          <h2 style="margin: 0; color: #fff; font-size: 20px;">${p.name}</h2>
+          <p style="margin: 4px 0 0 0; color: #888; font-size: 14px;">Especialista pronto para te atender</p>
         </div>
       `;
-      professionalsDiv.appendChild(btn);
-    });
+      
+      // Insere este cabeçalho mesmo antes da lista de serviços
+      const servicesSection = document.getElementById("servicesSection") || document.getElementById("services").parentElement;
+      servicesSection.parentNode.insertBefore(headerLobo, servicesSection);
+
+    } else {
+      // --- CENÁRIO: BARBEARIA COM EQUIPE 💈 ---
+      profs.forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "card card--person";
+        btn.type = "button";
+        btn.setAttribute("data-prof", p.id);
+        btn.setAttribute("data-prof-name", p.name);
+        
+        const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
+
+        btn.innerHTML = `
+          <div class="card__media">
+            <img src="${imgCaminho}" alt="${p.name}" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">${p.name}</div>
+            <div class="card__meta">Toque para selecionar</div>
+          </div>
+        `;
+        professionalsDiv.appendChild(btn);
+      });
+    }
 
     // 3. RENDERIZA OS SERVIÇOS DINAMICAMENTE
     const servicesDiv = document.getElementById("services");
@@ -114,7 +152,7 @@ function updateSummaryCard() {
       }
     }
 
-    const dateInput = document.getElementById("date").value;
+    const dateInput = document.getElementById("date");
     const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
     
     let dateTimeText = "Escolha o dia e horário";
