@@ -12,8 +12,12 @@
 
 
 
-    <meta http-equiv="refresh" content="0; url=/public/booking.html">
-    <script>window.location.replace("/public/booking.html");</script>
+   
+    <script>
+  // Pega nos parâmetros da URL (ex: ?tenant=jef) e leva-os junto na viagem para a pasta public
+  window.location.replace("/public/booking.html" + window.location.search);
+</script>
+
 </head>
 <body style="background-color: #111;">
     </body>

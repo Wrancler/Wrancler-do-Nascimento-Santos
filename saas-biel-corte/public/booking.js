@@ -26,28 +26,23 @@ async function initTenant() {
     
     // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE (COM INTELIGÊNCIA DE SAAS)
     const professionalsDiv = document.getElementById("professionals");
-    const professionalsSection = document.getElementById("professionalsSection"); // Tenta buscar a seção inteira
+    const professionalsSection = document.getElementById("professionalsSection"); 
     professionalsDiv.innerHTML = ""; 
 
     const profs = config.professionals || []; 
     
-    // 🧠 A MÁGICA DA RENDERIZAÇÃO CONDICIONAL
     if (profs.length === 1) {
       // --- CENÁRIO: LOBO SOLITÁRIO 🐺 ---
       const p = profs[0];
-      
-      // 1. Seleciona o profissional automaticamente nos bastidores
       selectedProfessionalId = p.id;
       selectedProfessionalName = p.name;
       
-      // 2. Esconde a seção de escolha de profissionais
       if (professionalsSection) {
         professionalsSection.style.display = "none";
       } else {
         professionalsDiv.style.display = "none";
       }
 
-      // 3. Desenha um Cabeçalho Premium Fixo
       const headerLobo = document.createElement("div");
       headerLobo.style = "display: flex; align-items: center; gap: 16px; background: #161616; padding: 20px; border-radius: 16px; border: 1px solid #e0b976; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);";
       
@@ -61,7 +56,6 @@ async function initTenant() {
         </div>
       `;
       
-      // Insere este cabeçalho mesmo antes da lista de serviços
       const servicesSection = document.getElementById("servicesSection") || document.getElementById("services").parentElement;
       servicesSection.parentNode.insertBefore(headerLobo, servicesSection);
 
@@ -132,6 +126,9 @@ async function initTenant() {
   }
 }
 
+// =========================================
+// CORREÇÃO DO BUG: updateSummaryCard 🐛🔨
+// =========================================
 function updateSummaryCard() {
   const summarySection = document.getElementById("summarySection");
   if (!summarySection) return;
@@ -152,13 +149,15 @@ function updateSummaryCard() {
       }
     }
 
-    const dateInput = document.getElementById("date");
+    // AQUI ESTAVA O ERRO: Pegando o valor (.value) corretamente agora
+    const dateInputVal = document.getElementById("date").value;
     const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
     
     let dateTimeText = "Escolha o dia e horário";
     
-    if (dateInput) {
-      const dataFormatada = dateInput.split("-").reverse().join("/");
+    // Verificamos se é uma string válida antes de tentar dar o .split()
+    if (dateInputVal && typeof dateInputVal === "string") {
+      const dataFormatada = dateInputVal.split("-").reverse().join("/");
       if (selectedSlot) {
         dateTimeText = `${dataFormatada} às ${selectedSlot.textContent}`;
       } else {
@@ -198,9 +197,6 @@ clientPhoneInput.addEventListener("input", (e) => {
   e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
 });
 
-// =========================================
-// CORREÇÃO DA ROLAGEM SUAVE (UX PREMIUM)
-// =========================================
 function smoothScrollTo(el, blockPos = "start") {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: blockPos });
@@ -209,15 +205,6 @@ function smoothScrollTo(el, blockPos = "start") {
 function smoothScrollToId(id, blockPos = "start") {
   smoothScrollTo(document.getElementById(id), blockPos);
 }
-
-// NOVO: Corrige o pulo agressivo do iPhone ao usar Autocomplete ou botão "Avançar"
-clientNameInput.addEventListener("focus", () => {
-  setTimeout(() => smoothScrollTo(clientNameInput, "center"), 300);
-});
-
-clientPhoneInput.addEventListener("focus", () => {
-  setTimeout(() => smoothScrollTo(clientPhoneInput, "center"), 300);
-});
 
 function addMinutes(time, minutes) {
   const [h, m] = time.split(":").map(Number);
@@ -245,7 +232,6 @@ function formatPhoneDigits(phone) {
 
 function updateScheduleLockState() {
   const ready = !!selectedProfessionalId && !!selectedServiceId;
-
   scheduleSection.setAttribute("aria-disabled", ready ? "false" : "true");
 
   if (!ready) {
@@ -255,9 +241,11 @@ function updateScheduleLockState() {
     hint.textContent = "Agora escolha o dia e o horário.";
   }
 
-  subtitle.textContent = ready
-    ? `Agendando com ${selectedProfessionalName} • ${servicesById[selectedServiceId].name}`
-    : "Escolha o barbeiro e o serviço para liberar a agenda.";
+  if(subtitle) {
+    subtitle.textContent = ready
+      ? `Agendando com ${selectedProfessionalName} • ${servicesById[selectedServiceId].name}`
+      : "Escolha o barbeiro e o serviço para liberar a agenda.";
+  }
 }
 
 function markSelected(container, selector, selectedAttrValue, attrName) {
@@ -278,7 +266,7 @@ function preselectFromUrl() {
       selectedProfessionalId = prof;
       selectedProfessionalName = btn.getAttribute("data-prof-name") || prof;
       markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
-      selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
+      if(selectedProfessionalText) selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
     }
   }
 
@@ -286,7 +274,7 @@ function preselectFromUrl() {
     selectedServiceId = service;
     markSelected(servicesDiv, "button[data-service]", selectedServiceId, "data-service");
     const s = servicesById[selectedServiceId];
-    selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
+    if(selectedServiceText) selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
   }
 
   updateScheduleLockState();
@@ -300,13 +288,12 @@ professionalsDiv.addEventListener("click", (e) => {
   selectedProfessionalName = btn.getAttribute("data-prof-name") || selectedProfessionalId;
 
   markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
-  selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
+  if(selectedProfessionalText) selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
 
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
   if (dateInput.value && selectedServiceId) renderSlots();
-
   smoothScrollToId("servicesSection", "start");
   updateSummaryCard();
 });
@@ -322,26 +309,20 @@ servicesDiv.addEventListener("click", (e) => {
 
   markSelected(servicesDiv, "button[data-service]", selectedServiceId, "data-service");
   const s = servicesById[selectedServiceId];
-  selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
+  if(selectedServiceText) selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
 
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
   if (dateInput.value && selectedProfessionalId) renderSlots();
-
   smoothScrollToId("clientSection", "start");
-  
   updateSummaryCard();
 });
 
 async function renderSlots() {
   const date = dateInput.value;
   if (!date) return;
-
-  if (!selectedProfessionalId || !selectedServiceId) {
-    updateScheduleLockState();
-    return;
-  }
+  if (!selectedProfessionalId || !selectedServiceId) return;
 
   const service = servicesById[selectedServiceId];
   setSlotsLoading("Carregando...");
@@ -353,11 +334,7 @@ async function renderSlots() {
       date
     });
 
-    const slots = generateAvailableSlots(
-      workingHours,
-      appointments,
-      service.durationMinutes
-    );
+    const slots = generateAvailableSlots(workingHours, appointments, service.durationMinutes);
 
     let finalSlots = slots;
     const now = new Date();
@@ -374,8 +351,7 @@ async function renderSlots() {
     slotsDiv.innerHTML = "";
 
     if (finalSlots.length === 0) {
-      slotsDiv.textContent = "Sem horários disponíveis para hoje. Escolha outro dia.";
-      smoothScrollTo(slotsDiv, "center");
+      slotsDiv.textContent = "Sem horários disponíveis para hoje.";
       return;
     }
 
@@ -388,22 +364,15 @@ async function renderSlots() {
       btn.onclick = () => {
         const allSlots = slotsDiv.querySelectorAll('button');
         allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
-        
         btn.classList.add('selected', 'is-selected');
         updateSummaryCard();
-        
         setTimeout(() => handleCreateAppointment(time, date, btn), 300);
       };
-      
       slotsDiv.appendChild(btn);
     });
-
-    smoothScrollTo(slotsDiv, "center");
-
   } catch (e) {
     console.error(e);
-    slotsDiv.textContent = "Erro ao carregar horários. Tente novamente.";
-    smoothScrollTo(slotsDiv, "center");
+    slotsDiv.textContent = "Erro ao carregar horários.";
   }
 }
 
@@ -416,11 +385,9 @@ async function handleCreateAppointment(time, date, clickedBtn) {
   if (!clientName) return alert("Digite seu nome.");
   
   const cleanPhone = formatPhoneDigits(clientPhone);
-  if (cleanPhone.length < 10) return alert("Digite um WhatsApp válido com DDD.");
+  if (cleanPhone.length < 10) return alert("Digite um WhatsApp válido.");
 
-  if (clickedBtn) {
-    clickedBtn.textContent = "Agendando...";
-  }
+  if (clickedBtn) clickedBtn.textContent = "Agendando...";
   setButtonsDisabled(true);
 
   const service = servicesById[selectedServiceId];
@@ -441,45 +408,24 @@ async function handleCreateAppointment(time, date, clickedBtn) {
   try {
     const result = await createAppointment(payload);
     const code = result?.code;
-
     const dataFormatada = date.split("-").reverse().join("/");
 
     const currentUrl = new URL(window.location.href);
     const baseUrl = currentUrl.origin + currentUrl.pathname.replace('booking.html', '');
     const linkCancelamento = `${baseUrl}cancelar.html?id=${code}`;
 
-    const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
-                `👥 CLIENTE: *${clientName} *\n` +
-                `📞 TELEFONE: ${cleanPhone}\n` +
-                `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n` +
+    const msg = `📅 MEU AGENDAMENTO\n` +
+                `👥 CLIENTE: ${clientName}\n` +
                 `📌 DIA ${dataFormatada}\n` +
-                `⌚ HORÁRIO ${time}\n\n` +
-                `💇‍♂️ PROFISSIONAL\n` +
-                `${selectedProfessionalName}\n\n` +
-                `✂️ SERVIÇO\n` +
-                `${service.name}\n\n` +
-                `Olá seu horário foi agendado com sucesso 👍\n` +
-                `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n` +
-                `CASO DESEJE CANCELAR O AGENDAMENTO:\n` +
-                `❌ Acesse o link abaixo para cancelar na hora:\n` +
-                `${linkCancelamento}\n\n` +
-                `COMPROVANTE DE AGENDAMENTO`;
+                `⌚ HORÁRIO ${time}\n` +
+                `💇‍♂️ PROFISSIONAL: ${selectedProfessionalName}\n` +
+                `✂️ SERVIÇO: ${service.name}\n` +
+                `❌ Link de cancelamento: ${linkCancelamento}`;
 
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`;
-    
-    window.location.replace(whatsappUrl);
-
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
-
+    window.location.replace(`https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`);
   } catch (e) {
-    if (e?.message === "HORARIO_OCUPADO") {
-      alert("❌ Ops! Esse horário foi preenchido agora pouco. Escolha outro.");
-    } else {
-      alert("❌ Erro ao agendar: " + e.message);
-    }
-    await renderSlots();
+    alert("Erro: " + e.message);
+    renderSlots();
   } finally {
     setButtonsDisabled(false);
   }
@@ -497,11 +443,7 @@ function renderDateCards() {
   for (let i = 0; i < 15; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const isoDate = `${year}-${month}-${day}`;
+    const isoDate = d.toISOString().split('T')[0];
 
     const card = document.createElement("div");
     card.className = "date-card";
@@ -514,16 +456,11 @@ function renderDateCards() {
     card.addEventListener("click", () => {
       document.querySelectorAll(".date-card").forEach(c => c.classList.remove("is-selected"));
       card.classList.add("is-selected");
-
-      const dateInput = document.getElementById("date");
       dateInput.value = isoDate;
-      
       renderSlots();
       updateSummaryCard();
     });
-
     dateSlider.appendChild(card);
   }
 }
-
 renderDateCards();
