@@ -1,4 +1,3 @@
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
@@ -8,34 +7,28 @@ function getParam(name) {
 }
 
 const tenantId = getParam("tenant") || "tenant-demo";
-const auth = getAuth();
 
-let profSelecionadoAtual = "todos"; // Variável global para saber quem está selecionado
+let profSelecionadoAtual = "todos"; 
 
 // ==========================================
-// 1. SEGURANÇA E NAVEGAÇÃO
+// 1. SEGURANÇA E NAVEGAÇÃO 
 // ==========================================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = `login.html?tenant=${encodeURIComponent(tenantId)}`;
-  } else {
-    initFinanceiro();
-  }
-});
-
 document.getElementById("btnVoltar").addEventListener("click", () => {
   window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
 });
+
+initFinanceiro();
 
 // ==========================================
 // 2. INICIALIZAÇÃO DOS DADOS E ABAS
 // ==========================================
 const dateStart = document.getElementById("dateStart");
 const dateEnd = document.getElementById("dateEnd");
-const profPills = document.getElementById("profPills"); // Mudou para Pills
+const profPills = document.getElementById("profPills"); 
 const financeList = document.getElementById("financeList");
 const totCortes = document.getElementById("totCortes");
 const totValor = document.getElementById("totValor");
+const totAgendamentos = document.getElementById("totAgendamentos"); 
 
 function formatarDataIso(data) {
   const ano = data.getFullYear();
@@ -48,6 +41,7 @@ async function initFinanceiro() {
   try {
     const config = await getTenantConfig(tenantId);
     
+    // A PORTA DO COFRE: Verifica se o utilizador digitou o PIN no Dashboard
     const cracha = sessionStorage.getItem("crachaFinanceiro");
     if (!config.financePin || cracha !== String(config.financePin)) {
       alert("⚠️ Acesso Restrito: Digite o PIN correto no painel para acessar.");
@@ -55,7 +49,6 @@ async function initFinanceiro() {
       return; 
     }
 
-    // GERA OS BOTÕES DAS ABAS (PILLS) DINAMICAMENTE
     profPills.innerHTML = `<button class="pill-btn active" data-id="todos">💰 Todos (Geral)</button>`;
     
     if (config.professionals) {
@@ -64,21 +57,15 @@ async function initFinanceiro() {
       });
     }
 
-    // Adiciona a ação de clique nas Abas
     document.querySelectorAll(".pill-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        // Tira a cor dourada de todos
         document.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
-        // Coloca a cor dourada no botão clicado
         e.target.classList.add("active");
-        
-        // Atualiza a variável e recalcula a matemática!
         profSelecionadoAtual = e.target.getAttribute("data-id");
         calcularFinancas();
       });
     });
 
-    // Renderiza a roleta de datas nova
     renderFinanceDateCards();
 
   } catch(e) { 
@@ -104,7 +91,6 @@ function renderFinanceDateCards() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-  // 1º Card: RESUMO DO MÊS
   const cardMes = document.createElement("div");
   cardMes.className = "date-card";
   cardMes.style.minWidth = "85px";
@@ -123,44 +109,26 @@ function renderFinanceDateCards() {
   });
   dateSlider.appendChild(cardMes);
 
-  // Cartões de Dias
   for (let i = 0; i >= -15; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const d = new Date(today); d.setDate(today.getDate() + i);
     const isoDate = formatarDataIso(d);
-
-    const card = document.createElement("div");
-    card.className = "date-card";
+    const card = document.createElement("div"); card.className = "date-card";
     
-    if (i === 0) {
-      card.classList.add("is-selected");
-      definirFiltro(isoDate, isoDate); 
-    }
+    if (i === 0) { card.classList.add("is-selected"); definirFiltro(isoDate, isoDate); }
 
-    card.innerHTML = `
-      <span class="date-card__weekday">${i === 0 ? "HOJE" : diasSemana[d.getDay()]}</span>
-      <span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span>
-      <span class="date-card__month">${meses[d.getMonth()]}</span>
-    `;
+    card.innerHTML = `<span class="date-card__weekday">${i === 0 ? "HOJE" : diasSemana[d.getDay()]}</span><span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span><span class="date-card__month">${meses[d.getMonth()]}</span>`;
 
     card.addEventListener("click", () => {
       document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
-      card.classList.add("is-selected");
-      definirFiltro(isoDate, isoDate);
+      card.classList.add("is-selected"); definirFiltro(isoDate, isoDate);
     });
 
     dateSlider.appendChild(card);
   }
 }
 
-dateStart.addEventListener("change", () => { 
-  document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
-  calcularFinancas(); 
-});
-dateEnd.addEventListener("change", () => { 
-  document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
-  calcularFinancas(); 
-});
+dateStart.addEventListener("change", () => { document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected")); calcularFinancas(); });
+dateEnd.addEventListener("change", () => { document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected")); calcularFinancas(); });
 
 
 // ==========================================
@@ -170,10 +138,9 @@ async function calcularFinancas() {
   financeList.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>A calcular finanças...</p>";
   totCortes.textContent = "...";
   totValor.textContent = "...";
+  if (totAgendamentos) totAgendamentos.textContent = "...";
 
-  const start = dateStart.value;
-  const end = dateEnd.value;
-
+  const start = dateStart.value; const end = dateEnd.value;
   if (!start || !end) return;
 
   try {
@@ -182,19 +149,24 @@ async function calcularFinancas() {
     
     let agendamentosValidos = [];
     let valorAcumulado = 0;
+    let totalAgendamentosCount = 0; // Conta o movimento total da loja
 
     snap.forEach(d => {
       const app = d.data();
-      // MUDANÇA: Agora usamos a variável profSelecionadoAtual em vez de profFilter.value
-      if (
-        app.status === "completed" &&
-        app.date >= start &&
-        app.date <= end &&
-        (profSelecionadoAtual === "todos" || app.professionalId === profSelecionadoAtual)
-      ) {
-        agendamentosValidos.push(app);
-        const preco = parseFloat(app.servicePrice) || 0;
-        valorAcumulado += preco;
+      
+      if (app.date >= start && app.date <= end && (profSelecionadoAtual === "todos" || app.professionalId === profSelecionadoAtual)) {
+        
+        // Ignora bloqueios e cancelamentos na contagem geral
+        if (app.clientName !== "⛔ BLOQUEIO DE AGENDA" && app.status !== "cancelled") {
+          totalAgendamentosCount++;
+          
+          // O dinheiro e a lista final só contam quem realmente pagou e finalizou
+          if (app.status === "completed") {
+            agendamentosValidos.push(app);
+            const preco = parseFloat(app.servicePrice) || 0;
+            valorAcumulado += preco;
+          }
+        }
       }
     });
 
@@ -203,6 +175,7 @@ async function calcularFinancas() {
       return String(b.startTime).localeCompare(String(a.startTime));
     });
 
+    if (totAgendamentos) totAgendamentos.textContent = totalAgendamentosCount;
     totCortes.textContent = agendamentosValidos.length;
     totValor.textContent = `R$ ${valorAcumulado.toFixed(2).replace('.', ',')}`;
 
