@@ -1,14 +1,9 @@
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
 
-function getParam(name) {
-  return new URLSearchParams(window.location.search).get(name);
-}
-
+function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
 const tenantId = getParam("tenant") || "tenant-demo";
-const auth = getAuth();
 
 let workingHours = [];
 let allAppointmentsForDay = []; 
@@ -17,9 +12,6 @@ let currentSnapshotUnsubscribe = null;
 let servicesData = []; 
 let profissionaisConfig = []; 
 
-// ==========================================
-// 1. INICIALIZAÇÃO DIRETA (AGENDA LIVRE)
-// ==========================================
 initDashboard();
 
 const btnFinanceiro = document.getElementById("btnFinanceiro");
@@ -88,24 +80,18 @@ async function initDashboard() {
     }
     
     renderConfigPanel();
-
   } catch(e) { console.error("Erro config", e); }
 
   blockProfSelect.addEventListener("change", renderBlockSlots);
   if (mainProfFilter) mainProfFilter.addEventListener("change", renderAppointmentsList);
-  
   manualProfSelect.addEventListener("change", updateManualSlots);
   manualServiceSelect.addEventListener("change", updateManualSlots);
-  manualTimeSelect.addEventListener("change", () => {
-    btnConfirmManual.disabled = !manualTimeSelect.value;
-  });
+  manualTimeSelect.addEventListener("change", () => { btnConfirmManual.disabled = !manualTimeSelect.value; });
 
   renderAdminDateCards();
 }
 
-// ==========================================
-// ABA DE CONFIGURAÇÕES E GALERIA
-// ==========================================
+// ABA DE CONFIGURAÇÕES E GALERIA (Mantida idêntica)
 const configSection = document.getElementById("configSection");
 const agendaSection = document.getElementById("agendaSection");
 const listaSection = document.getElementById("listaSection");
@@ -149,9 +135,9 @@ function renderConfigPanel() {
 
   document.querySelectorAll(".btnRemoverServico").forEach(btn => {
     btn.addEventListener("click", async (e) => {
+      if(!confirm("Remover este serviço do site?")) return;
       const index = e.target.getAttribute("data-index");
       servicesData.splice(index, 1); 
-      btn.textContent = "⌛";
       await salvarConfiguracoes(true);
     });
   });
@@ -217,16 +203,13 @@ async function salvarConfiguracoes(mostrarAlerta = true) {
   try {
     document.getElementById("btnAddNewService").textContent = "A gravar...";
     await updateDoc(doc(db, "tenants", tenantId), { services: servicesData });
+    if (mostrarAlerta) alert("Configurações atualizadas com sucesso!");
     document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
     renderConfigPanel(); 
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 }
 
-// ==========================================
 // ROLETA DE DATAS E REALTIME BUSCA
-// ==========================================
 function renderAdminDateCards() {
   const dateSlider = document.getElementById("adminDateSlider");
   if (!dateSlider) return;
@@ -286,7 +269,6 @@ function loadAppointments(dateStr) {
     }, (error) => {
       console.error("Erro no tempo real:", error); listDiv.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro: ${error.message}</p>`;
     });
-
   } catch (error) { console.error("Erro:", error); }
 }
 
@@ -329,52 +311,52 @@ function renderAppointmentsList() {
         <div class="admin-item__service">${app.serviceName || 'Serviço'}</div>`;
     }
 
-    const actionsDiv = document.createElement("div"); actionsDiv.className = "admin-item__actions"; actionsDiv.style.display = "flex"; actionsDiv.style.gap = "8px";
+    // 🔥 CORREÇÃO CRÍTICA AQUI 🔥 A memória dos botões não será apagada
+    const actionsDiv = document.createElement("div"); 
+    actionsDiv.className = "admin-item__actions"; 
+    actionsDiv.style.display = "flex"; 
+    actionsDiv.style.gap = "8px";
 
     if (isCompleted) {
       actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
     } else if (isCancelled) {
-      // 🔥 BOTÃO DE EXCLUIR INSTANTÂNEO
-      const btnExcluir = document.createElement("button"); btnExcluir.className = "btn-admin btn-admin--cancel"; btnExcluir.style.background = "#ff3333"; btnExcluir.style.color = "white"; btnExcluir.style.flex = "1"; btnExcluir.textContent = "🗑️ Excluir da Tela";
-      btnExcluir.onclick = async () => { 
-        btnExcluir.textContent = "Excluindo..."; 
-        btnExcluir.disabled = true;
-        await deleteDoc(doc(db, "appointments", app.id)); 
-      };
-      actionsDiv.appendChild(btnExcluir);
+      let buttonsHTML = `<button class="btn-admin btn-admin--cancel" style="background: #ff3333; color: white; flex: 1;" onclick="excluirApp('${app.id}', this)">🗑️ Excluir da Tela</button>`;
+      actionsDiv.innerHTML = buttonsHTML;
     } else {
+      let buttonsHTML = "";
       if (!isBlock) {
-        // 🔥 BOTÃO DE FINALIZAR INSTANTÂNEO
-        const btnFinalizar = document.createElement("button"); btnFinalizar.className = "btn-admin"; btnFinalizar.style.background = "#4CAF50"; btnFinalizar.style.color = "white"; btnFinalizar.style.flex = "1"; btnFinalizar.textContent = "✅ Finalizar";
-        btnFinalizar.onclick = async () => { 
-            btnFinalizar.textContent = "Aguarde..."; 
-            btnFinalizar.disabled = true;
-            await updateDoc(doc(db, "appointments", app.id), { status: "completed" }); 
-        };
-        actionsDiv.appendChild(btnFinalizar);
-        
+        buttonsHTML += `<button class="btn-admin" style="background: #4CAF50; color: white; flex: 1;" onclick="finalizarApp('${app.id}', this)">✅ Finalizar</button>`;
         if (app.clientPhone && app.clientPhone.replace(/\D/g, '').length >= 10) {
-          actionsDiv.innerHTML += `<button class="btn-admin" style="background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid #25D366; flex: 1;" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
+          buttonsHTML += `<button class="btn-admin" style="background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid #25D366; flex: 1;" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
         }
       }
-      
-      // 🔥 BOTÃO DE CANCELAR INSTANTÂNEO
-      const btnCancel = document.createElement("button"); btnCancel.className = "btn-admin btn-admin--cancel"; btnCancel.style.flex = "1"; btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar";
-      btnCancel.onclick = async () => {
-        btnCancel.textContent = "Aguarde..."; 
-        btnCancel.disabled = true;
-        await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" }); 
-      };
-      actionsDiv.appendChild(btnCancel);
+      buttonsHTML += `<button class="btn-admin btn-admin--cancel" style="flex: 1;" onclick="cancelarApp('${app.id}', ${isBlock}, this)">${isBlock ? 'Desbloquear Horário' : 'Cancelar'}</button>`;
+      actionsDiv.innerHTML = buttonsHTML;
     }
     
-    item.appendChild(actionsDiv); listDiv.appendChild(item);
+    item.appendChild(actionsDiv); 
+    listDiv.appendChild(item);
   });
 }
 
 // ==========================================
-// FUNÇÕES GLOBAIS DE AÇÃO
+// FUNÇÕES GLOBAIS DE AÇÃO (1 CLIQUE SEGURO)
 // ==========================================
+window.excluirApp = async (id, btn) => { 
+  btn.textContent = "A apagar..."; btn.disabled = true;
+  await deleteDoc(doc(db, "appointments", id)); 
+};
+
+window.finalizarApp = async (id, btn) => { 
+  btn.textContent = "Aguarde..."; btn.disabled = true;
+  await updateDoc(doc(db, "appointments", id), { status: "completed" }); 
+};
+
+window.cancelarApp = async (id, isBlock, btn) => { 
+  btn.textContent = "Aguarde..."; btn.disabled = true;
+  await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); 
+};
+
 window.lembrarApp = (nome, servico, data, hora, telefone) => {
     let phoneLimpo = telefone.replace(/\D/g, '');
     if (phoneLimpo.length <= 11) phoneLimpo = "55" + phoneLimpo;
