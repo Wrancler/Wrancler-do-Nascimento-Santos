@@ -18,7 +18,7 @@ let showPrices = false;
 let selectedProfessionalId = null;
 let selectedProfessionalName = null;
 let selectedServiceId = null;
-let selectedTime = null; // 🔥 NOVA VARIÁVEL: Guarda a hora sem agendar logo
+let selectedTime = null; // 🔥 Guarda a hora na memória sem agendar logo
 
 async function initTenant() {
   try {
@@ -34,6 +34,7 @@ async function initTenant() {
 
     const profs = config.professionals || []; 
     
+    // 🔥 LÓGICA DO LOBO SOLITÁRIO MANTIDA
     if (profs.length === 1) {
       const p = profs[0];
       selectedProfessionalId = p.id;
@@ -138,6 +139,7 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
+      // Exibe os preços se a barbearia permitir
       if (showPrices && servico.price) {
         document.getElementById("summaryTotal").textContent = `R$ ${servico.price},00`; 
       } else {
@@ -186,10 +188,15 @@ clientPhoneInput.addEventListener("input", (e) => {
   e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
 });
 
+// Correção do Pulo do iPhone
 function smoothScrollToId(id, blockPos = "start") {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: blockPos });
 }
+
+clientNameInput.addEventListener("focus", () => setTimeout(() => smoothScrollToId("clientSection", "center"), 300));
+clientPhoneInput.addEventListener("focus", () => setTimeout(() => smoothScrollToId("clientSection", "center"), 300));
+
 
 function addMinutes(time, minutes) {
   const [h, m] = time.split(":").map(Number);
@@ -273,7 +280,7 @@ professionalsDiv.addEventListener("click", (e) => {
   markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
   if(selectedProfessionalText) selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
   
-  selectedTime = null; // Limpa hora escolhida se mudar o profissional
+  selectedTime = null; // Limpa hora escolhida
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
   if (dateInput.value && selectedServiceId) renderSlots();
@@ -291,7 +298,7 @@ servicesDiv.addEventListener("click", (e) => {
   const s = servicesById[selectedServiceId];
   if(selectedServiceText) selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
   
-  selectedTime = null; // Limpa hora escolhida se mudar o serviço
+  selectedTime = null; // Limpa hora escolhida
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
   if (dateInput.value && selectedProfessionalId) renderSlots();
@@ -301,7 +308,7 @@ servicesDiv.addEventListener("click", (e) => {
 
 async function renderSlots() {
   const date = dateInput.value;
-  selectedTime = null; // Resetamos a hora sempre que trocar de dia
+  selectedTime = null; 
   
   if (!date) return;
   if (!selectedProfessionalId || !selectedServiceId) return;
@@ -346,16 +353,15 @@ async function renderSlots() {
       btn.className = "slot";
       btn.textContent = time;
       
-      // 🔥 A MÁGICA ACONTECE AQUI: Apenas seleciona e rola a tela
+      // 🔥 A MÁGICA DO CLIQUE CONSCIENTE
       btn.onclick = () => {
         const allSlots = slotsDiv.querySelectorAll('button');
         allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
         btn.classList.add('selected', 'is-selected');
         
-        selectedTime = time; // Guarda a hora na memória
+        selectedTime = time; // Guarda a hora
         updateSummaryCard();
         
-        // Rola suavemente para o botão de confirmar
         setTimeout(() => smoothScrollToId("summarySection", "start"), 100);
       };
       slotsDiv.appendChild(btn);
@@ -394,7 +400,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
   const cleanPhone = formatPhoneDigits(clientPhone);
   if (cleanPhone.length < 10) {
     smoothScrollToId("clientSection", "center");
-    return alert("Digite um WhatsApp válido.");
+    return alert("Digite um WhatsApp válido com DDD.");
   }
 
   if (clickedBtn) clickedBtn.textContent = "AGENDANDO...";
@@ -433,7 +439,14 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `✂️ SERVIÇO: ${service.name}\n` +
                 `❌ Link de cancelamento: ${linkCancelamento}`;
 
+    // Manda para o WhatsApp principal do Biel
     window.location.replace(`https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`);
+    
+    // Bônus: Recarrega a página após 2 segundos para limpar a tela
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+
   } catch (e) {
     alert("Erro: " + e.message);
     renderSlots();

@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Agendamento Premium</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Agendamento Premium">
-    <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
-    <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Agendamento Premium">
+  <link rel="apple-touch-icon" href="/public/assets/brand/logo001.png?v=1">
+  <link rel="icon" type="image/png" href="/public/assets/brand/logo001.png?v=1">
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -21,7 +21,7 @@
         <div class="brand">
           <div class="brand__mark">
             <img src="assets/brand/logo001.png" alt="Logo">
-        </div>
+          </div>
 
           <div class="brand__info">
             <div class="brand__name">Agendamento Premium</div>
@@ -53,7 +53,7 @@
     <section class="section" id="servicesSection">
       <div class="section__head">
         <h2>Escolha o serviço</h2>
-        <p>Todos os serviços têm 40 minutos.</p>
+        <p>Todos os serviços têm duração configurada.</p>
       </div>
 
       <div id="services" class="grid grid--3"></div>
@@ -72,7 +72,7 @@
         <input class="input" id="clientName" placeholder="Ex: João" autocomplete="name" />
 
         <label class="label">Seu WhatsApp</label>
-        <input class="input" id="clientPhone" placeholder="Ex: (11) 99999-9999" autocomplete="tel" inputmode="numeric" />
+        <input class="input" id="clientPhone" placeholder="Ex: 83999999999" autocomplete="tel" inputmode="numeric" />
       </div>
     </section>
 
@@ -122,6 +122,11 @@
           <span class="summary-value" id="summaryTotal">R$ 0,00</span>
         </div>
       </div>
+
+      <button id="btnConfirmBooking" style="width: 100%; padding: 16px; background-color: #e0b976; color: #111; font-weight: 800; text-transform: uppercase; border-radius: 8px; border: none; font-size: 16px; cursor: pointer; margin-top: 24px; box-shadow: 0 4px 15px rgba(224, 185, 118, 0.3);">
+        Confirmar e Agendar
+      </button>
+
     </section>
 
     <footer class="footer">

@@ -9,23 +9,23 @@ function getParam(name) {
 
 const tenantId = getParam("tenant") || "tenant-demo";
 
-// Variáveis que agora vêm do Firebase
 let barberWhatsapp = "";
 let workingHours = [];
 let servicesById = {};
 
-// Função que inicia o sistema buscando os dados do SaaS
+// Estado da seleção
+let selectedProfessionalId = null;
+let selectedProfessionalName = null;
+let selectedServiceId = null;
+let selectedTime = null; // 🔥 NOVA VARIÁVEL: Guarda a hora na memória antes de agendar
+
 async function initTenant() {
   try {
     const config = await getTenantConfig(tenantId);
     
-    // 1. Carrega as configurações gerais
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
     
-    // ==========================================
-    // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE
-    // ==========================================
     const professionalsDiv = document.getElementById("professionals");
     professionalsDiv.innerHTML = ""; 
 
@@ -53,9 +53,6 @@ async function initTenant() {
       professionalsDiv.appendChild(btn);
     });
 
-    // ==========================================
-    // 3. RENDERIZA OS SERVIÇOS DINAMICAMENTE
-    // ==========================================
     const servicesDiv = document.getElementById("services");
     servicesDiv.innerHTML = ""; 
 
@@ -74,7 +71,6 @@ async function initTenant() {
       
       const imgCaminho = s.image || `assets/services/${s.id}.png`;
 
-      // Os botões agora mostram APENAS a duração, sem menção a preços
       btn.innerHTML = `
         <div class="card__media">
           <img src="${imgCaminho}" alt="${s.name}" loading="lazy">
@@ -97,7 +93,6 @@ async function initTenant() {
   }
 }
 
-// Função para atualizar o Card de Resumo em tempo real
 function updateSummaryCard() {
   const summarySection = document.getElementById("summarySection");
   if (!summarySection) return;
@@ -110,7 +105,6 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      // O total fica totalmente invisível/vazio
       document.getElementById("summaryTotal").textContent = ""; 
     }
 
@@ -131,14 +125,8 @@ function updateSummaryCard() {
   }
 }
 
-// Estado da seleção
-let selectedProfessionalId = null;
-let selectedProfessionalName = null;
-let selectedServiceId = null;
-
 initTenant();
 
-// Elements
 const professionalsDiv = document.getElementById("professionals");
 const servicesDiv = document.getElementById("services");
 const selectedProfessionalText = document.getElementById("selectedProfessionalText");
@@ -152,24 +140,15 @@ const slotsDiv = document.getElementById("slots");
 const clientNameInput = document.getElementById("clientName");
 const clientPhoneInput = document.getElementById("clientPhone");
 
-// =========================================
-// MÁSCARAS E FORMATAÇÕES
-// =========================================
-
-// 1. Auto-Maiúscula no Nome
 clientNameInput.addEventListener("input", (e) => {
   e.target.value = e.target.value.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
 });
 
-// 2. Máscara de Telefone (WhatsApp) Automática
 clientPhoneInput.addEventListener("input", (e) => {
   let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
   e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
 });
 
-// =========================================
-// CORREÇÃO DA ROLAGEM SUAVE (UX PREMIUM)
-// =========================================
 function smoothScrollTo(el, blockPos = "start") {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: blockPos });
@@ -179,7 +158,6 @@ function smoothScrollToId(id, blockPos = "start") {
   smoothScrollTo(document.getElementById(id), blockPos);
 }
 
-// NOVO: Corrige o pulo agressivo do iPhone ao usar Autocomplete ou botão "Avançar"
 clientNameInput.addEventListener("focus", () => {
   setTimeout(() => smoothScrollTo(clientNameInput, "center"), 300);
 });
@@ -261,7 +239,6 @@ function preselectFromUrl() {
   updateScheduleLockState();
 }
 
-// Clique no barbeiro
 professionalsDiv.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-prof]");
   if (!btn) return;
@@ -272,6 +249,7 @@ professionalsDiv.addEventListener("click", (e) => {
   markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
   selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
 
+  selectedTime = null; 
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
@@ -281,7 +259,6 @@ professionalsDiv.addEventListener("click", (e) => {
   updateSummaryCard();
 });
 
-// Clique no serviço
 servicesDiv.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-service]");
   if (!btn) return;
@@ -295,6 +272,7 @@ servicesDiv.addEventListener("click", (e) => {
   const s = servicesById[selectedServiceId];
   selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
 
+  selectedTime = null; 
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
 
@@ -305,11 +283,10 @@ servicesDiv.addEventListener("click", (e) => {
   updateSummaryCard();
 });
 
-// =========================================
-// RENDERIZAÇÃO INTELIGENTE DE HORÁRIOS
-// =========================================
 async function renderSlots() {
   const date = dateInput.value;
+  selectedTime = null; 
+  
   if (!date) return;
 
   if (!selectedProfessionalId || !selectedServiceId) {
@@ -359,15 +336,18 @@ async function renderSlots() {
       btn.className = "slot";
       btn.textContent = time;
       
+      // 🔥 A MÁGICA ACONTECE AQUI
       btn.onclick = () => {
         const allSlots = slotsDiv.querySelectorAll('button');
         allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
         
         btn.classList.add('selected', 'is-selected');
+        
+        selectedTime = time; // Guarda a hora na memória
         updateSummaryCard();
         
-        // Passa o botão clicado para a função colocar o efeito "Agendando..."
-        setTimeout(() => handleCreateAppointment(time, date, btn), 300);
+        // Rola suavemente para o botão de confirmar
+        setTimeout(() => smoothScrollToId("summarySection", "start"), 100);
       };
       
       slotsDiv.appendChild(btn);
@@ -381,8 +361,19 @@ async function renderSlots() {
   }
 }
 
-// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
-// Recebe o botão clicado (clickedBtn) para aplicar o visual de "Agendando..."
+// 🔥 NOVO GATILHO: Dispara o agendamento através do botão final
+const btnConfirmBooking = document.getElementById("btnConfirmBooking");
+if (btnConfirmBooking) {
+  btnConfirmBooking.addEventListener("click", () => {
+    if (!selectedTime) {
+      alert("Por favor, selecione um horário primeiro.");
+      smoothScrollToId("scheduleSection", "start");
+      return;
+    }
+    handleCreateAppointment(selectedTime, dateInput.value, btnConfirmBooking);
+  });
+}
+
 async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
@@ -391,13 +382,12 @@ async function handleCreateAppointment(time, date, clickedBtn) {
   if (!selectedServiceId) return alert("Escolha um serviço.");
   if (!clientName) return alert("Digite seu nome.");
   
-  // Valida se o telefone tem pelo menos 10 números (DDD + 8 dígitos)
   const cleanPhone = formatPhoneDigits(clientPhone);
   if (cleanPhone.length < 10) return alert("Digite um WhatsApp válido com DDD.");
 
-  // Se passou nas verificações de dados, aplica o efeito visual de carregamento!
   if (clickedBtn) {
-    clickedBtn.textContent = "Agendando...";
+    clickedBtn.textContent = "AGENDANDO...";
+    clickedBtn.disabled = true;
   }
   setButtonsDisabled(true);
 
@@ -407,7 +397,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     tenantId,
     professionalId: selectedProfessionalId,
     serviceName: service.name,
-    servicePrice: service.price, // Salvamos no banco o valor original por histórico, mas não mostramos
+    servicePrice: service.price, 
     date,
     startTime: time,
     endTime: addMinutes(time, service.durationMinutes),
@@ -420,15 +410,12 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     const result = await createAppointment(payload);
     const code = result?.code;
 
-    // Converte a data de YYYY-MM-DD para DD/MM/YYYY
     const dataFormatada = date.split("-").reverse().join("/");
 
-    // Pega o link atual limpo de forma segura
     const currentUrl = new URL(window.location.href);
     const baseUrl = currentUrl.origin + currentUrl.pathname.replace('booking.html', '');
     const linkCancelamento = `${baseUrl}cancelar.html?id=${code}`;
 
-    // MENSAGEM DO WHATSAPP 100% LIMPA, SÓ COM O NOME DO CORTE
     const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
                 `👥 CLIENTE: *${clientName} *\n` +
                 `📞 TELEFONE: ${cleanPhone}\n` +
@@ -446,31 +433,18 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `${linkCancelamento}\n\n` +
                 `COMPROVANTE DE AGENDAMENTO`;
 
-    // =========================================
-    // NOVO: LÓGICA DO WHATSAPP DINÂMICO
-    // =========================================
-    // 1. Pega as configurações gerais que foram guardadas no Firebase
     const config = await getTenantConfig(tenantId);
-    
-    // 2. Procura os dados do barbeiro que o cliente selecionou
     const barbeiroEscolhido = config.professionals.find(p => p.id === selectedProfessionalId);
-    
-    // 3. Define para quem enviar a mensagem:
-    // Tenta pegar o telefone ('phone') do barbeiro. Se ele não tiver, usa o telefone geral ('whatsapp') da barbearia
-    let telefoneDestino = barberWhatsapp; // Inicia com o fallback da loja
+    let telefoneDestino = barberWhatsapp; 
     
     if (barbeiroEscolhido && barbeiroEscolhido.phone) {
-      telefoneDestino = barbeiroEscolhido.phone.replace(/[^\d]/g, ""); // Limpa qualquer traço ou espaço que tenha no firebase
+      telefoneDestino = barbeiroEscolhido.phone.replace(/[^\d]/g, ""); 
     }
 
-    // Monta o link final com o telefone correto
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${telefoneDestino}&text=${encodeURIComponent(msg)}`;
-    // =========================================
     
-    // 1. Manda pro WhatsApp instantaneamente
     window.location.replace(whatsappUrl);
 
-    // 2. O Truque Mágico: Recarrega a página após 2 segundos 
     setTimeout(() => {
       window.location.reload();
     }, 2000);
@@ -481,15 +455,16 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     } else {
       alert("❌ Erro ao agendar: " + e.message);
     }
-    await renderSlots(); // O renderSlots recarrega sem precisar passar parâmetro no código atual
+    await renderSlots(); 
+    if (clickedBtn) {
+      clickedBtn.textContent = "Confirmar e Agendar";
+      clickedBtn.disabled = false;
+    }
   } finally {
     setButtonsDisabled(false);
   }
 }
 
-// =========================================
-// GERA A ROLETA DE DATAS (Próximos 15 dias)
-// =========================================
 function renderDateCards() {
   const dateSlider = document.getElementById("dateSlider");
   if (!dateSlider) return;
@@ -532,3 +507,4 @@ function renderDateCards() {
 }
 
 renderDateCards();
+510
