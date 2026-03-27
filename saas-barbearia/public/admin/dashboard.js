@@ -1,3 +1,4 @@
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
@@ -7,6 +8,7 @@ function getParam(name) {
 }
 
 const tenantId = getParam("tenant") || "tenant-demo";
+const auth = getAuth();
 
 let workingHours = [];
 let allAppointmentsForDay = []; 
@@ -147,9 +149,9 @@ function renderConfigPanel() {
 
   document.querySelectorAll(".btnRemoverServico").forEach(btn => {
     btn.addEventListener("click", async (e) => {
-      if(!confirm("Remover este serviço do site?")) return;
       const index = e.target.getAttribute("data-index");
       servicesData.splice(index, 1); 
+      btn.textContent = "⌛";
       await salvarConfiguracoes(true);
     });
   });
@@ -209,18 +211,16 @@ sheetBtnGaleria.addEventListener("click", () => {
 
 sheetBtnPadrao.addEventListener("click", () => {
   imageSheetOverlay.classList.remove("is-open");
-  alert("Configurações atualizadas com sucesso!");
 });
 
 async function salvarConfiguracoes(mostrarAlerta = true) {
   try {
     document.getElementById("btnAddNewService").textContent = "A gravar...";
     await updateDoc(doc(db, "tenants", tenantId), { services: servicesData });
-    if (mostrarAlerta) alert("Configurações atualizadas com sucesso!");
     document.getElementById("btnAddNewService").textContent = "+ Adicionar Novo Serviço";
     renderConfigPanel(); 
   } catch(e) {
-    alert("Erro ao gravar. Tente novamente."); console.error(e);
+    console.error(e);
   }
 }
 
@@ -334,23 +334,36 @@ function renderAppointmentsList() {
     if (isCompleted) {
       actionsDiv.innerHTML = `<span style="color: #4CAF50; font-weight: bold; font-size: 14px; padding: 8px 0;">✅ Serviço Finalizado</span>`;
     } else if (isCancelled) {
+      // 🔥 BOTÃO DE EXCLUIR INSTANTÂNEO
       const btnExcluir = document.createElement("button"); btnExcluir.className = "btn-admin btn-admin--cancel"; btnExcluir.style.background = "#ff3333"; btnExcluir.style.color = "white"; btnExcluir.style.flex = "1"; btnExcluir.textContent = "🗑️ Excluir da Tela";
-      btnExcluir.onclick = async () => { if (confirm("Tem certeza que deseja limpar este horário cancelado da tela?")) { btnExcluir.textContent = "Excluindo..."; await deleteDoc(doc(db, "appointments", app.id)); } };
+      btnExcluir.onclick = async () => { 
+        btnExcluir.textContent = "Excluindo..."; 
+        btnExcluir.disabled = true;
+        await deleteDoc(doc(db, "appointments", app.id)); 
+      };
       actionsDiv.appendChild(btnExcluir);
     } else {
       if (!isBlock) {
+        // 🔥 BOTÃO DE FINALIZAR INSTANTÂNEO
         const btnFinalizar = document.createElement("button"); btnFinalizar.className = "btn-admin"; btnFinalizar.style.background = "#4CAF50"; btnFinalizar.style.color = "white"; btnFinalizar.style.flex = "1"; btnFinalizar.textContent = "✅ Finalizar";
-        btnFinalizar.onclick = async () => { if (confirm("Marcar este atendimento como concluído?")) { btnFinalizar.textContent = "Aguarde..."; await updateDoc(doc(db, "appointments", app.id), { status: "completed" }); } };
+        btnFinalizar.onclick = async () => { 
+            btnFinalizar.textContent = "Aguarde..."; 
+            btnFinalizar.disabled = true;
+            await updateDoc(doc(db, "appointments", app.id), { status: "completed" }); 
+        };
         actionsDiv.appendChild(btnFinalizar);
         
         if (app.clientPhone && app.clientPhone.replace(/\D/g, '').length >= 10) {
           actionsDiv.innerHTML += `<button class="btn-admin" style="background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid #25D366; flex: 1;" onclick="lembrarApp('${app.clientName}', '${app.serviceName}', '${app.date}', '${app.startTime}', '${app.clientPhone}')">🔔 Lembrar</button>`;
         }
       }
+      
+      // 🔥 BOTÃO DE CANCELAR INSTANTÂNEO
       const btnCancel = document.createElement("button"); btnCancel.className = "btn-admin btn-admin--cancel"; btnCancel.style.flex = "1"; btnCancel.textContent = isBlock ? "Desbloquear Horário" : "Cancelar";
       btnCancel.onclick = async () => {
-        const msg = isBlock ? `Tem certeza que deseja LIBERAR o horário das ${app.startTime}?` : `Tem certeza que deseja cancelar o horário de ${app.clientName} às ${app.startTime}?`;
-        if (confirm(msg)) { btnCancel.textContent = "Aguarde..."; await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" }); }
+        btnCancel.textContent = "Aguarde..."; 
+        btnCancel.disabled = true;
+        await updateDoc(doc(db, "appointments", app.id), { status: "cancelled" }); 
       };
       actionsDiv.appendChild(btnCancel);
     }
@@ -525,24 +538,15 @@ const btnBlockWholeDay = document.getElementById("btnBlockWholeDay");
 if (btnBlockWholeDay) {
   btnBlockWholeDay.addEventListener("click", async () => {
     const profId = blockProfSelect.value; const dateStr = dateInput.value;
-    if (!profId) return alert("Aguarde os profissionais carregarem.");
+    if (!profId) return;
 
-    const clientesAgendados = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status === "confirmed" && a.clientName !== "⛔ BLOQUEIO DE AGENDA");
-    let mensagemConfirmacao = `Tem certeza que deseja FECHAR A AGENDA O DIA INTEIRO neste dia? Ninguém conseguirá marcar horários.`;
-
-    if (clientesAgendados.length > 0) {
-      mensagemConfirmacao = `⚠️ ALERTA CRÍTICO: Existem ${clientesAgendados.length} cliente(s) já agendado(s) para este barbeiro neste dia!\n\nBloquear o dia inteiro NÃO cancela os agendamentos já feitos. Você precisará cancelar manualmente ou avisar os clientes.\n\nTem CERTEZA ABSOLUTA que deseja fechar a agenda mesmo assim?`;
-    }
-
-    if (confirm(mensagemConfirmacao)) {
-      btnBlockWholeDay.textContent = "Bloqueando o dia..."; btnBlockWholeDay.disabled = true;
-      try {
-        await addDoc(collection(db, "appointments"), {
-          tenantId: tenantId, professionalId: profId, date: dateStr, startTime: "00:00", endTime: "23:59",   
-          clientName: "⛔ BLOQUEIO DE AGENDA", clientPhone: "00000000000", serviceName: "Dia Inteiro Fechado", servicePrice: 0, status: "confirmed"
-        });
-      } catch (error) { console.error(error); alert("Erro ao bloquear o dia."); } 
-      finally { btnBlockWholeDay.textContent = "🛑 Bloquear o Dia Inteiro"; btnBlockWholeDay.disabled = false; }
-    }
+    btnBlockWholeDay.textContent = "Bloqueando o dia..."; btnBlockWholeDay.disabled = true;
+    try {
+      await addDoc(collection(db, "appointments"), {
+        tenantId: tenantId, professionalId: profId, date: dateStr, startTime: "00:00", endTime: "23:59",   
+        clientName: "⛔ BLOQUEIO DE AGENDA", clientPhone: "00000000000", serviceName: "Dia Inteiro Fechado", servicePrice: 0, status: "confirmed"
+      });
+    } catch (error) { console.error(error); } 
+    finally { btnBlockWholeDay.textContent = "🛑 Bloquear o Dia Inteiro"; btnBlockWholeDay.disabled = false; }
   });
 }
