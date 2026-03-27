@@ -10,11 +10,15 @@ function getParam(name) {
 
 const tenantId = getParam("tenant") || "biel-do-corte";
 
-// Variáveis que agora vêm do Firebase
+// Variáveis globais do SaaS
 let barberWhatsapp = "";
 let workingHours = [];
 let servicesById = {};
 let showPrices = false;
+let selectedProfessionalId = null;
+let selectedProfessionalName = null;
+let selectedServiceId = null;
+let selectedTime = null; // 🔥 NOVA VARIÁVEL: Guarda a hora sem agendar logo
 
 async function initTenant() {
   try {
@@ -24,7 +28,6 @@ async function initTenant() {
     workingHours = config.workingHours;
     showPrices = config.showPrices === true;
     
-    // 2. RENDERIZA OS BARBEIROS DINAMICAMENTE (COM INTELIGÊNCIA DE SAAS)
     const professionalsDiv = document.getElementById("professionals");
     const professionalsSection = document.getElementById("professionalsSection"); 
     professionalsDiv.innerHTML = ""; 
@@ -32,7 +35,6 @@ async function initTenant() {
     const profs = config.professionals || []; 
     
     if (profs.length === 1) {
-      // --- CENÁRIO: LOBO SOLITÁRIO 🐺 ---
       const p = profs[0];
       selectedProfessionalId = p.id;
       selectedProfessionalName = p.name;
@@ -44,7 +46,6 @@ async function initTenant() {
       }
 
       const headerLobo = document.createElement("div");
-      // 🔥 AJUSTE SÊNIOR: Aumentei o padding, o gap e o border-radius para equilibrar a imagem grande
       headerLobo.style = "display: flex; align-items: center; gap: 24px; background: #161616; padding: 32px; border-radius: 24px; border: 1px solid #e0b976; margin-bottom: 32px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);";
       
       const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
@@ -61,7 +62,6 @@ async function initTenant() {
       servicesSection.parentNode.insertBefore(headerLobo, servicesSection);
 
     } else {
-      // --- CENÁRIO: BARBEARIA COM EQUIPE 💈 ---
       profs.forEach(p => {
         const btn = document.createElement("button");
         btn.className = "card card--person";
@@ -85,7 +85,6 @@ async function initTenant() {
       });
     }
 
-    // 3. RENDERIZA OS SERVIÇOS DINAMICAMENTE
     const servicesDiv = document.getElementById("services");
     servicesDiv.innerHTML = ""; 
 
@@ -139,7 +138,6 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      
       if (showPrices && servico.price) {
         document.getElementById("summaryTotal").textContent = `R$ ${servico.price},00`; 
       } else {
@@ -151,7 +149,6 @@ function updateSummaryCard() {
     const selectedSlot = document.querySelector("#slots .slot.selected, #slots .chip.selected"); 
     
     let dateTimeText = "Escolha o dia e horário";
-    
     if (dateInputVal && typeof dateInputVal === "string") {
       const dataFormatada = dateInputVal.split("-").reverse().join("/");
       if (selectedSlot) {
@@ -163,10 +160,6 @@ function updateSummaryCard() {
     document.getElementById("summaryDateTime").textContent = dateTimeText;
   }
 }
-
-let selectedProfessionalId = null;
-let selectedProfessionalName = null;
-let selectedServiceId = null;
 
 initTenant();
 
@@ -189,17 +182,13 @@ clientNameInput.addEventListener("input", (e) => {
 });
 
 clientPhoneInput.addEventListener("input", (e) => {
-  let x = e.target.value.replace(/\\D/g, '').match(/(\\d{0,2})(\\d{0,5})(\\d{0,4})/);
+  let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
   e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
 });
 
-function smoothScrollTo(el, blockPos = "start") {
-  if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: blockPos });
-}
-
 function smoothScrollToId(id, blockPos = "start") {
-  smoothScrollTo(document.getElementById(id), blockPos);
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: blockPos });
 }
 
 function addMinutes(time, minutes) {
@@ -223,7 +212,7 @@ function setButtonsDisabled(disabled) {
 }
 
 function formatPhoneDigits(phone) {
-  return (phone || "").replace(/[^\\d]/g, "");
+  return (phone || "").replace(/[^\d]/g, "");
 }
 
 function updateScheduleLockState() {
@@ -279,16 +268,14 @@ function preselectFromUrl() {
 professionalsDiv.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-prof]");
   if (!btn) return;
-
   selectedProfessionalId = btn.getAttribute("data-prof");
   selectedProfessionalName = btn.getAttribute("data-prof-name") || selectedProfessionalId;
-
   markSelected(professionalsDiv, "button[data-prof]", selectedProfessionalId, "data-prof");
   if(selectedProfessionalText) selectedProfessionalText.textContent = `Barbeiro selecionado: ${selectedProfessionalName}`;
-
+  
+  selectedTime = null; // Limpa hora escolhida se mudar o profissional
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
-
   if (dateInput.value && selectedServiceId) renderSlots();
   smoothScrollToId("servicesSection", "start");
   updateSummaryCard();
@@ -297,19 +284,16 @@ professionalsDiv.addEventListener("click", (e) => {
 servicesDiv.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-service]");
   if (!btn) return;
-
   const serviceId = btn.getAttribute("data-service");
   if (!servicesById[serviceId]) return;
-
   selectedServiceId = serviceId;
-
   markSelected(servicesDiv, "button[data-service]", selectedServiceId, "data-service");
   const s = servicesById[selectedServiceId];
   if(selectedServiceText) selectedServiceText.textContent = `Serviço selecionado: ${s.name} • ${s.durationMinutes} min`;
-
+  
+  selectedTime = null; // Limpa hora escolhida se mudar o serviço
   slotsDiv.innerHTML = "";
   updateScheduleLockState();
-
   if (dateInput.value && selectedProfessionalId) renderSlots();
   smoothScrollToId("clientSection", "start");
   updateSummaryCard();
@@ -317,6 +301,8 @@ servicesDiv.addEventListener("click", (e) => {
 
 async function renderSlots() {
   const date = dateInput.value;
+  selectedTime = null; // Resetamos a hora sempre que trocar de dia
+  
   if (!date) return;
   if (!selectedProfessionalId || !selectedServiceId) return;
 
@@ -330,14 +316,11 @@ async function renderSlots() {
       date
     });
 
-    // 🔥 O FILTRO DE INTELIGÊNCIA: Remove os horários cancelados da contagem
     const activeAppointments = appointments.filter(app => 
       app.status !== "cancelled" && app.status !== "cancelado"
     );
 
-    // Passamos apenas os agendamentos "ativos" para bloquear a agenda
     const slots = generateAvailableSlots(workingHours, activeAppointments, service.durationMinutes);
-
     let finalSlots = slots;
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -363,12 +346,17 @@ async function renderSlots() {
       btn.className = "slot";
       btn.textContent = time;
       
+      // 🔥 A MÁGICA ACONTECE AQUI: Apenas seleciona e rola a tela
       btn.onclick = () => {
         const allSlots = slotsDiv.querySelectorAll('button');
         allSlots.forEach(b => b.classList.remove('selected', 'is-selected'));
         btn.classList.add('selected', 'is-selected');
+        
+        selectedTime = time; // Guarda a hora na memória
         updateSummaryCard();
-        setTimeout(() => handleCreateAppointment(time, date, btn), 300);
+        
+        // Rola suavemente para o botão de confirmar
+        setTimeout(() => smoothScrollToId("summarySection", "start"), 100);
       };
       slotsDiv.appendChild(btn);
     });
@@ -378,18 +366,39 @@ async function renderSlots() {
   }
 }
 
+// 🔥 NOVO GATILHO: Botão Confirmar e Agendar
+const btnConfirmBooking = document.getElementById("btnConfirmBooking");
+if (btnConfirmBooking) {
+  btnConfirmBooking.addEventListener("click", () => {
+    if (!selectedTime) {
+      alert("Por favor, selecione um horário primeiro.");
+      smoothScrollToId("scheduleSection", "start");
+      return;
+    }
+    handleCreateAppointment(selectedTime, dateInput.value, btnConfirmBooking);
+  });
+}
+
 async function handleCreateAppointment(time, date, clickedBtn) {
   const clientName = clientNameInput.value.trim();
   const clientPhone = clientPhoneInput.value.trim();
 
   if (!selectedProfessionalId) return alert("Escolha um barbeiro.");
   if (!selectedServiceId) return alert("Escolha um serviço.");
-  if (!clientName) return alert("Digite seu nome.");
+  
+  if (!clientName) {
+    smoothScrollToId("clientSection", "center");
+    return alert("Digite seu nome.");
+  }
   
   const cleanPhone = formatPhoneDigits(clientPhone);
-  if (cleanPhone.length < 10) return alert("Digite um WhatsApp válido.");
+  if (cleanPhone.length < 10) {
+    smoothScrollToId("clientSection", "center");
+    return alert("Digite um WhatsApp válido.");
+  }
 
-  if (clickedBtn) clickedBtn.textContent = "Agendando...";
+  if (clickedBtn) clickedBtn.textContent = "AGENDANDO...";
+  if (clickedBtn) clickedBtn.disabled = true;
   setButtonsDisabled(true);
 
   const service = servicesById[selectedServiceId];
@@ -428,6 +437,8 @@ async function handleCreateAppointment(time, date, clickedBtn) {
   } catch (e) {
     alert("Erro: " + e.message);
     renderSlots();
+    if (clickedBtn) clickedBtn.textContent = "Confirmar e Agendar";
+    if (clickedBtn) clickedBtn.disabled = false;
   } finally {
     setButtonsDisabled(false);
   }
