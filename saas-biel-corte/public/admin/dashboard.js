@@ -2,7 +2,6 @@ import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/fire
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
-// 🔥 IMPORTANTE: Agora o Admin usa o mesmo motor de criação do cliente para não quebrar as travas!
 import { createAppointment } from "../../firebase/createAppointment.js";
 import { generateAvailableSlots } from "../../services/slotGenerator.js"; 
 
@@ -17,13 +16,9 @@ let currentSnapshotUnsubscribe = null;
 let profissionaisConfig = [];
 let adminPinConfig = "";
 
-// Variáveis de Controle de Acesso
 let loggedRole = sessionStorage.getItem("loggedRole") || null; 
 let loggedName = sessionStorage.getItem("loggedName") || null;
 
-// ==========================================
-// 1. INÍCIO DIRETO (SISTEMA DE PIN)
-// ==========================================
 initDashboard();
 
 document.getElementById("btnSwitchUser").addEventListener("click", () => {
@@ -40,9 +35,6 @@ if (btnFinanceiro) {
   });
 }
 
-// ==========================================
-// 2. TELA DE BLOQUEIO E INICIALIZAÇÃO
-// ==========================================
 const loginUserSelect = document.getElementById("loginUserSelect");
 const loginPinInput = document.getElementById("loginPinInput");
 const btnUnlock = document.getElementById("btnUnlock");
@@ -98,9 +90,6 @@ function liberarAcesso(role, name) {
   setTimeout(() => { lockScreen.style.display = "none"; aplicarPermissoesDeAcesso(); }, 300);
 }
 
-// ==========================================
-// 3. MOTOR DE PERMISSÕES E CONFIGURAÇÕES
-// ==========================================
 const blockProfSelect = document.getElementById("blockProf");
 const mainProfFilter = document.getElementById("mainProfFilter"); 
 const manualProfSelect = document.getElementById("manualProf");
@@ -146,9 +135,6 @@ function aplicarPermissoesDeAcesso() {
   renderAdminDateCards();
 }
 
-// ==========================================
-// 4. LÓGICA DA ABA DE CONFIGURAÇÕES
-// ==========================================
 const configSection = document.getElementById("configSection");
 const agendaSection = document.getElementById("agendaSection");
 const listaSection = document.getElementById("listaSection");
@@ -199,7 +185,6 @@ function renderConfigPanel() {
   });
 }
 
-// LÓGICA DO MODAL DA GALERIA (IPHONE FIX)
 const imageSheetOverlay = document.getElementById("imageSheetOverlay");
 const sheetBtnGaleria = document.getElementById("sheetBtnGaleria");
 const sheetBtnPadrao = document.getElementById("sheetBtnPadrao");
@@ -293,9 +278,6 @@ async function salvarConfiguracoes(mostrarAlerta = true) {
   }
 }
 
-// ==========================================
-// 5. ROLETA DE DATAS E RADAR (TEMPO REAL)
-// ==========================================
 const dateInput = document.getElementById("adminDate");
 const listDiv = document.getElementById("appointmentsList");
 const totalHead = document.getElementById("totalAppointments");
@@ -351,7 +333,6 @@ function loadAppointments(dateStr) {
     allAppointmentsForDay = []; 
     snap.forEach(d => allAppointmentsForDay.push({ id: d.id, ...d.data() }));
 
-    // 🔥 FILTRO VITAL: Filtra cancelados, mas mostra no painel com cor diferente (tratado no render)
     allAppointmentsForDay.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
     renderBlockSlots(); 
@@ -365,6 +346,8 @@ function renderAppointmentsList() {
   const profFiltro = mainProfFilter.value;
 
   let appsToRender = allAppointmentsForDay;
+  
+  // 1. Aplica o filtro de quem está a ver a tela (Gestor ou Colaborador)
   if (profFiltro !== "todos") {
     appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
   }
@@ -372,13 +355,37 @@ function renderAppointmentsList() {
   // Oculta os cancelados da contagem e da tela principal se for um bloqueio cancelado
   appsToRender = appsToRender.filter(a => !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
 
+  // 🔥 CÁLCULO DAS MÉTRICAS (VISÃO DE CEO) 🔥
+  let totalAgendamentos = 0;
+  let totalFaturamento = 0;
+  let totalFinalizados = 0;
+
+  appsToRender.forEach(app => {
+    const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
+    const isCancelled = app.status === "cancelled";
+    const isCompleted = app.status === "completed";
+
+    // Só conta dinheiro se não for bloqueio de agenda e não tiver sido cancelado
+    if (!isBlock && !isCancelled) {
+      totalAgendamentos++;
+      totalFaturamento += (Number(app.servicePrice) || 0);
+      if (isCompleted) totalFinalizados++;
+    }
+  });
+
+  // Atualiza os cartões na tela
+  document.getElementById("metricAgendamentos").textContent = totalAgendamentos;
+  document.getElementById("metricFaturamento").textContent = `R$ ${totalFaturamento}`;
+  document.getElementById("metricFinalizados").textContent = totalFinalizados;
+
+
   if (appsToRender.length === 0) {
     totalHead.textContent = "Nenhum agendamento.";
     listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Agenda livre.</p>";
     return;
   }
 
-  totalHead.textContent = `${appsToRender.length} agendamento(s)`;
+  totalHead.textContent = `${appsToRender.length} compromisso(s)`;
 
   appsToRender.forEach(app => {
     const item = document.createElement("div");
@@ -423,10 +430,6 @@ function renderAppointmentsList() {
     listDiv.appendChild(item);
   });
 }
-
-// ==========================================
-// 🚀 LÓGICA DE AÇÕES AVANÇADA (EXCLUIR / CANCELAR / FINALIZAR)
-// ==========================================
 
 async function limparTravasDoAgendamento(appointmentId) {
   try {
@@ -486,9 +489,6 @@ window.lembrarApp = (nome, servico, data, hora, telefone) => {
     window.open(`https://api.whatsapp.com/send?phone=${phoneLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// ==========================================
-// MOTOR BLINDADO DE HORÁRIOS
-// ==========================================
 function addMinutes(time, minsToAdd) {
   const [h, m] = time.split(":").map(Number);
   const total = h * 60 + m + minsToAdd;
@@ -506,7 +506,6 @@ function updateManualSlots() {
   const service = servicesData.find(s => s.id === serviceId);
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
   
-  // 🔥 AGORA O ADMIN USA A MESMA MATEMÁTICA DA TELA DO CLIENTE
   let slots = generateAvailableSlots(workingHours, profAppointments, service.duration);
   
   const now = new Date(); const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -525,7 +524,6 @@ document.getElementById("btnConfirmManual").addEventListener("click", async () =
   const service = servicesData.find(s => s.id === document.getElementById("manualService").value);
   const time = document.getElementById("manualTime").value;
 
-  // 🔥 CHAMA A FUNÇÃO OFICIAL DO SAAS QUE CRIA AS TRAVAS
   const payload = {
     tenantId: tenantId,
     professionalId: manualProfSelect.value,
@@ -555,7 +553,7 @@ function renderBlockSlots() {
   if (!profId) return;
 
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
-  let slots = generateAvailableSlots(workingHours, profAppointments, 40); // Bloqueios de 40 min padrão
+  let slots = generateAvailableSlots(workingHours, profAppointments, 40); 
   
   slots.forEach(time => {
     const btn = document.createElement("button"); btn.className = "slot"; btn.textContent = time;
