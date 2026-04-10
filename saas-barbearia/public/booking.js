@@ -25,6 +25,12 @@ async function initTenant() {
     
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
+
+    // Ajuste dinâmico do Logo (WN Systems Lab)
+    const brandLogo = document.querySelector(".brand__mark img");
+    if (brandLogo && config.logo) {
+      brandLogo.src = config.logo;
+    }
     
     const professionalsDiv = document.getElementById("professionals");
     professionalsDiv.innerHTML = ""; 
