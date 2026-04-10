@@ -33,31 +33,62 @@ async function initTenant() {
     }
     
     const professionalsDiv = document.getElementById("professionals");
+    const professionalsSection = document.getElementById("professionalsSection"); 
     professionalsDiv.innerHTML = ""; 
 
     const profs = config.professionals || []; 
     
-    profs.forEach(p => {
-      const btn = document.createElement("button");
-      btn.className = "card card--person";
-      btn.type = "button";
-      btn.setAttribute("data-prof", p.id);
-      btn.setAttribute("data-prof-name", p.name);
+    // 🔥 LÓGICA DO LOBO SOLITÁRIO RECUPERADA
+    if (profs.length === 1) {
+      const p = profs[0];
+      selectedProfessionalId = p.id;
+      selectedProfessionalName = p.name;
+      
+      if (professionalsSection) {
+        professionalsSection.style.display = "none";
+      } else {
+        professionalsDiv.style.display = "none";
+      }
+
+      const headerLobo = document.createElement("div");
+      headerLobo.style = "display: flex; align-items: center; gap: 24px; background: #161616; padding: 32px; border-radius: 24px; border: 1px solid #e0b976; margin-bottom: 32px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);";
       
       const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
-
-      btn.innerHTML = `
-        <div class="card__media">
-          <img src="${imgCaminho}" alt="${p.name}" loading="lazy">
-          <div class="card__fade"></div>
-        </div>
-        <div class="card__body">
-          <div class="card__title">${p.name}</div>
-          <div class="card__meta">Toque para selecionar</div>
+      
+      headerLobo.innerHTML = `
+        <img src="${imgCaminho}" alt="${p.name}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #e0b976; box-shadow: 0 0 15px rgba(224, 185, 118, 0.3);">
+        <div>
+          <h2 style="margin: 0; color: #fff; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">${p.name}</h2>
+          <p style="margin: 8px 0 0 0; color: #bbb; font-size: 16px; font-weight: 400; line-height: 1.4;">Seu especialista dedicado e pronto<br>para te atender.</p>
         </div>
       `;
-      professionalsDiv.appendChild(btn);
-    });
+      
+      const servicesSection = document.getElementById("servicesSection") || document.getElementById("services").parentElement;
+      servicesSection.parentNode.insertBefore(headerLobo, servicesSection);
+
+    } else {
+      profs.forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "card card--person";
+        btn.type = "button";
+        btn.setAttribute("data-prof", p.id);
+        btn.setAttribute("data-prof-name", p.name);
+        
+        const imgCaminho = p.image || `assets/barbers/${p.id}.jpeg`;
+
+        btn.innerHTML = `
+          <div class="card__media">
+            <img src="${imgCaminho}" alt="${p.name}" loading="lazy">
+            <div class="card__fade"></div>
+          </div>
+          <div class="card__body">
+            <div class="card__title">${p.name}</div>
+            <div class="card__meta">Toque para selecionar</div>
+          </div>
+        `;
+        professionalsDiv.appendChild(btn);
+      });
+    }
 
     const servicesDiv = document.getElementById("services");
     servicesDiv.innerHTML = ""; 
@@ -513,4 +544,3 @@ function renderDateCards() {
 }
 
 renderDateCards();
-510
