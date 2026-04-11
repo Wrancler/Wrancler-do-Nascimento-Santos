@@ -125,6 +125,12 @@ async function initTenant() {
     preselectFromUrl();
     updateScheduleLockState();
 
+    // 🔥 O TOQUE PREMIUM: Revela a tela inteira de uma vez, sem piscar nada
+    const appBody = document.getElementById("appBody");
+    if (appBody) {
+      appBody.style.opacity = "1";
+    }
+
   } catch (error) {
     console.error(error);
     alert("Erro ao carregar dados da barbearia. Verifique o link.");
