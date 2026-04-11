@@ -28,11 +28,15 @@ async function initTenant() {
     workingHours = config.workingHours;
     showPrices = config.showPrices === true;
     
+    // 🔥 A MÁGICA DO MULTI-TENANT PARA O LOGO
+    const brandLogo = document.querySelector(".brand__mark img");
+    if (brandLogo && config.logo) {
+      brandLogo.src = config.logo;
+    }
+    
     const professionalsDiv = document.getElementById("professionals");
-    const professionalsSection = document.getElementById("professionalsSection"); 
-    professionalsDiv.innerHTML = ""; 
+// ... resto do seu código
 
-    const profs = config.professionals || []; 
     
     // 🔥 LÓGICA DO LOBO SOLITÁRIO MANTIDA
     if (profs.length === 1) {
