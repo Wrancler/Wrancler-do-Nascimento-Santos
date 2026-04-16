@@ -26,7 +26,19 @@ async function initTenant() {
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
 
-    // Ajuste dinâmico do Logo (WN Systems Lab)
+    // 🔥 O PULO DO GATO MULTI-TENANT: NOME, TÍTULO E LOGO
+    const tenantName = config.name || "Agendamento Premium";
+    
+    // 1. Muda o nome na aba do navegador
+    document.title = tenantName + " - Agendamento";
+
+    // 2. Muda o texto do logotipo no topo da tela
+    const brandNameText = document.querySelector(".brand__name");
+    if (brandNameText) {
+      brandNameText.textContent = tenantName;
+    }
+
+    // 3. Ajuste dinâmico da imagem do Logo
     const brandLogo = document.querySelector(".brand__mark img");
     if (brandLogo && config.logo) {
       brandLogo.src = config.logo;
