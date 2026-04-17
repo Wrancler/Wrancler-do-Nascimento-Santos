@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WN Systems Lab - Clientes</title>
+    <title>WN Systems Lab - Hub</title>
     <style>
-        /* Importando uma fonte moderna do Google */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         * {
@@ -16,7 +15,7 @@
         }
 
         body {
-            background-color: #111;
+            background-color: #0d0d0d;
             color: #fff;
             display: flex;
             flex-direction: column;
@@ -27,98 +26,171 @@
 
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
-            color: #e0b976; /* O Dourado Premium do seu SaaS */
+            color: #e0b976; 
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+            letter-spacing: 2px;
         }
 
-        h2 {
-            font-size: 16px;
-            font-weight: 400;
-            color: #bbb;
+        /* Menu de Nichos (Categorias) */
+        .niche-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            width: 100%;
+            max-width: 450px;
+            padding-bottom: 10px;
         }
 
-        /* Container que alinha os botões */
+        .niche-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #888;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .niche-btn.active {
+            background: #e0b976;
+            color: #000;
+            border-color: #e0b976;
+        }
+
+        /* Container de Conteúdo */
+        .content-area {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .niche-content {
+            display: none; /* Escondido por padrão */
+            animation: fadeIn 0.4s ease;
+        }
+
+        .niche-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .links-container {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            width: 100%;
-            max-width: 400px; /* Tamanho perfeito para celular */
+            gap: 12px;
         }
 
-        /* Estilo do Botão/Card */
         .link-card {
             display: flex;
             align-items: center;
             gap: 16px;
-            background-color: #1e1e1e;
-            padding: 16px;
+            background-color: #161616;
+            padding: 14px;
             border-radius: 16px;
             text-decoration: none;
             color: #fff;
-            border: 1px solid #333;
-            transition: all 0.3s ease;
+            border: 1px solid #222;
+            transition: 0.2s;
         }
 
-        /* Efeito ao passar o mouse */
         .link-card:hover {
-            transform: translateY(-4px);
             border-color: #e0b976;
-            box-shadow: 0 8px 20px rgba(224, 185, 118, 0.15);
+            background: #1f1f1f;
         }
 
         .link-card img {
-            width: 55px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #e0b976;
+            border: 2px solid #333;
         }
 
-        .link-card h3 {
-            font-size: 16px;
-            font-weight: 600;
-        }
+        .link-card h3 { font-size: 15px; }
+
+        /* Estilização da barra de rolagem do menu */
+        .niche-nav::-webkit-scrollbar { height: 4px; }
+        .niche-nav::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <header>
         <h1>WN Systems Lab</h1>
-        <h2>Central de Agendamentos Barbers</h2>
     </header>
 
-    <main class="links-container">
+    <nav class="niche-nav">
+        <button class="niche-btn active" onclick="showNiche('barbearia', this)">💈 Barbearias</button>
+        <button class="niche-btn" onclick="showNiche('estetica', this)">💅 Beleza/Estética</button>
+        <button class="niche-btn" onclick="showNiche('outro', this)">🚀 Outros</button>
+    </nav>
+
+    <main class="content-area">
         
-        <a href="https://barbearia-agendamentos-lovat.vercel.app/public/booking.html?" target="_blank" rel="noopener noreferrer" class="link-card">
-            <img src="brand/labarber.png" alt="Logo Guilherme">
-            <h3>Guilherme La Barber Clube</h3>
-        </a>
+        <section id="barbearia" class="niche-content active">
+            <div class="links-container">
+                <a href="https://barbearia-agendamentos-lovat.vercel.app/public/booking.html?" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <img src="brand/labarber.png" alt="Guilherme">
+                    <h3>Guilherme La Barber Clube</h3>
+                </a>
+                <a href="https://agendabiel.vercel.app/public/booking.html" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <img src="brand/biellogo.png" alt="Biel">
+                    <h3>Barbearia Biel do Corte</h3>
+                </a>
+                <a href="https://agendamentosbarbers.vercel.app/public/booking.html?tenant=jef-barbearia" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <img src="brand/jeflogo.png" alt="Jef">
+                    <h3>Barbearia Jef</h3>
+                </a>
+                <a href="https://agendamentosbarbers.vercel.app/public/booking.html?tenant=leodias" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <img src="brand/leologo.png" alt="Leo Dias">
+                    <h3>Leo Dias Barbershop</h3>
+                </a>
+            </div>
+        </section>
 
-        <a href="https://agendabiel.vercel.app/public/booking.html" target="_blank" rel="noopener noreferrer" class="link-card">
-            <img src="brand/biellogo.png" alt="Logo Biel">
-            <h3>Barbearia Biel do Corte</h3>
-        </a>
+        <section id="estetica" class="niche-content">
+            <div class="links-container">
+                <a href="#" class="link-card">
+                    <img src="https://ui-avatars.com/api/?name=Studio+A&background=random&color=fff" alt="Exemplo">
+                    <h3>Jenifer Lima Makeup</h3>
+                </a>
+            </div>
+        </section>
 
-        <a href="https://agendamentosbarbers.vercel.app/public/booking.html?tenant=jef-barbearia" target="_blank" rel="noopener noreferrer" class="link-card">
-            <img src="brand/jeflogo.png" alt="Logo Jef">
-            <h3>Barbearia Jef</h3>
-        </a>
-
-        <a href="https://agendamentosbarbers.vercel.app/public/booking.html?tenant=leodias" target="_blank" rel="noopener noreferrer" class="link-card">
-            <img src="brand/leologo.png" alt="Logo Leo Dias">
-            <h3>Leo Dias Barbershop</h3>
-        </a>
+        <section id="outro" class="niche-content">
+            <div class="links-container">
+                <p style="color: #666; text-align: center; margin-top: 20px;">Nenhum projeto cadastrado aqui ainda.</p>
+            </div>
+        </section>
 
     </main>
+
+    <script>
+        function showNiche(nicheId, btn) {
+            // Esconde todos os conteúdos
+            document.querySelectorAll('.niche-content').forEach(el => el.classList.remove('active'));
+            // Desativa todos os botões
+            document.querySelectorAll('.niche-btn').forEach(el => el.classList.remove('active'));
+            
+            // Mostra o selecionado
+            document.getElementById(nicheId).classList.add('active');
+            // Ativa o botão clicado
+            btn.classList.add('active');
+        }
+    </script>
 
 </body>
 </html>
