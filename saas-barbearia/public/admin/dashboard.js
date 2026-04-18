@@ -5,6 +5,11 @@ import { getTenantConfig } from "../../firebase/tenants.js";
 function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
 const tenantId = getParam("tenant") || "tenant-demo";
 
+// 🔥 CONFIGURAÇÕES DO SAAS PARA COBRANÇA
+const MEU_WHATSAPP = "5583996675179"; 
+const VALOR_MENSALIDADE = "R$ 35,00"; 
+const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; 
+
 let workingHours = [];
 let allAppointmentsForDay = []; 
 let selectedBlockTime = null; 
@@ -18,7 +23,7 @@ const btnFinanceiro = document.getElementById("btnFinanceiro");
 if (btnFinanceiro) {
   btnFinanceiro.addEventListener("click", async () => {
     const config = await getTenantConfig(tenantId);
-    const pinDigitado = prompt("🔒 Digite o PIN do Gestor para acessar o Financeiro:");
+    const pinDigitado = prompt("🔒 Digite o PIN do Gestor para aceder ao Financeiro:");
     if (pinDigitado === null) return; 
     if (config.financePin && pinDigitado === String(config.financePin)) {
       sessionStorage.setItem("crachaFinanceiro", pinDigitado);
@@ -49,7 +54,14 @@ async function initDashboard() {
     servicesData = config.services || []; 
     profissionaisConfig = config.professionals || []; 
     
-    blockProfSelect.innerHTML = '<option value="">Carregando profissionais...</option>';
+    // 🔥 GATILHO DE FATURAÇÃO COM DELAY
+    if (config.vencimento) {
+      verificarFaturamento(config.vencimento);
+    } else {
+      console.log("[SaaS] Nenhuma data de vencimento encontrada no Firebase para este cliente.");
+    }
+
+    blockProfSelect.innerHTML = '<option value="">A carregar profissionais...</option>';
     if (mainProfFilter) mainProfFilter.innerHTML = '<option value="todos">Todos os Barbeiros</option>';
     manualProfSelect.innerHTML = '<option value="">Selecione o Barbeiro...</option>';
     manualServiceSelect.innerHTML = '<option value="">Selecione o Serviço...</option>';
@@ -91,7 +103,103 @@ async function initDashboard() {
   renderAdminDateCards();
 }
 
-// ABA DE CONFIGURAÇÕES E GALERIA (Mantida idêntica)
+// 🔥 LÓGICA DO POP-UP DE FATURAÇÃO SAAS
+function verificarFaturamento(vencimentoStr) {
+  const hoje = new Date(); 
+  hoje.setHours(0, 0, 0, 0); 
+  const partesData = vencimentoStr.split('/');
+  const dataVencimento = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+  const diffTime = dataVencimento.getTime() - hoje.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  console.log(`[SaaS] Vencimento em: ${vencimentoStr}. Faltam: ${diffDays} dias.`);
+
+  const billingModal = document.getElementById("billingModal");
+  const billingTitle = document.getElementById("billingTitle");
+  const billingMessage = document.getElementById("billingMessage");
+  const btnLembrarDepois = document.getElementById("btnLembrarDepois");
+  const btnPagarAgora = document.getElementById("btnPagarAgora");
+
+  if(document.getElementById("pixValorDisplay")) document.getElementById("pixValorDisplay").textContent = VALOR_MENSALIDADE;
+  if(document.getElementById("pixKeyInput")) document.getElementById("pixKeyInput").value = MINHA_CHAVE_PIX;
+
+  if(btnPagarAgora) {
+    btnPagarAgora.onclick = () => {
+      document.getElementById("billingState1").style.display = "none";
+      document.getElementById("billingState2").style.display = "block";
+      billingTitle.textContent = "Pagamento via PIX"; 
+      billingTitle.style.color = "#e0b976";
+      document.getElementById("billingIcon").textContent = "💳"; 
+      document.querySelector("#billingModal .premium-sheet").style.borderColor = "#e0b976";
+    };
+  }
+
+  const btnCopyPix = document.getElementById("btnCopyPix");
+  if(btnCopyPix) {
+    btnCopyPix.onclick = () => {
+      const pixInput = document.getElementById("pixKeyInput");
+      pixInput.select(); 
+      pixInput.setSelectionRange(0, 99999); 
+      navigator.clipboard.writeText(pixInput.value).then(() => {
+        btnCopyPix.textContent = "Copiado! ✅"; 
+        btnCopyPix.style.background = "#4CAF50"; 
+        btnCopyPix.style.borderColor = "#4CAF50";
+        setTimeout(() => { 
+          btnCopyPix.textContent = "Copiar"; 
+          btnCopyPix.style.background = "#333"; 
+          btnCopyPix.style.borderColor = "#444"; 
+        }, 5000);
+      });
+    };
+  }
+
+  const btnEnviarComprovante = document.getElementById("btnEnviarComprovante");
+  if(btnEnviarComprovante) {
+    btnEnviarComprovante.onclick = () => {
+      const msg = `Olá Wrancler! Já efetuei o PIX de ${VALOR_MENSALIDADE}. Segue o comprovativo de renovação da barbearia *${tenantId}*.`;
+      window.open(`https://api.whatsapp.com/send?phone=${MEU_WHATSAPP}&text=${encodeURIComponent(msg)}`, '_blank');
+    };
+  }
+
+  if(btnLembrarDepois) {
+    btnLembrarDepois.onclick = () => {
+      sessionStorage.setItem("billingDismissed", "true");
+      billingModal.classList.remove("is-open");
+    };
+  }
+
+  if (diffDays < 0) {
+    // Bloqueio Total após o vencimento
+    billingTitle.textContent = "Sistema Suspenso"; 
+    billingTitle.style.color = "#ff5555"; 
+    document.getElementById("billingIcon").textContent = "🔒";
+    document.querySelector("#billingModal .premium-sheet").style.borderColor = "#ff5555";
+    billingMessage.textContent = `A sua licença expirou há ${Math.abs(diffDays)} dias. Efetue o pagamento de ${VALOR_MENSALIDADE} para reativar o acesso.`;
+    if(btnLembrarDepois) btnLembrarDepois.style.display = "none"; 
+    
+    // 🔥 DELAY DE 5 SEGUNDOS
+    setTimeout(() => { billingModal.classList.add("is-open"); }, 5000); 
+  } 
+  else if (diffDays <= 5) {
+    // Aviso prévio de renovação
+    if (sessionStorage.getItem("billingDismissed") !== "true") {
+      billingTitle.textContent = "Renovação Próxima"; 
+      document.getElementById("billingIcon").textContent = "⚠️";
+      if (diffDays === 0) billingMessage.textContent = `A licença do sistema vence HOJE!`;
+      else billingMessage.textContent = `A sua licença do sistema vence em ${diffDays} dia(s).`;
+      
+      // 🔥 DELAY DE 5 SEGUNDOS
+      setTimeout(() => { billingModal.classList.add("is-open"); }, 5000); 
+    } else {
+      console.log("[SaaS] O usuário clicou em 'Lembrar Depois' recentemente. Ocultando pop-up nesta sessão.");
+    }
+  }
+}
+
+// ==========================================
+// CÓDIGO ORIGINAL DA AGENDA ABAIXO (INTACTO)
+// ==========================================
+
 const configSection = document.getElementById("configSection");
 const agendaSection = document.getElementById("agendaSection");
 const listaSection = document.getElementById("listaSection");
@@ -209,7 +317,6 @@ async function salvarConfiguracoes(mostrarAlerta = true) {
   } catch(e) { console.error(e); }
 }
 
-// ROLETA DE DATAS E REALTIME BUSCA
 function renderAdminDateCards() {
   const dateSlider = document.getElementById("adminDateSlider");
   if (!dateSlider) return;
@@ -245,7 +352,7 @@ function renderAdminDateCards() {
 }
 
 function loadAppointments(dateStr) {
-  listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>Buscando horários...</p>";
+  listDiv.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>A buscar horários...</p>";
   totalHead.textContent = "Aguarde...";
 
   if (currentSnapshotUnsubscribe) currentSnapshotUnsubscribe();
@@ -311,7 +418,6 @@ function renderAppointmentsList() {
         <div class="admin-item__service">${app.serviceName || 'Serviço'}</div>`;
     }
 
-    // 🔥 CORREÇÃO CRÍTICA AQUI 🔥 A memória dos botões não será apagada
     const actionsDiv = document.createElement("div"); 
     actionsDiv.className = "admin-item__actions"; 
     actionsDiv.style.display = "flex"; 
@@ -339,9 +445,6 @@ function renderAppointmentsList() {
   });
 }
 
-// ==========================================
-// FUNÇÕES GLOBAIS DE AÇÃO (1 CLIQUE SEGURO)
-// ==========================================
 window.excluirApp = async (id, btn) => { 
   btn.textContent = "A apagar..."; btn.disabled = true;
   await deleteDoc(doc(db, "appointments", id)); 
@@ -367,9 +470,6 @@ window.lembrarApp = (nome, servico, data, hora, telefone) => {
     window.open(`https://api.whatsapp.com/send?phone=${phoneLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// ==========================================
-// MOTOR DE HORÁRIOS (AGENDAMENTO MANUAL / BLOQUEIO)
-// ==========================================
 function generateDynamicSlots(workHours, apps, durationMinutes = 30) {
   const slots = [];
   if (!workHours || !Array.isArray(workHours)) return slots;
@@ -441,7 +541,7 @@ btnConfirmManual.addEventListener("click", async () => {
 
   if (!profId || !serviceId || !time) return alert("Preencha Barbeiro, Serviço e Horário.");
   const service = servicesData.find(s => s.id === serviceId);
-  btnConfirmManual.textContent = "Agendando..."; btnConfirmManual.disabled = true;
+  btnConfirmManual.textContent = "A agendar..."; btnConfirmManual.disabled = true;
 
   const [h, m] = time.split(":").map(Number); const total = h * 60 + m + service.duration; 
   const endH = String(Math.floor(total / 60)).padStart(2, "0"); const endM = String(total % 60).padStart(2, "0"); const endTime = `${endH}:${endM}`;
@@ -454,7 +554,7 @@ btnConfirmManual.addEventListener("click", async () => {
     manualClientName.value = ""; manualClientPhone.value = ""; manualProfSelect.value = ""; manualServiceSelect.value = ""; updateManualSlots();
     document.getElementById('secaoManual').style.display = 'none'; document.getElementById('btnToggleManual').innerHTML = '➕ Novo Agendamento (Balcão)';
   } catch (error) { console.error(error); alert("Erro ao criar agendamento manual."); } 
-  finally { btnConfirmManual.textContent = "Confirmar Agendamento"; btnConfirmManual.disabled = false; }
+  finally { btnConfirmManual.textContent = "Confirmar Horário"; btnConfirmManual.disabled = false; }
 });
 
 document.getElementById('btnToggleManual').addEventListener('click', function() {
@@ -496,7 +596,7 @@ if (btnConfirmBlock) {
   btnConfirmBlock.addEventListener("click", async () => {
     const profId = blockProfSelect.value; const dateStr = dateInput.value;
     if (!selectedBlockTime) return;
-    btnConfirmBlock.textContent = "Bloqueando..."; btnConfirmBlock.disabled = true;
+    btnConfirmBlock.textContent = "A bloquear..."; btnConfirmBlock.disabled = true;
     const time = selectedBlockTime; const [h, m] = time.split(":").map(Number); const total = h * 60 + m + 30; 
     const endH = String(Math.floor(total / 60)).padStart(2, "0"); const endM = String(total % 60).padStart(2, "0"); const endTime = `${endH}:${endM}`;
 
@@ -522,13 +622,13 @@ if (btnBlockWholeDay) {
     const profId = blockProfSelect.value; const dateStr = dateInput.value;
     if (!profId) return;
 
-    btnBlockWholeDay.textContent = "Bloqueando o dia..."; btnBlockWholeDay.disabled = true;
+    btnBlockWholeDay.textContent = "A bloquear o dia..."; btnBlockWholeDay.disabled = true;
     try {
       await addDoc(collection(db, "appointments"), {
         tenantId: tenantId, professionalId: profId, date: dateStr, startTime: "00:00", endTime: "23:59",   
         clientName: "⛔ BLOQUEIO DE AGENDA", clientPhone: "00000000000", serviceName: "Dia Inteiro Fechado", servicePrice: 0, status: "confirmed"
       });
     } catch (error) { console.error(error); } 
-    finally { btnBlockWholeDay.textContent = "🛑 Bloquear o Dia Inteiro"; btnBlockWholeDay.disabled = false; }
+    finally { btnBlockWholeDay.textContent = "🛑 Fechar o Dia Inteiro"; btnBlockWholeDay.disabled = false; }
   });
 }

@@ -14,12 +14,12 @@
     /* Estilos Premium para os novos elementos do Dashboard */
     .premium-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 20px; padding: 24px; margin-top: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
     .premium-card h3 { color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 20px 0; letter-spacing: 0.5px; }
-    .premium-btn-main { width: 100%; margin-top: 24px; background: #e0b976; color: #111; padding: 16px; border-radius: 16px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    .premium-btn-main { width: 100%; margin-top: 24px; background: #E2E8F0; color: #111; padding: 16px; border-radius: 16px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; }
     .premium-btn-main:active { transform: scale(0.98); }
     .premium-btn-secondary { width: 100%; margin-top: 12px; background: transparent; color: #888; padding: 16px; border-radius: 16px; border: 1px solid #333; font-weight: 500; font-size: 15px; cursor: pointer; transition: 0.2s; }
     .premium-btn-secondary:active { transform: scale(0.98); background: #222; }
     .premium-input { background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 12px; padding: 14px 16px; width: 100%; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s; }
-    .premium-input:focus { border-color: #e0b976; }
+    .premium-input:focus { border-color: #E2E8F0; }
     .premium-btn-danger { background: rgba(255, 60, 60, 0.1); color: #ff5555; border: 1px solid rgba(255, 60, 60, 0.2); border-radius: 12px; padding: 14px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 8px; transition: 0.2s; }
     
     /* ESTILOS DE LISTA DE CONFIGURAÇÕES */
@@ -30,9 +30,25 @@
     /* ESTILOS DO MODAL PREMIUM (SHEET) DA GALERIA */
     .premium-sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s; align-items: flex-end; }
     .premium-sheet-overlay.is-open { display: flex; opacity: 1; }
-    .premium-sheet { background: #161616; width: 100%; border-radius: 24px 24px 0 0; padding: 32px 24px 40px 24px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease-out; border-top: 1px solid #e0b976; box-shadow: 0 -10px 40px rgba(224,185,118,0.1); }
+    .premium-sheet { background: #161616; width: 100%; border-radius: 24px 24px 0 0; padding: 32px 24px 40px 24px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease-out; border-top: 1px solid #E2E8F0; box-shadow: 0 -10px 40px rgba(226,232,240,0.1); }
     .premium-sheet-overlay.is-open .premium-sheet { transform: translateY(0); }
     .premium-sheet__handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 24px auto; }
+
+    /* 🔥 ANIMAÇÃO PREMIUM SAAS PARA O MODAL DE COBRANÇA */
+    @keyframes premiumOverlay {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes premiumModal {
+      0% { opacity: 0; transform: scale(0.9) translateY(40px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #billingModal.is-open {
+      animation: premiumOverlay 0.4s ease-out forwards !important;
+    }
+    #billingModal.is-open .premium-sheet {
+      animation: premiumModal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
   </style>
 </head>
 
@@ -48,12 +64,12 @@
             </div>
             <div class="brand__info">
               <div class="brand__name">Painel Admin</div>
-              <div class="brand__tag" style="color: #e0b976;">Gestão de Agenda</div>
+              <div class="brand__tag" style="color: #E2E8F0;">Gestão de Agenda</div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
             <button id="btnConfig" style="background: transparent; color: #888; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">⚙️ Config</button>
-            <button id="btnFinanceiro" style="background: #222; color: #e0b976; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">💰 Financeiro</button>
+            <button id="btnFinanceiro" style="background: #222; color: #E2E8F0; border: 1px solid #333; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">💰 Financeiro</button>
           </div>
         </div>
       </div>
@@ -64,7 +80,7 @@
     
     <section id="configSection" class="section" style="display: none;">
       <div class="section__head">
-        <h2 style="color: #e0b976;">⚙️ Configurações da Barbearia</h2>
+        <h2 style="color: #E2E8F0;">⚙️ Configurações da Barbearia</h2>
         <p>Ajuste os serviços, preços e profissionais ativos.</p>
       </div>
 
@@ -150,11 +166,46 @@
   <div id="imageSheetOverlay" class="premium-sheet-overlay">
     <div class="premium-sheet">
       <div class="premium-sheet__handle"></div>
-      <h2 style="color: #e0b976; margin-top: 0; margin-bottom: 12px; text-align: center;">✅ Serviço Criado!</h2>
+      <h2 style="color: #E2E8F0; margin-top: 0; margin-bottom: 12px; text-align: center;">✅ Serviço Criado!</h2>
       <p style="color: #ccc; font-size: 14px; text-align: center; margin-bottom: 32px; line-height: 1.5;">O serviço foi salvo. Deseja adicionar uma foto da sua galeria ou usar a imagem padrão?</p>
       
       <button id="sheetBtnGaleria" class="premium-btn-main" style="margin-top: 0; background: #fff; color: #111;">🖼️ Escolher da Galeria</button>
-      <button id="sheetBtnPadrao" class="premium-btn-secondary" style="color: #e0b976; border-color: #333;">✂️ Usar Imagem Padrão</button>
+      <button id="sheetBtnPadrao" class="premium-btn-secondary" style="color: #E2E8F0; border-color: #333;">✂️ Usar Imagem Padrão</button>
+    </div>
+  </div>
+
+  <div id="billingModal" class="premium-sheet-overlay" style="align-items: center; z-index: 100000;">
+    <div class="premium-sheet" style="border-radius: 24px; padding: 32px 24px; width: 90%; max-width: 360px; margin: 0 auto; transform: translateY(40px); border-top: none; border: 1px solid #E2E8F0; text-align: center;">
+      <div id="billingIcon" style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+      <h2 id="billingTitle" style="color: #E2E8F0; margin-top: 0; margin-bottom: 12px;">Aviso de Faturação</h2>
+      
+      <div id="billingState1">
+        <p id="billingMessage" style="color: #ccc; font-size: 14px; margin-bottom: 24px; line-height: 1.5;">
+          A sua licença do sistema vence em X dias.
+        </p>
+        <button id="btnPagarAgora" class="premium-btn-main" style="margin-top: 0; background: #25D366; color: #111; border: none; font-weight: 800;">
+          💳 Renovar Agora (PIX)
+        </button>
+        <button id="btnLembrarDepois" class="premium-btn-secondary" style="margin-top: 12px;">
+          Lembrar Depois
+        </button>
+      </div>
+
+      <div id="billingState2" style="display: none; text-align: left;">
+        <p style="color: #ccc; font-size: 14px; margin-bottom: 16px; text-align: center;">
+          Copie a chave PIX abaixo, faça o pagamento de <strong style="color: #E2E8F0; font-size: 16px;"><span id="pixValorDisplay">R$ 0,00</span></strong> e envie o comprovativo.
+        </p>
+        
+        <label style="color: #888; font-size: 12px; margin-bottom: 4px; display: block;">A sua Chave PIX</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+          <input type="text" id="pixKeyInput" class="premium-input" readonly value="A carregar..." style="flex: 1; color: #fff; font-weight: bold; background: #111;">
+          <button id="btnCopyPix" style="background: #333; color: #fff; border: 1px solid #444; border-radius: 12px; padding: 0 16px; font-weight: 600; cursor: pointer; transition: 0.2s;">Copiar</button>
+        </div>
+
+        <button id="btnEnviarComprovante" class="premium-btn-main" style="margin-top: 0; background: #25D366; color: #111; border: none; font-weight: 800;">
+          📲 Enviar Comprovativo
+        </button>
+      </div>
     </div>
   </div>
 

@@ -287,9 +287,9 @@ body{
   border-color: rgba(255,255,255,.24);
 }
 .slots button.is-selected {
-  border-color: #e0b976;
-  background: rgba(224, 185, 118, 0.1);
-  color: #e0b976;
+  border-color: #E2E8F0;
+  background: rgba(226, 232, 240, 0.1);
+  color: #E2E8F0;
 }
 .slots button:disabled{
   opacity:.40;
@@ -364,7 +364,7 @@ body{
 .summary-total .summary-value {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #e0b976;
+  color: #E2E8F0;
 }
 
 /* =========================================
@@ -400,8 +400,8 @@ body{
   background: rgba(255,255,255,0.08);
 }
 .date-card.is-selected {
-  border-color: #e0b976;
-  background: rgba(224, 185, 118, 0.1);
+  border-color: #E2E8F0;
+  background: rgba(226, 232, 240, 0.1);
   transform: translateY(-2px);
 }
 
@@ -419,7 +419,7 @@ body{
 .date-card.is-selected .date-card__day,
 .date-card.is-selected .date-card__weekday,
 .date-card.is-selected .date-card__month {
-  color: #e0b976;
+  color: #E2E8F0;
 }
 .date-card__month {
   font-size: 0.75rem;
@@ -457,7 +457,7 @@ body{
 .admin-item__time {
   font-size: 1.4rem;
   font-weight: 900;
-  color: #e0b976;
+  color: #E2E8F0;
 }
 
 .admin-item__client {

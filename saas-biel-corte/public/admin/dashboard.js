@@ -15,6 +15,7 @@ let servicesData = [];
 let currentSnapshotUnsubscribe = null;
 let profissionaisConfig = [];
 let adminPinConfig = "";
+let tenantVencimento = null; // 🔥 Guarda a data de vencimento globalmente
 
 let loggedRole = sessionStorage.getItem("loggedRole") || null; 
 let loggedName = sessionStorage.getItem("loggedName") || null;
@@ -41,6 +42,11 @@ const btnUnlock = document.getElementById("btnUnlock");
 const loginError = document.getElementById("loginError");
 const lockScreen = document.getElementById("lockScreen");
 
+// 🔥 NOVO: CONFIGURAÇÕES DO SEU SAAS 
+const MEU_WHATSAPP = "5583996675179"; // <-- número
+const VALOR_MENSALIDADE = "R$ 35,00"; // <-- valor da assinatura
+const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; // <-- CHAVE PIX 
+
 async function initDashboard() {
   try {
     const config = await getTenantConfig(tenantId);
@@ -48,6 +54,9 @@ async function initDashboard() {
     servicesData = config.services || [];
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
+    
+    // Apenas guarda a data, não roda a verificação ainda
+    tenantVencimento = config.vencimento || null;
 
     profissionaisConfig.forEach(p => {
       if (p.isOwner === true) return; 
@@ -64,6 +73,128 @@ async function initDashboard() {
     }
 
   } catch(e) { console.error("Erro config", e); }
+}
+
+// 🔥 LÓGICA DE FATURAMENTO COM INTELIGÊNCIA DE CARGOS
+function verificarFaturamento(vencimentoStr, cargoAtual) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); 
+
+  const partesData = vencimentoStr.split('/');
+  const dia = partesData[0];
+  const mes = partesData[1];
+  const ano = partesData[2];
+  const dataVencimento = new Date(ano, mes - 1, dia);
+  
+  const diffTime = dataVencimento.getTime() - hoje.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const billingModal = document.getElementById("billingModal");
+  const billingTitle = document.getElementById("billingTitle");
+  const billingMessage = document.getElementById("billingMessage");
+  const btnLembrarDepois = document.getElementById("btnLembrarDepois");
+  const btnPagarAgora = document.getElementById("btnPagarAgora");
+
+  // ==========================================
+  // REGRA 1: SE FOR COLABORADOR
+  // ==========================================
+  if (cargoAtual !== "admin") {
+    if (diffDays < 0) {
+      // Bloqueio Cego (Sem valores, sem botões)
+      billingTitle.textContent = "Sistema Suspenso";
+      billingTitle.style.color = "#ff5555";
+      document.getElementById("billingIcon").textContent = "🔒";
+      document.querySelector(".lock-box").style.borderColor = "#ff5555";
+      billingMessage.textContent = "O sistema está temporariamente indisponível. Por favor, solicite ao Gestor da barbearia que verifique a licença.";
+      
+      if(btnPagarAgora) btnPagarAgora.style.display = "none";
+      if(btnLembrarDepois) btnLembrarDepois.style.display = "none";
+      
+      setTimeout(() => { billingModal.classList.add("is-open"); }, 2000);
+    }
+    // Se faltarem 5 dias, não faz nada. O colaborador não recebe aviso.
+    return; 
+  }
+
+  // ==========================================
+  // REGRA 2: SE FOR O GESTOR (ADMIN)
+  // ==========================================
+  const pixValorDisplay = document.getElementById("pixValorDisplay");
+  const pixKeyInput = document.getElementById("pixKeyInput");
+  
+  if(pixValorDisplay) pixValorDisplay.textContent = VALOR_MENSALIDADE;
+  if(pixKeyInput) pixKeyInput.value = MINHA_CHAVE_PIX;
+
+  if(btnPagarAgora) {
+    btnPagarAgora.onclick = () => {
+      document.getElementById("billingState1").style.display = "none";
+      document.getElementById("billingState2").style.display = "block";
+      billingTitle.textContent = "Pagamento via PIX";
+      billingTitle.style.color = "#e0b976";
+      document.getElementById("billingIcon").textContent = "💳";
+      document.querySelector(".lock-box").style.borderColor = "#e0b976";
+    };
+  }
+
+  const btnCopyPix = document.getElementById("btnCopyPix");
+  if(btnCopyPix) {
+    btnCopyPix.onclick = () => {
+      const pixInput = document.getElementById("pixKeyInput");
+      pixInput.select();
+      pixInput.setSelectionRange(0, 99999); 
+      navigator.clipboard.writeText(pixInput.value).then(() => {
+        btnCopyPix.textContent = "Copiado! ✅";
+        btnCopyPix.style.background = "#4CAF50";
+        btnCopyPix.style.borderColor = "#4CAF50";
+        setTimeout(() => {
+          btnCopyPix.textContent = "Copiar";
+          btnCopyPix.style.background = "#333";
+          btnCopyPix.style.borderColor = "#444";
+        }, 5000);
+      });
+    };
+  }
+
+  const btnEnviarComprovante = document.getElementById("btnEnviarComprovante");
+  if(btnEnviarComprovante) {
+    btnEnviarComprovante.onclick = () => {
+      const msg = `Fala Wrancler! Já fiz o PIX de ${VALOR_MENSALIDADE}. Segue o comprovante de renovação da barbearia *${tenantId}*.`;
+      window.open(`https://api.whatsapp.com/send?phone=${MEU_WHATSAPP}&text=${encodeURIComponent(msg)}`, '_blank');
+    };
+  }
+
+  if(btnLembrarDepois) {
+    btnLembrarDepois.onclick = () => {
+      sessionStorage.setItem("billingDismissed", "true");
+      billingModal.classList.remove("is-open");
+    };
+  }
+
+  if (diffDays < 0) {
+    // BLOQUEIO DO GESTOR
+    billingTitle.textContent = "Sistema Suspenso";
+    billingTitle.style.color = "#ff5555";
+    document.getElementById("billingIcon").textContent = "🔒";
+    document.querySelector(".lock-box").style.borderColor = "#ff5555";
+    billingMessage.textContent = `Sua licença expirou há ${Math.abs(diffDays)} dias. Efetue o pagamento de ${VALOR_MENSALIDADE} para reativar seu acesso e a agenda dos seus clientes.`;
+    if(btnLembrarDepois) btnLembrarDepois.style.display = "none"; 
+    
+    setTimeout(() => { billingModal.classList.add("is-open"); }, 7000);
+  } 
+  else if (diffDays <= 5) {
+    // AVISO DO GESTOR
+    if (sessionStorage.getItem("billingDismissed") !== "true") {
+      billingTitle.textContent = "Renovação Próxima";
+      document.getElementById("billingIcon").textContent = "⚠️";
+      if (diffDays === 0) {
+         billingMessage.textContent = `A sua licença do sistema vence HOJE! Garanta que seus clientes continuem agendando.`;
+      } else {
+         billingMessage.textContent = `Sua licença do sistema vence em ${diffDays} dia(s). Não deixe a sua agenda parar.`;
+      }
+      
+      setTimeout(() => { billingModal.classList.add("is-open"); }, 7000);
+    }
+  }
 }
 
 btnUnlock.addEventListener("click", () => {
@@ -133,6 +264,11 @@ function aplicarPermissoesDeAcesso() {
   document.getElementById("manualTime").addEventListener("change", () => { document.getElementById("btnConfirmManual").disabled = !document.getElementById("manualTime").value; });
 
   renderAdminDateCards();
+
+  // 🔥 RODA A VERIFICAÇÃO DE COBRANÇA DEPOIS DE VALIDAR QUEM LOGOU
+  if (tenantVencimento) {
+    verificarFaturamento(tenantVencimento, loggedRole);
+  }
 }
 
 const configSection = document.getElementById("configSection");
@@ -347,15 +483,12 @@ function renderAppointmentsList() {
 
   let appsToRender = allAppointmentsForDay;
   
-  // 1. Aplica o filtro de quem está a ver a tela (Gestor ou Colaborador)
   if (profFiltro !== "todos") {
     appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
   }
 
-  // Oculta os cancelados da contagem e da tela principal se for um bloqueio cancelado
   appsToRender = appsToRender.filter(a => !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
 
-  // 🔥 CÁLCULO DAS MÉTRICAS (VISÃO DE CEO) 🔥
   let totalAgendamentos = 0;
   let totalFaturamento = 0;
   let totalFinalizados = 0;
@@ -365,7 +498,6 @@ function renderAppointmentsList() {
     const isCancelled = app.status === "cancelled";
     const isCompleted = app.status === "completed";
 
-    // Só conta dinheiro se não for bloqueio de agenda e não tiver sido cancelado
     if (!isBlock && !isCancelled) {
       totalAgendamentos++;
       totalFaturamento += (Number(app.servicePrice) || 0);
@@ -373,7 +505,6 @@ function renderAppointmentsList() {
     }
   });
 
-  // Atualiza os cartões na tela
   document.getElementById("metricAgendamentos").textContent = totalAgendamentos;
   document.getElementById("metricFaturamento").textContent = `R$ ${totalFaturamento}`;
   document.getElementById("metricFinalizados").textContent = totalFinalizados;
