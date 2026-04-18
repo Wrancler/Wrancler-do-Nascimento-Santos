@@ -1,6 +1,8 @@
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../../firebase/config.js";
 import { getTenantConfig } from "../../firebase/tenants.js";
+// 🔥 CORREÇÃO: Importando a função oficial que escreve no Público e Privado
+import { createAppointment } from "../../firebase/createAppointment.js";
 
 function getParam(name) { return new URLSearchParams(window.location.search).get(name); }
 const tenantId = getParam("tenant") || "tenant-demo";
@@ -54,11 +56,9 @@ async function initDashboard() {
     servicesData = config.services || []; 
     profissionaisConfig = config.professionals || []; 
     
-    // 🔥 GATILHO DE FATURAÇÃO COM DELAY
+    // 🔥 GATILHO DE FATURAÇÃO
     if (config.vencimento) {
       verificarFaturamento(config.vencimento);
-    } else {
-      console.log("[SaaS] Nenhuma data de vencimento encontrada no Firebase para este cliente.");
     }
 
     blockProfSelect.innerHTML = '<option value="">A carregar profissionais...</option>';
@@ -103,7 +103,6 @@ async function initDashboard() {
   renderAdminDateCards();
 }
 
-// 🔥 LÓGICA DO POP-UP DE FATURAÇÃO SAAS
 function verificarFaturamento(vencimentoStr) {
   const hoje = new Date(); 
   hoje.setHours(0, 0, 0, 0); 
@@ -111,8 +110,6 @@ function verificarFaturamento(vencimentoStr) {
   const dataVencimento = new Date(partesData[2], partesData[1] - 1, partesData[0]);
   const diffTime = dataVencimento.getTime() - hoje.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  console.log(`[SaaS] Vencimento em: ${vencimentoStr}. Faltam: ${diffDays} dias.`);
 
   const billingModal = document.getElementById("billingModal");
   const billingTitle = document.getElementById("billingTitle");
@@ -128,9 +125,9 @@ function verificarFaturamento(vencimentoStr) {
       document.getElementById("billingState1").style.display = "none";
       document.getElementById("billingState2").style.display = "block";
       billingTitle.textContent = "Pagamento via PIX"; 
-      billingTitle.style.color = "#e0b976";
+      billingTitle.style.color = "#E2E8F0";
       document.getElementById("billingIcon").textContent = "💳"; 
-      document.querySelector("#billingModal .premium-sheet").style.borderColor = "#e0b976";
+      document.querySelector("#billingModal .premium-sheet").style.borderColor = "#E2E8F0";
     };
   }
 
@@ -169,36 +166,24 @@ function verificarFaturamento(vencimentoStr) {
   }
 
   if (diffDays < 0) {
-    // Bloqueio Total após o vencimento
     billingTitle.textContent = "Sistema Suspenso"; 
     billingTitle.style.color = "#ff5555"; 
     document.getElementById("billingIcon").textContent = "🔒";
     document.querySelector("#billingModal .premium-sheet").style.borderColor = "#ff5555";
     billingMessage.textContent = `A sua licença expirou há ${Math.abs(diffDays)} dias. Efetue o pagamento de ${VALOR_MENSALIDADE} para reativar o acesso.`;
     if(btnLembrarDepois) btnLembrarDepois.style.display = "none"; 
-    
-    // 🔥 DELAY DE 5 SEGUNDOS
     setTimeout(() => { billingModal.classList.add("is-open"); }, 5000); 
   } 
   else if (diffDays <= 5) {
-    // Aviso prévio de renovação
     if (sessionStorage.getItem("billingDismissed") !== "true") {
       billingTitle.textContent = "Renovação Próxima"; 
       document.getElementById("billingIcon").textContent = "⚠️";
       if (diffDays === 0) billingMessage.textContent = `A licença do sistema vence HOJE!`;
       else billingMessage.textContent = `A sua licença do sistema vence em ${diffDays} dia(s).`;
-      
-      // 🔥 DELAY DE 5 SEGUNDOS
       setTimeout(() => { billingModal.classList.add("is-open"); }, 5000); 
-    } else {
-      console.log("[SaaS] O usuário clicou em 'Lembrar Depois' recentemente. Ocultando pop-up nesta sessão.");
     }
   }
 }
-
-// ==========================================
-// CÓDIGO ORIGINAL DA AGENDA ABAIXO (INTACTO)
-// ==========================================
 
 const configSection = document.getElementById("configSection");
 const agendaSection = document.getElementById("agendaSection");
@@ -397,7 +382,7 @@ function renderAppointmentsList() {
 
     const isCancelled = app.status === "cancelled"; const isCompleted = app.status === "completed"; const isBlock = app.clientName === "⛔ BLOQUEIO DE AGENDA";
     
-    let timeColor = "#e0b976"; let timeText = app.startTime;
+    let timeColor = "#E2E8F0"; let timeText = app.startTime;
 
     if (isCancelled) { timeColor = "#ff5555"; timeText = `${app.startTime} (Cancelado)`; } 
     else if (isCompleted) { timeColor = "#4CAF50"; timeText = `${app.startTime} (Finalizado)`; item.style.opacity = "0.6"; item.style.borderLeft = "4px solid #4CAF50"; } 
@@ -445,19 +430,41 @@ function renderAppointmentsList() {
   });
 }
 
+// 🔥 CORREÇÃO: Limpa as travas do Public quando o Admin cancela ou exclui da tela
+async function limparTravasDoAgendamento(appointmentId) {
+  try {
+    const lockQuery = query(collection(db, "slotLocks"), where("appointmentId", "==", appointmentId));
+    const lockSnapshot = await getDocs(lockQuery);
+    lockSnapshot.forEach(async (documento) => {
+      await deleteDoc(doc(db, "slotLocks", documento.id));
+    });
+
+    const publicQuery = query(collection(db, "appointmentsPublic"), where("appointmentId", "==", appointmentId));
+    const publicSnapshot = await getDocs(publicQuery);
+    publicSnapshot.forEach(async (documento) => {
+      await deleteDoc(doc(db, "appointmentsPublic", documento.id));
+    });
+  } catch (error) {
+    console.error("Erro ao limpar travas do Firebase:", error);
+  }
+}
+
 window.excluirApp = async (id, btn) => { 
   btn.textContent = "A apagar..."; btn.disabled = true;
   await deleteDoc(doc(db, "appointments", id)); 
+  await limparTravasDoAgendamento(id); // Limpa o lado público
 };
 
 window.finalizarApp = async (id, btn) => { 
   btn.textContent = "Aguarde..."; btn.disabled = true;
   await updateDoc(doc(db, "appointments", id), { status: "completed" }); 
+  await limparTravasDoAgendamento(id); // Limpa as travas para segurança
 };
 
 window.cancelarApp = async (id, isBlock, btn) => { 
   btn.textContent = "Aguarde..."; btn.disabled = true;
   await updateDoc(doc(db, "appointments", id), { status: "cancelled" }); 
+  await limparTravasDoAgendamento(id); // Libera o horário para os clientes na hora!
 };
 
 window.lembrarApp = (nome, servico, data, hora, telefone) => {
@@ -547,7 +554,8 @@ btnConfirmManual.addEventListener("click", async () => {
   const endH = String(Math.floor(total / 60)).padStart(2, "0"); const endM = String(total % 60).padStart(2, "0"); const endTime = `${endH}:${endM}`;
 
   try {
-    await addDoc(collection(db, "appointments"), {
+    // 🔥 CORREÇÃO: Usando createAppointment no Agendamento do Balcão
+    await createAppointment({
       tenantId: tenantId, professionalId: profId, date: dateStr, startTime: time, endTime: endTime,
       clientName: clientName, clientPhone: clientPhone, serviceName: service.name, servicePrice: service.price, status: "confirmed"
     });
@@ -601,7 +609,8 @@ if (btnConfirmBlock) {
     const endH = String(Math.floor(total / 60)).padStart(2, "0"); const endM = String(total % 60).padStart(2, "0"); const endTime = `${endH}:${endM}`;
 
     try {
-      await addDoc(collection(db, "appointments"), {
+      // 🔥 CORREÇÃO: Usando createAppointment no Bloqueio Manual
+      await createAppointment({
         tenantId: tenantId, professionalId: profId, date: dateStr, startTime: time, endTime: endTime,
         clientName: "⛔ BLOQUEIO DE AGENDA", clientPhone: "00000000000", serviceName: "Bloqueio Manual", servicePrice: 0, status: "confirmed"
       });
@@ -624,7 +633,8 @@ if (btnBlockWholeDay) {
 
     btnBlockWholeDay.textContent = "A bloquear o dia..."; btnBlockWholeDay.disabled = true;
     try {
-      await addDoc(collection(db, "appointments"), {
+      // 🔥 CORREÇÃO: Usando createAppointment no Bloqueio do Dia Inteiro
+      await createAppointment({
         tenantId: tenantId, professionalId: profId, date: dateStr, startTime: "00:00", endTime: "23:59",   
         clientName: "⛔ BLOQUEIO DE AGENDA", clientPhone: "00000000000", serviceName: "Dia Inteiro Fechado", servicePrice: 0, status: "confirmed"
       });
