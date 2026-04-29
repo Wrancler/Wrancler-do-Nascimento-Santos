@@ -15,7 +15,7 @@ let servicesData = [];
 let currentSnapshotUnsubscribe = null;
 let profissionaisConfig = [];
 let adminPinConfig = "";
-let tenantVencimento = null; // 🔥 Guarda a data de vencimento globalmente
+let tenantVencimento = null; 
 
 let loggedRole = sessionStorage.getItem("loggedRole") || null; 
 let loggedName = sessionStorage.getItem("loggedName") || null;
@@ -42,10 +42,9 @@ const btnUnlock = document.getElementById("btnUnlock");
 const loginError = document.getElementById("loginError");
 const lockScreen = document.getElementById("lockScreen");
 
-// 🔥 NOVO: CONFIGURAÇÕES DO SEU SAAS 
-const MEU_WHATSAPP = "5583996675179"; // <-- número
-const VALOR_MENSALIDADE = "R$ 35,00"; // <-- valor da assinatura
-const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; // <-- CHAVE PIX 
+const MEU_WHATSAPP = "5583996675179"; 
+const VALOR_MENSALIDADE = "R$ 35,00"; 
+const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; 
 
 async function initDashboard() {
   try {
@@ -55,7 +54,6 @@ async function initDashboard() {
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
     
-    // Apenas guarda a data, não roda a verificação ainda
     tenantVencimento = config.vencimento || null;
 
     profissionaisConfig.forEach(p => {
@@ -75,7 +73,6 @@ async function initDashboard() {
   } catch(e) { console.error("Erro config", e); }
 }
 
-// 🔥 LÓGICA DE FATURAMENTO COM INTELIGÊNCIA DE CARGOS
 function verificarFaturamento(vencimentoStr, cargoAtual) {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0); 
@@ -95,12 +92,8 @@ function verificarFaturamento(vencimentoStr, cargoAtual) {
   const btnLembrarDepois = document.getElementById("btnLembrarDepois");
   const btnPagarAgora = document.getElementById("btnPagarAgora");
 
-  // ==========================================
-  // REGRA 1: SE FOR COLABORADOR
-  // ==========================================
   if (cargoAtual !== "admin") {
     if (diffDays < 0) {
-      // Bloqueio Cego (Sem valores, sem botões)
       billingTitle.textContent = "Sistema Suspenso";
       billingTitle.style.color = "#ff5555";
       document.getElementById("billingIcon").textContent = "🔒";
@@ -112,13 +105,9 @@ function verificarFaturamento(vencimentoStr, cargoAtual) {
       
       setTimeout(() => { billingModal.classList.add("is-open"); }, 2000);
     }
-    // Se faltarem 5 dias, não faz nada. O colaborador não recebe aviso.
     return; 
   }
 
-  // ==========================================
-  // REGRA 2: SE FOR O GESTOR (ADMIN)
-  // ==========================================
   const pixValorDisplay = document.getElementById("pixValorDisplay");
   const pixKeyInput = document.getElementById("pixKeyInput");
   
@@ -171,7 +160,6 @@ function verificarFaturamento(vencimentoStr, cargoAtual) {
   }
 
   if (diffDays < 0) {
-    // BLOQUEIO DO GESTOR
     billingTitle.textContent = "Sistema Suspenso";
     billingTitle.style.color = "#ff5555";
     document.getElementById("billingIcon").textContent = "🔒";
@@ -182,7 +170,6 @@ function verificarFaturamento(vencimentoStr, cargoAtual) {
     setTimeout(() => { billingModal.classList.add("is-open"); }, 7000);
   } 
   else if (diffDays <= 5) {
-    // AVISO DO GESTOR
     if (sessionStorage.getItem("billingDismissed") !== "true") {
       billingTitle.textContent = "Renovação Próxima";
       document.getElementById("billingIcon").textContent = "⚠️";
@@ -204,7 +191,8 @@ btnUnlock.addEventListener("click", () => {
   if (userSelecionado === "admin" && pinDigitado === adminPinConfig) {
     liberarAcesso("admin", "Gestor Geral");
   } else {
-    const barbeiro = profissionaisConfig.find(p => p.id === userSelecionado);
+    // 🔥 BLINDAGEM DE LOGIN: Ignora maiúsculas e espaços no ID
+    const barbeiro = profissionaisConfig.find(p => String(p.id).trim().toLowerCase() === String(userSelecionado).trim().toLowerCase());
     if (barbeiro && barbeiro.pin && pinDigitado === barbeiro.pin) {
       liberarAcesso(barbeiro.id, barbeiro.name);
     } else {
@@ -265,7 +253,6 @@ function aplicarPermissoesDeAcesso() {
 
   renderAdminDateCards();
 
-  // 🔥 RODA A VERIFICAÇÃO DE COBRANÇA DEPOIS DE VALIDAR QUEM LOGOU
   if (tenantVencimento) {
     verificarFaturamento(tenantVencimento, loggedRole);
   }
@@ -483,8 +470,9 @@ function renderAppointmentsList() {
 
   let appsToRender = allAppointmentsForDay;
   
+  // 🔥 BLINDAGEM DE FILTRO: Ignora maiúsculas e espaços para garantir que Hélio veja a agenda dele
   if (profFiltro !== "todos") {
-    appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
+    appsToRender = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profFiltro).trim().toLowerCase());
   }
 
   appsToRender = appsToRender.filter(a => !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
@@ -508,7 +496,6 @@ function renderAppointmentsList() {
   document.getElementById("metricAgendamentos").textContent = totalAgendamentos;
   document.getElementById("metricFaturamento").textContent = `R$ ${totalFaturamento}`;
   document.getElementById("metricFinalizados").textContent = totalFinalizados;
-
 
   if (appsToRender.length === 0) {
     totalHead.textContent = "Nenhum agendamento.";
@@ -635,7 +622,9 @@ function updateManualSlots() {
 
   if (!profId || !serviceId) return;
   const service = servicesData.find(s => s.id === serviceId);
-  const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
+  
+  // 🔥 BLINDAGEM DE FILTRO: Protege a roleta de horários do Balcão
+  const profAppointments = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled");
   
   let slots = generateAvailableSlots(workingHours, profAppointments, service.duration);
   
@@ -683,12 +672,12 @@ function renderBlockSlots() {
   blockSlotsDiv.innerHTML = ""; document.getElementById("btnConfirmBlock").disabled = true;
   if (!profId) return;
 
-  // 🔥 CORREÇÃO: Usa a menor duração dos serviços para mostrar todos os slots possíveis
   const menorDuracao = servicesData.length > 0
     ? Math.min(...servicesData.map(s => Number(s.duration) || 40))
     : 40;
 
-  const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
+  // 🔥 BLINDAGEM DE FILTRO: Protege a roleta de bloqueio
+  const profAppointments = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled");
   let slots = generateAvailableSlots(workingHours, profAppointments, menorDuracao); 
   
   slots.forEach(time => {
@@ -703,7 +692,6 @@ function renderBlockSlots() {
 }
 
 document.getElementById("btnConfirmBlock").addEventListener("click", async () => {
-  // 🔥 CORREÇÃO: Usa a menor duração dos serviços para o bloqueio
   const menorDuracao = servicesData.length > 0 ? Math.min(...servicesData.map(s => Number(s.duration) || 40)) : 40;
   const time = document.getElementById("btnConfirmBlock").getAttribute("data-time");
   
