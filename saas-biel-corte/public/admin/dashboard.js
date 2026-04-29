@@ -242,7 +242,10 @@ function aplicarPermissoesDeAcesso() {
   }
 
   document.getElementById("manualService").innerHTML = '<option value="">Selecione o Serviço...</option>';
-  servicesData.forEach(s => { document.getElementById("manualService").appendChild(new Option(`${s.name} - R$${s.price}`, s.id)); });
+  // 🔥 OPÇÃO A: Filtra apenas serviços com horário (não produtos)
+  servicesData.filter(s => s.type !== "product").forEach(s => {
+    document.getElementById("manualService").appendChild(new Option(`${s.name} - R$${s.price}`, s.id));
+  });
 
   blockProfSelect.addEventListener("change", renderBlockSlots);
   mainProfFilter.addEventListener("change", renderAppointmentsList);
@@ -287,14 +290,35 @@ function renderConfigPanel() {
   });
 
   servicesData.forEach((s, index) => {
+    const isProduto = s.type === "product";
+    const badge = isProduto
+      ? `<span style="background:rgba(224,185,118,0.15);color:#e0b976;border:1px solid #e0b976;border-radius:6px;font-size:10px;padding:2px 6px;font-weight:700;">PRODUTO</span>`
+      : "";
+    const metaInfo = isProduto
+      ? `Produto adicional • R$ ${s.price}`
+      : `${s.duration} min • R$ ${s.price}`;
+
     servicesList.innerHTML += `
       <div class="config-list-item">
         <div style="display:flex; align-items:center; gap:12px;">
             ${s.image ? `<img src="${s.image}" style="width:36px; height:36px; border-radius:8px; object-fit:cover;">` : ''}
-            <div><strong>${s.name}</strong><br><span>${s.duration} min • R$ ${s.price}</span></div>
+            <div><strong>${s.name}</strong> ${badge}<br><span>${metaInfo}</span></div>
         </div>
-        <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer; font-size:18px;">❌</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btnToggleTipo" data-index="${index}" title="${isProduto ? 'Converter para Serviço' : 'Converter para Produto'}" style="background:transparent;border:1px solid #444;color:#888;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;">${isProduto ? "→ Serviço" : "→ Produto"}</button>
+          <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer; font-size:18px;">❌</button>
+        </div>
       </div>`;
+  });
+
+  document.querySelectorAll(".btnToggleTipo").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const index = e.target.getAttribute("data-index");
+      const atual = servicesData[index].type;
+      servicesData[index].type = atual === "product" ? "service" : "product";
+      await salvarConfiguracoes(false);
+      renderConfigPanel();
+    });
   });
 
   document.querySelectorAll(".btnRemoverServico").forEach(btn => {
@@ -313,12 +337,20 @@ const sheetBtnPadrao = document.getElementById("sheetBtnPadrao");
 let currentNewServiceId = null;
 
 document.getElementById("btnAddNewService").addEventListener("click", async () => {
-  const nome = prompt("Nome do novo serviço (ex: Platinado):");
+  const nome = prompt("Nome do novo item (ex: Degradê, Pomada XYZ):");
   if (!nome) return;
   const preco = prompt("Preço (ex: 70):");
   if (!preco) return;
-  const duracao = prompt("Duração em minutos (ex: 60):");
-  if (!duracao) return;
+
+  // 🔥 OPÇÃO A: Pergunta se é serviço ou produto
+  const tipoResposta = confirm("É um SERVIÇO com horário na agenda?\n\n✅ OK = Serviço (aparece na agenda)\n❌ Cancelar = Produto adicional (sem horário)");
+  const tipo = tipoResposta ? "service" : "product";
+
+  let duracao = "40";
+  if (tipo === "service") {
+    duracao = prompt("Duração em minutos (ex: 40):");
+    if (!duracao) return;
+  }
 
   document.getElementById("btnAddNewService").textContent = "A preparar...";
 
@@ -327,7 +359,7 @@ document.getElementById("btnAddNewService").addEventListener("click", async () =
   const imageUrl = "https://cdn-icons-png.flaticon.com/512/6573/6573138.png"; 
 
   servicesData.push({ 
-    id: newId, name: nome, price: Number(preco), duration: Number(duracao), image: imageUrl 
+    id: newId, name: nome, price: Number(preco), duration: Number(duracao), image: imageUrl, type: tipo
   });
   
   await salvarConfiguracoes(false);

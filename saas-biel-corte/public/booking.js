@@ -106,7 +106,11 @@ async function initTenant() {
     const servicesDiv = document.getElementById("services");
     servicesDiv.innerHTML = ""; 
 
-    config.services.forEach(s => {
+    // 🔥 OPÇÃO A: Separa serviços de produtos pelo campo type
+    const apenasServicos = config.services.filter(s => s.type !== "product");
+    const apenasProdutos = config.services.filter(s => s.type === "product");
+
+    apenasServicos.forEach(s => {
       servicesById[s.id] = {
         id: s.id,
         name: s.name,
@@ -132,6 +136,37 @@ async function initTenant() {
       `;
       servicesDiv.appendChild(btn);
     });
+
+    // 🔥 PRODUTOS: Renderiza seção de adicionais se houver produtos cadastrados
+    const produtosSection = document.getElementById("produtosSection");
+    const produtosDiv = document.getElementById("produtos");
+    if (produtosSection) produtosSection.style.display = apenasProdutos.length > 0 ? "block" : "none";
+    if (produtosDiv && apenasProdutos.length > 0) {
+      produtosDiv.innerHTML = "";
+      apenasProdutos.forEach(p => {
+        const imgCaminho = p.image || `assets/services/${p.id}.png`;
+        const item = document.createElement("div");
+        item.setAttribute("data-produto-id", p.id);
+        item.setAttribute("data-produto-name", p.name);
+        item.setAttribute("data-produto-price", p.price);
+        item.style.cssText = "display:flex;align-items:center;gap:12px;background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;";
+        item.innerHTML = `
+          <img src="${imgCaminho}" alt="${p.name}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid #333;">
+          <div style="flex:1;">
+            <div style="color:#fff;font-weight:600;font-size:14px;">${p.name}</div>
+            <div style="color:#888;font-size:12px;">R$ ${Number(p.price).toFixed(2).replace(".", ",")}</div>
+          </div>
+          <div class="produto-check" style="width:26px;height:26px;border-radius:50%;border:2px solid #444;display:flex;align-items:center;justify-content:center;font-size:14px;transition:0.2s;flex-shrink:0;"></div>
+        `;
+        item.addEventListener("click", () => {
+          const on = item.classList.toggle("produto-selected");
+          item.style.borderColor = on ? "#e0b976" : "#2a2a2a";
+          item.querySelector(".produto-check").textContent = on ? "✅" : "";
+          item.querySelector(".produto-check").style.borderColor = on ? "#e0b976" : "#444";
+        });
+        produtosDiv.appendChild(item);
+      });
+    }
 
     preselectFromUrl();
     updateScheduleLockState();
@@ -448,6 +483,14 @@ async function handleCreateAppointment(time, date, clickedBtn) {
 
   const service = servicesById[selectedServiceId];
 
+  // 🔥 PRODUTOS: Coleta produtos selecionados pelo cliente
+  const produtosSelecionados = Array.from(document.querySelectorAll(".produto-selected")).map(el => ({
+    name: el.getAttribute("data-produto-name"),
+    price: Number(el.getAttribute("data-produto-price")) || 0
+  }));
+  const totalProdutos = produtosSelecionados.reduce((acc, p) => acc + p.price, 0);
+  const totalGeral = (service.price || 0) + totalProdutos;
+
   const payload = {
     tenantId,
     professionalId: selectedProfessionalId,
@@ -471,6 +514,11 @@ async function handleCreateAppointment(time, date, clickedBtn) {
     const baseUrl = currentUrl.origin + currentUrl.pathname.replace('booking.html', '');
     const linkCancelamento = `${baseUrl}cancelar.html?id=${code}`;
 
+    // 🔥 PRODUTOS: Linha de adicionais só aparece se cliente selecionou algum produto
+    const linhaAdicionais = produtosSelecionados.length > 0
+      ? `\n🛒 ADICIONAIS\n` + produtosSelecionados.map(p => `• ${p.name} — R$ ${Number(p.price).toFixed(2).replace(".", ",")}`).join("\n") + `\n💰 TOTAL GERAL: R$ ${totalGeral.toFixed(2).replace(".", ",")}`
+      : "";
+
     const msg = `- * * * 📅 MEU AGENDAMENTO * * * *\n` +
                 `👥 CLIENTE: *${clientName} *\n` +
                 `📞 TELEFONE: ${cleanPhone}\n` +
@@ -480,7 +528,7 @@ async function handleCreateAppointment(time, date, clickedBtn) {
                 `💇‍♂️ PROFISSIONAL\n` +
                 `${selectedProfessionalName}\n\n` +
                 `✂️ SERVIÇO\n` +
-                `${service.name}\n\n` +
+                `${service.name}${linhaAdicionais}\n\n` +
                 `Olá seu horário foi agendado com sucesso 👍\n` +
                 `=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n` +
                 `CASO DESEJE CANCELAR O AGENDAMENTO:\n` +
