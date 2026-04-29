@@ -128,8 +128,7 @@ async function initTenant() {
         </div>
         <div class="card__body">
           <div class="card__title">${s.name}</div>
-          <div class="card__meta">${s.duration} min</div>
-        </div>
+          <div class="card__meta">${s.duration} min • R$ ${Number(s.price).toFixed(2).replace(".", ",")}</div>
       `;
       servicesDiv.appendChild(btn);
     });
