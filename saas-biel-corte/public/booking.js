@@ -164,9 +164,33 @@ async function initTenant() {
           item.style.borderColor = on ? "#e0b976" : "#2a2a2a";
           item.querySelector(".produto-check").textContent = on ? "✅" : "";
           item.querySelector(".produto-check").style.borderColor = on ? "#e0b976" : "#444";
+          updateSummaryCard();
+          // 🔥 BOTÃO PEDIR: Mostra/oculta o botão de pedir só produto
+          atualizarBotaoPedirProduto();
         });
         produtosDiv.appendChild(item);
       });
+
+      // 🔥 BOTÃO PEDIR: Configura o botão de pedido via WhatsApp
+      const btnPedirWrap = document.getElementById("btnPedirProdutoWrap");
+      const btnPedir = document.getElementById("btnPedirProduto");
+      if (btnPedir) {
+        btnPedir.addEventListener("click", () => {
+          const selecionados = Array.from(document.querySelectorAll(".produto-selected"));
+          if (selecionados.length === 0) {
+            alert("Selecione ao menos um produto antes de pedir.");
+            return;
+          }
+          const itens = selecionados.map(el => {
+            const nome = el.getAttribute("data-produto-name");
+            const preco = Number(el.getAttribute("data-produto-price") || 0);
+            return `• ${nome} — R$ ${preco.toFixed(2).replace(".", ",")}`;
+          }).join("\n");
+          const total = selecionados.reduce((acc, el) => acc + (Number(el.getAttribute("data-produto-price")) || 0), 0);
+          const msg = `Olá! Gostaria de comprar os seguintes produtos:\n\n${itens}\n\n💰 Total: R$ ${total.toFixed(2).replace(".", ",")}`;
+          window.open(`https://api.whatsapp.com/send?phone=${barberWhatsapp}&text=${encodeURIComponent(msg)}`, "_blank");
+        });
+      }
     }
 
     preselectFromUrl();
@@ -184,6 +208,16 @@ async function initTenant() {
   }
 }
 
+// 🔥 BOTÃO PEDIR: Mostra o botão de pedir só produto quando há produto selecionado sem serviço
+function atualizarBotaoPedirProduto() {
+  const wrap = document.getElementById("btnPedirProdutoWrap");
+  if (!wrap) return;
+  const temProdutoSelecionado = document.querySelectorAll(".produto-selected").length > 0;
+  const temServico = !!selectedServiceId;
+  // Aparece só quando há produto selecionado E nenhum serviço escolhido
+  wrap.style.display = (temProdutoSelecionado && !temServico) ? "block" : "none";
+}
+
 function updateSummaryCard() {
   const summarySection = document.getElementById("summarySection");
   if (!summarySection) return;
@@ -196,7 +230,20 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      document.getElementById("summaryTotal").textContent = `R$ ${Number(servico.price).toFixed(2).replace(".", ",")}`;
+
+      // 🔥 CORREÇÃO: Soma produtos selecionados ao total do resumo
+      const totalProdutos = Array.from(document.querySelectorAll(".produto-selected"))
+        .reduce((acc, el) => acc + (Number(el.getAttribute("data-produto-price")) || 0), 0);
+      const totalGeral = (Number(servico.price) || 0) + totalProdutos;
+
+      const produtosNomes = Array.from(document.querySelectorAll(".produto-selected"))
+        .map(el => el.getAttribute("data-produto-name")).filter(Boolean);
+      const resumoServico = produtosNomes.length > 0
+        ? `${servico.name} + ${produtosNomes.join(", ")}`
+        : servico.name;
+
+      document.getElementById("summaryService").textContent = resumoServico;
+      document.getElementById("summaryTotal").textContent = `R$ ${totalGeral.toFixed(2).replace(".", ",")}`;
     }
 
     const dateInput = document.getElementById("date").value;
