@@ -683,8 +683,13 @@ function renderBlockSlots() {
   blockSlotsDiv.innerHTML = ""; document.getElementById("btnConfirmBlock").disabled = true;
   if (!profId) return;
 
+  // 🔥 CORREÇÃO: Usa a menor duração dos serviços para mostrar todos os slots possíveis
+  const menorDuracao = servicesData.length > 0
+    ? Math.min(...servicesData.map(s => Number(s.duration) || 40))
+    : 40;
+
   const profAppointments = allAppointmentsForDay.filter(a => a.professionalId === profId && a.status !== "cancelled");
-  let slots = generateAvailableSlots(workingHours, profAppointments, 40); 
+  let slots = generateAvailableSlots(workingHours, profAppointments, menorDuracao); 
   
   slots.forEach(time => {
     const btn = document.createElement("button"); btn.className = "slot"; btn.textContent = time;
@@ -698,6 +703,8 @@ function renderBlockSlots() {
 }
 
 document.getElementById("btnConfirmBlock").addEventListener("click", async () => {
+  // 🔥 CORREÇÃO: Usa a menor duração dos serviços para o bloqueio
+  const menorDuracao = servicesData.length > 0 ? Math.min(...servicesData.map(s => Number(s.duration) || 40)) : 40;
   const time = document.getElementById("btnConfirmBlock").getAttribute("data-time");
   
   const payload = {
@@ -707,7 +714,7 @@ document.getElementById("btnConfirmBlock").addEventListener("click", async () =>
     servicePrice: 0,
     date: dateInput.value,
     startTime: time,
-    endTime: addMinutes(time, 40),
+    endTime: addMinutes(time, menorDuracao),
     clientName: "⛔ BLOQUEIO DE AGENDA",
     clientPhone: "",
     status: "confirmed"
