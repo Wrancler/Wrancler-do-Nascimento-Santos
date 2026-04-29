@@ -161,7 +161,7 @@ function updateSummaryCard() {
     const servico = servicesById[selectedServiceId];
     if (servico) {
       document.getElementById("summaryService").textContent = servico.name;
-      document.getElementById("summaryTotal").textContent = ""; 
+      document.getElementById("summaryTotal").textContent = ""; // 👈 aparecer preço 
     }
 
     const dateInput = document.getElementById("date").value;
