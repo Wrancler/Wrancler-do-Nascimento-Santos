@@ -191,8 +191,7 @@ btnUnlock.addEventListener("click", () => {
   if (userSelecionado === "admin" && pinDigitado === adminPinConfig) {
     liberarAcesso("admin", "Gestor Geral");
   } else {
-    // 🔥 BLINDAGEM DE LOGIN: Ignora maiúsculas e espaços no ID
-    const barbeiro = profissionaisConfig.find(p => String(p.id).trim().toLowerCase() === String(userSelecionado).trim().toLowerCase());
+    const barbeiro = profissionaisConfig.find(p => p.id === userSelecionado);
     if (barbeiro && barbeiro.pin && pinDigitado === barbeiro.pin) {
       liberarAcesso(barbeiro.id, barbeiro.name);
     } else {
@@ -470,9 +469,8 @@ function renderAppointmentsList() {
 
   let appsToRender = allAppointmentsForDay;
   
-  // 🔥 BLINDAGEM DE FILTRO: Ignora maiúsculas e espaços para garantir que Hélio veja a agenda dele
   if (profFiltro !== "todos") {
-    appsToRender = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profFiltro).trim().toLowerCase());
+    appsToRender = allAppointmentsForDay.filter(a => a.professionalId === profFiltro);
   }
 
   appsToRender = appsToRender.filter(a => !(a.clientName === "⛔ BLOQUEIO DE AGENDA" && a.status === "cancelled"));
@@ -496,6 +494,7 @@ function renderAppointmentsList() {
   document.getElementById("metricAgendamentos").textContent = totalAgendamentos;
   document.getElementById("metricFaturamento").textContent = `R$ ${totalFaturamento}`;
   document.getElementById("metricFinalizados").textContent = totalFinalizados;
+
 
   if (appsToRender.length === 0) {
     totalHead.textContent = "Nenhum agendamento.";
@@ -623,8 +622,10 @@ function updateManualSlots() {
   if (!profId || !serviceId) return;
   const service = servicesData.find(s => s.id === serviceId);
   
-  // 🔥 BLINDAGEM DE FILTRO: Protege a roleta de horários do Balcão
-  const profAppointments = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled");
+  // 🔥 BLINDAGEM ANTI-CRASH: Força o start e end para o gerador antigo não travar a tela
+  const profAppointments = allAppointmentsForDay
+    .filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled")
+    .map(a => ({ ...a, start: a.startTime, end: a.endTime }));
   
   let slots = generateAvailableSlots(workingHours, profAppointments, service.duration);
   
@@ -676,8 +677,11 @@ function renderBlockSlots() {
     ? Math.min(...servicesData.map(s => Number(s.duration) || 40))
     : 40;
 
-  // 🔥 BLINDAGEM DE FILTRO: Protege a roleta de bloqueio
-  const profAppointments = allAppointmentsForDay.filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled");
+  // 🔥 BLINDAGEM ANTI-CRASH: Força o start e end para o gerador antigo não travar a tela
+  const profAppointments = allAppointmentsForDay
+    .filter(a => String(a.professionalId).trim().toLowerCase() === String(profId).trim().toLowerCase() && a.status !== "cancelled")
+    .map(a => ({ ...a, start: a.startTime, end: a.endTime }));
+    
   let slots = generateAvailableSlots(workingHours, profAppointments, menorDuracao); 
   
   slots.forEach(time => {
