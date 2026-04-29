@@ -107,7 +107,8 @@ async function initTenant() {
     servicesDiv.innerHTML = ""; 
 
     // 🔥 OPÇÃO A: Separa serviços de produtos pelo campo type
-    const apenasServicos = config.services.filter(s => s.type !== "product");
+    // 🔥 PROTEÇÃO DUPLA: filtra produtos e itens com duration 0 (evita loop infinito)
+    const apenasServicos = config.services.filter(s => s.type !== "product" && Number(s.duration) > 0);
     const apenasProdutos = config.services.filter(s => s.type === "product");
 
     apenasServicos.forEach(s => {
