@@ -513,3 +513,30 @@ body{
   color: #55ff77;
   border: 1px solid rgba(60, 255, 100, 0.3);
 }
+
+/* =========================================
+   NOVO LAYOUT DE SERVIÇOS: 2 COLUNAS
+   ========================================= */
+#services {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px;
+}
+
+#services .card__media {
+  height: 120px !important; 
+}
+
+#services .card__body {
+  padding: 10px 10px 12px !important;
+}
+
+#services .card__title {
+  font-size: 14px !important;
+  line-height: 1.2;
+}
+
+#services .card__meta {
+  font-size: 12px !important;
+  margin-top: 4px !important;
+}
