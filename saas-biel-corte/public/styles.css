@@ -515,28 +515,30 @@ body{
 }
 
 /* =========================================
-   NOVO LAYOUT DE SERVIÇOS: 2 COLUNAS
+   NOVO LAYOUT DE SERVIÇOS: 2 COLUNAS (APENAS MOBILE)
    ========================================= */
-#services {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 12px;
-}
+@media (max-width: 759px) {
+  #services {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+  }
 
-#services .card__media {
-  height: 120px !important; 
-}
+  #services .card__media {
+    height: 120px !important; 
+  }
 
-#services .card__body {
-  padding: 10px 10px 12px !important;
-}
+  #services .card__body {
+    padding: 10px 10px 12px !important;
+  }
 
-#services .card__title {
-  font-size: 14px !important;
-  line-height: 1.2;
-}
+  #services .card__title {
+    font-size: 14px !important;
+    line-height: 1.2;
+  }
 
-#services .card__meta {
-  font-size: 12px !important;
-  margin-top: 4px !important;
+  #services .card__meta {
+    font-size: 12px !important;
+    margin-top: 4px !important;
+  }
 }
