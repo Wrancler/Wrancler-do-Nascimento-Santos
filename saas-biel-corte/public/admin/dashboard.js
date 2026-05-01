@@ -44,7 +44,7 @@ const lockScreen = document.getElementById("lockScreen");
 
 const MEU_WHATSAPP = "5583996675179"; 
 const VALOR_MENSALIDADE = "R$ 35,00"; 
-const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; 
+const MINHA_CHAVE_PIX = "wranclernascimento2018@gmail.com"; 
 
 async function initDashboard() {
   try {
