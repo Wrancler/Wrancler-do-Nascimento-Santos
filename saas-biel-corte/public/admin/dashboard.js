@@ -661,11 +661,7 @@ function updateManualSlots() {
   
   let slots = generateAvailableSlots(workingHours, profAppointments, service.duration);
   
-  const now = new Date(); const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  if (dateInput.value === todayStr) {
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    slots = slots.filter(time => (Number(time.split(":")[0]) * 60 + Number(time.split(":")[1])) > currentMinutes);
-  }
+  // 🔥 ADMIN: Sem filtro de horário passado — barbeiro pode registrar atendimentos retroativos
 
   slots.forEach(time => timeSelect.appendChild(new Option(time, time)));
   timeSelect.disabled = false;
