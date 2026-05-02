@@ -231,6 +231,7 @@ function aplicarPermissoesDeAcesso() {
       mainProfFilter.appendChild(new Option(p.name, p.id));
       manualProfSelect.appendChild(new Option(p.name, p.id));
       blockProfSelect.appendChild(new Option(p.name, p.id));
+      document.getElementById("vendaProf").appendChild(new Option(p.name, p.id));
     });
 
     renderConfigPanel();
@@ -239,6 +240,7 @@ function aplicarPermissoesDeAcesso() {
     mainProfFilter.appendChild(new Option(loggedName, loggedRole));
     manualProfSelect.appendChild(new Option(loggedName, loggedRole));
     blockProfSelect.appendChild(new Option(loggedName, loggedRole));
+    document.getElementById("vendaProf").appendChild(new Option(loggedName, loggedRole));
   }
 
   document.getElementById("manualService").innerHTML = '<option value="">Selecione o Serviço...</option>';
@@ -767,3 +769,109 @@ document.getElementById('btnToggleManual').onclick = function() {
 document.getElementById('btnToggleBloqueio').onclick = function() {
   const s = document.getElementById('secaoBloqueio'); s.style.display = s.style.display === 'none' ? 'block' : 'none';
 };
+
+// ==========================================
+// 🔥 VENDA AVULSA DE PRODUTOS
+// ==========================================
+document.getElementById('btnToggleVendaAvulsa').onclick = function() {
+  const s = document.getElementById('secaoVendaAvulsa');
+  const isOpen = s.style.display !== 'none';
+  s.style.display = isOpen ? 'none' : 'block';
+  this.textContent = isOpen ? '🛒 Venda Avulsa' : '🔼 Fechar Venda';
+
+  if (!isOpen) {
+    // Preenche os produtos disponíveis
+    const produtosDiv = document.getElementById('vendaProdutosList');
+    produtosDiv.innerHTML = '';
+    const apenasProdutos = servicesData.filter(s => s.type === 'product');
+
+    if (apenasProdutos.length === 0) {
+      produtosDiv.innerHTML = '<p style="color:#888;font-size:13px;">Nenhum produto cadastrado. Vá em ⚙️ Config e adicione um produto.</p>';
+      return;
+    }
+
+    apenasProdutos.forEach(p => {
+      const item = document.createElement('div');
+      item.setAttribute('data-produto-id', p.id);
+      item.setAttribute('data-produto-name', p.name);
+      item.setAttribute('data-produto-price', p.price);
+      item.style.cssText = 'display:flex;align-items:center;gap:12px;background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s;';
+      item.innerHTML = `
+        <div style="flex:1;">
+          <div style="color:#fff;font-weight:600;font-size:14px;">${p.name}</div>
+          <div style="color:#888;font-size:12px;">R$ ${Number(p.price).toFixed(2).replace('.', ',')}</div>
+        </div>
+        <div class="venda-check" style="width:26px;height:26px;border-radius:50%;border:2px solid #444;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:0.2s;"></div>
+      `;
+      item.addEventListener('click', () => {
+        const on = item.classList.toggle('venda-produto-selected');
+        item.style.borderColor = on ? '#e0b976' : '#2a2a2a';
+        item.querySelector('.venda-check').textContent = on ? '✅' : '';
+        item.querySelector('.venda-check').style.borderColor = on ? '#e0b976' : '#444';
+        atualizarTotalVenda();
+      });
+      produtosDiv.appendChild(item);
+    });
+  }
+};
+
+function atualizarTotalVenda() {
+  const selecionados = document.querySelectorAll('.venda-produto-selected');
+  const total = Array.from(selecionados).reduce((acc, el) => acc + (Number(el.getAttribute('data-produto-price')) || 0), 0);
+  const btnConfirmar = document.getElementById('btnConfirmVenda');
+  const totalEl = document.getElementById('vendaTotalDisplay');
+  if (totalEl) totalEl.textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+  if (btnConfirmar) btnConfirmar.disabled = selecionados.length === 0;
+}
+
+document.getElementById('btnConfirmVenda').addEventListener('click', async () => {
+  const btn = document.getElementById('btnConfirmVenda');
+  const clientName = document.getElementById('vendaClientName').value.trim() || 'Cliente Balcão';
+  const profId = document.getElementById('vendaProf').value;
+  const dateStr = document.getElementById('adminDate').value;
+
+  const selecionados = Array.from(document.querySelectorAll('.venda-produto-selected'));
+  if (selecionados.length === 0) return alert('Selecione ao menos um produto.');
+  if (!profId) return alert('Selecione o barbeiro responsável.');
+
+  btn.disabled = true; btn.textContent = 'Registrando...';
+
+  try {
+    const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { db } = await import("../../firebase/config.js");
+
+    for (const el of selecionados) {
+      await addDoc(collection(db, 'appointments'), {
+        tenantId,
+        professionalId: profId,
+        date: dateStr,
+        startTime: '00:00',
+        endTime: '00:00',
+        clientName,
+        clientPhone: '',
+        serviceName: el.getAttribute('data-produto-name'),
+        servicePrice: Number(el.getAttribute('data-produto-price')) || 0,
+        status: 'completed', // Já vai direto como finalizado no financeiro
+        type: 'venda-avulsa',
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // Limpa o formulário
+    document.getElementById('vendaClientName').value = '';
+    document.querySelectorAll('.venda-produto-selected').forEach(el => {
+      el.classList.remove('venda-produto-selected');
+      el.style.borderColor = '#2a2a2a';
+      el.querySelector('.venda-check').textContent = '';
+    });
+    atualizarTotalVenda();
+    alert('✅ Venda registrada com sucesso!');
+    document.getElementById('secaoVendaAvulsa').style.display = 'none';
+    document.getElementById('btnToggleVendaAvulsa').textContent = '🛒 Venda Avulsa';
+  } catch (e) {
+    console.error(e);
+    alert('Erro ao registrar venda: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Registrar Venda';
+  }
+});

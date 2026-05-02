@@ -156,6 +156,22 @@
         </div>
       </div>
 
+      <!-- 🔥 VENDA AVULSA -->
+      <button id="btnToggleVendaAvulsa" class="premium-btn-secondary" style="margin-top: 12px;">🛒 Venda Avulsa</button>
+
+      <div id="secaoVendaAvulsa" class="premium-card" style="display: none;">
+        <h3>🛒 Registrar Venda de Produto</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <input type="text" id="vendaClientName" class="premium-input" placeholder="Nome do Cliente (Opcional)">
+          <select id="vendaProf" class="premium-input">
+            <option value="">Barbeiro responsável...</option>
+          </select>
+          <div id="vendaProdutosList"></div>
+          <div id="vendaTotalDisplay" style="color: #e0b976; font-weight: 700; font-size: 16px; text-align: right; padding: 4px 0;">Total: R$ 0,00</div>
+          <button id="btnConfirmVenda" class="premium-btn-main" style="margin-top: 0;" disabled>Registrar Venda</button>
+        </div>
+      </div>
+
       <button id="btnToggleBloqueio" class="premium-btn-secondary">Gerenciar Bloqueios</button>
 
       <div id="secaoBloqueio" class="premium-card" style="display: none;">
