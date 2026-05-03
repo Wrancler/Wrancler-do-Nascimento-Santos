@@ -2,6 +2,8 @@ import { generateAvailableSlots } from "../services/slotGenerator.js";
 import { getAppointments } from "../firebase/appointments.js";
 import { createAppointment } from "../firebase/createAppointment.js";
 import { getTenantConfig } from "../firebase/tenants.js";
+// 🔥 SECURITY: Auth anônimo para cumprir as Security Rules do Firebase
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -20,6 +22,20 @@ let selectedServiceId = null;
 let selectedTime = null; // 🔥 NOVA VARIÁVEL: Guarda a hora na memória antes de agendar
 
 async function initTenant() {
+  // 🔥 SEGURANÇA: Timeout de segurança — revela a tela em até 8s no matter what
+  setTimeout(() => {
+    const appBody = document.getElementById("appBody");
+    if (appBody && appBody.style.opacity !== "1") appBody.style.opacity = "1";
+  }, 8000);
+
+  // 🔥 SEGURANÇA: Autentica anonimamente para cumprir as Security Rules
+  try {
+    const auth = getAuth();
+    await signInAnonymously(auth);
+  } catch (authError) {
+    console.error("Erro na autenticação anônima:", authError);
+  }
+
   try {
     const config = await getTenantConfig(tenantId);
     
@@ -198,13 +214,15 @@ async function initTenant() {
 
     // 🔥 O TOQUE PREMIUM: Revela a tela inteira de uma vez, sem piscar nada
     const appBody = document.getElementById("appBody");
-    if (appBody) {
-      appBody.style.opacity = "1";
-    }
+    if (appBody) appBody.style.opacity = "1";
 
   } catch (error) {
     console.error(error);
     alert("Erro ao carregar dados da barbearia. Verifique o link.");
+  } finally {
+    // 🔥 CORREÇÃO XIAOMI: Garante que a tela sempre aparece, mesmo com erro
+    const appBody = document.getElementById("appBody");
+    if (appBody && appBody.style.opacity !== "1") appBody.style.opacity = "1";
   }
 }
 
