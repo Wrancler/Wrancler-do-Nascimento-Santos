@@ -17,21 +17,26 @@ let profissionaisConfig = [];
 let adminPinConfig = "";
 let tenantVencimento = null; 
 
-let loggedRole = sessionStorage.getItem("loggedRole") || null; 
-let loggedName = sessionStorage.getItem("loggedName") || null;
+// 🔥 CORREÇÃO NAVEGAÇÃO: Usa tenantId já definido para consistência na chave
+let loggedRole = localStorage.getItem("loggedRole_" + tenantId) || null;
+let loggedName = localStorage.getItem("loggedName_" + tenantId) || null;
 
 initDashboard();
 
 document.getElementById("btnSwitchUser").addEventListener("click", () => {
-  sessionStorage.removeItem("loggedRole");
-  sessionStorage.removeItem("loggedName");
+  // 🔥 CORREÇÃO: Limpa localStorage ao sair
+  localStorage.removeItem("loggedRole_" + tenantId);
+  localStorage.removeItem("loggedName_" + tenantId);
+  localStorage.removeItem("crachaFinanceiro_" + tenantId);
   window.location.reload();
 });
 
 const btnFinanceiro = document.getElementById("btnFinanceiro");
 if (btnFinanceiro) {
   btnFinanceiro.addEventListener("click", () => {
-    sessionStorage.setItem("crachaFinanceiro", adminPinConfig); 
+    // 🔥 CORREÇÃO: localStorage persiste ao navegar e voltar
+    localStorage.setItem("crachaFinanceiro_" + tenantId, adminPinConfig);
+    sessionStorage.setItem("crachaFinanceiro", adminPinConfig); // mantém compatibilidade
     window.location.href = `financeiro.html?tenant=${encodeURIComponent(tenantId)}`;
   });
 }
@@ -201,7 +206,10 @@ btnUnlock.addEventListener("click", () => {
 });
 
 function liberarAcesso(role, name) {
-  sessionStorage.setItem("loggedRole", role);
+  // 🔥 CORREÇÃO: Salva em localStorage usando tenantId consistente
+  localStorage.setItem("loggedRole_" + tenantId, role);
+  localStorage.setItem("loggedName_" + tenantId, name);
+  sessionStorage.setItem("loggedRole", role); // mantém compatibilidade
   sessionStorage.setItem("loggedName", name);
   loggedRole = role; loggedName = name;
   lockScreen.style.opacity = "0";
@@ -283,12 +291,36 @@ function renderConfigPanel() {
   const teamList = document.getElementById("configTeamList");
   servicesList.innerHTML = ""; teamList.innerHTML = "";
 
-  profissionaisConfig.forEach(p => {
+  profissionaisConfig.forEach((p, index) => {
+    const comissao = p.commission !== undefined ? p.commission : (p.isOwner ? null : 60);
+    const comissaoLabel = p.isOwner
+      ? `<span style="color:#4CAF50;font-size:12px;">Proprietário</span>`
+      : `<span style="color:#e0b976;font-size:12px;font-weight:700;">${comissao}% comissão</span>`;
+
     teamList.innerHTML += `
       <div class="config-list-item">
-        <div><strong>${p.name}</strong><br><span>${p.isOwner ? '👑 Gestor' : '✂️ Colaborador'}</span></div>
-        <div style="color: #4CAF50; font-size: 12px;">Ativo</div>
+        <div><strong>${p.name}</strong><br><span>${p.isOwner ? '👑 Gestor' : '✂️ Colaborador'}</span><br>${comissaoLabel}</div>
+        ${!p.isOwner ? `<button class="btnEditarComissao" data-index="${index}" style="background:transparent;border:1px solid #444;color:#888;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;">✏️ Comissão</button>` : '<div style="color:#4CAF50;font-size:12px;">Ativo</div>'}
       </div>`;
+  });
+
+  document.querySelectorAll(".btnEditarComissao").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const index = e.target.getAttribute("data-index");
+      const p = profissionaisConfig[index];
+      const atual = p.commission !== undefined ? p.commission : 60;
+      const novoValor = prompt(`Comissão de ${p.name} (%)
+Atual: ${atual}%
+
+Digite o novo percentual:`, atual);
+      if (novoValor === null) return;
+      const numero = Number(novoValor);
+      if (isNaN(numero) || numero < 0 || numero > 100) return alert("Percentual inválido. Digite um número entre 0 e 100.");
+      profissionaisConfig[index].commission = numero;
+      await updateDoc(doc(db, "tenants", tenantId), { professionals: profissionaisConfig });
+      renderConfigPanel();
+      alert(`✅ Comissão de ${p.name} atualizada para ${numero}%`);
+    });
   });
 
   servicesData.forEach((s, index) => {

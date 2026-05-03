@@ -8,7 +8,8 @@ function getParam(name) {
 }
 
 const tenantId = getParam("tenant") || "biel-do-corte";
-let profSelecionadoAtual = "todos"; // Variável global para saber quem está selecionado
+let profSelecionadoAtual = "todos";
+let configProfissionais = []; // 🔥 Guarda os profissionais com comissão
 
 // ==========================================
 // 1. NAVEGAÇÃO E INÍCIO DIRETO
@@ -17,7 +18,8 @@ let profSelecionadoAtual = "todos"; // Variável global para saber quem está se
 initFinanceiro();
 
 document.getElementById("btnVoltar").addEventListener("click", () => {
-  window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
+  // 🔥 CORREÇÃO: history.back() volta sem recarregar o dashboard, preservando o login
+  history.back();
 });
 
 // ==========================================
@@ -41,8 +43,8 @@ async function initFinanceiro() {
   try {
     const config = await getTenantConfig(tenantId);
     
-    // Verificação de segurança pelo PIN
-    const cracha = sessionStorage.getItem("crachaFinanceiro");
+    // 🔥 CORREÇÃO: Verifica tanto localStorage quanto sessionStorage
+    const cracha = localStorage.getItem("crachaFinanceiro_" + tenantId) || sessionStorage.getItem("crachaFinanceiro");
     if (!config.financePin || cracha !== String(config.financePin)) {
       alert("⚠️ Acesso Restrito: Digite o PIN correto no painel para acessar.");
       window.location.href = `dashboard.html?tenant=${encodeURIComponent(tenantId)}`;
@@ -53,6 +55,7 @@ async function initFinanceiro() {
     profPills.innerHTML = `<button class="pill-btn active" data-id="todos">💰 Todos (Geral)</button>`;
     
     if (config.professionals) {
+      configProfissionais = config.professionals; // 🔥 Salva para usar na comissão
       config.professionals.forEach(p => {
         profPills.innerHTML += `<button class="pill-btn" data-id="${p.id}">✂️ ${p.name}</button>`;
       });
@@ -201,6 +204,24 @@ async function calcularFinancas() {
 
     totCortes.textContent = agendamentosValidos.length;
     totValor.textContent = `R$ ${valorAcumulado.toFixed(2).replace('.', ',')}`;
+
+    // 🔥 COMISSÃO: Mostra card só quando filtra por colaborador específico (não dono)
+    const cardComissaoEl = document.getElementById("cardComissao");
+    const profConfig = configProfissionais.find(p => p.id === profSelecionadoAtual);
+    const isColaborador = profConfig && !profConfig.isOwner;
+
+    if (cardComissaoEl) {
+      if (isColaborador && profSelecionadoAtual !== "todos") {
+        const percentual = profConfig.commission !== undefined ? profConfig.commission : 60;
+        const valorComissao = valorAcumulado * (percentual / 100);
+        document.getElementById("comissaoNome").textContent = profConfig.name;
+        document.getElementById("comissaoPercent").textContent = `${percentual}%`;
+        document.getElementById("comissaoValor").textContent = `R$ ${valorComissao.toFixed(2).replace(".", ",")}`;
+        cardComissaoEl.style.display = "flex";
+      } else {
+        cardComissaoEl.style.display = "none";
+      }
+    }
 
     financeList.innerHTML = "";
 
