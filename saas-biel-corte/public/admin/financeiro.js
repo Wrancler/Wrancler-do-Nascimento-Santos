@@ -208,16 +208,21 @@ async function calcularFinancas() {
     // 🔥 COMISSÃO: Mostra card só quando filtra por colaborador específico (não dono)
     const cardComissaoEl = document.getElementById("cardComissao");
     const profConfig = configProfissionais.find(p => p.id === profSelecionadoAtual);
-    const isColaborador = profConfig && profConfig.commission !== undefined; // 🔥 Mostra para qualquer prof com comissão definida, incluindo o dono
+    const isColaborador = profConfig && !profConfig.isOwner;
 
     if (cardComissaoEl) {
       if (isColaborador && profSelecionadoAtual !== "todos") {
         const percentual = profConfig.commission !== undefined ? profConfig.commission : 60;
         const valorComissao = valorAcumulado * (percentual / 100);
+        const valorRestante = valorAcumulado - valorComissao;
+
         document.getElementById("comissaoNome").textContent = profConfig.name;
         document.getElementById("comissaoPercent").textContent = `${percentual}%`;
+        document.getElementById("comissaoBruto").textContent = `R$ ${valorAcumulado.toFixed(2).replace(".", ",")}`;
         document.getElementById("comissaoValor").textContent = `R$ ${valorComissao.toFixed(2).replace(".", ",")}`;
+        document.getElementById("comissaoRestante").textContent = `R$ ${valorRestante.toFixed(2).replace(".", ",")}`;
         cardComissaoEl.style.display = "flex";
+        cardComissaoEl.style.flexDirection = "column";
       } else {
         cardComissaoEl.style.display = "none";
       }

@@ -88,16 +88,36 @@
         </div>
       </div>
 
-      <!-- 🔥 CARD DE COMISSÃO — aparece só ao filtrar por colaborador -->
-      <div id="cardComissao" style="display:none; background: linear-gradient(145deg, #1a1200, #111); border: 1px solid #e0b976; border-radius: 20px; padding: 20px 24px; margin-top: 4px; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 8px 20px rgba(224,185,118,0.1);">
-        <div>
-          <div style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:4px;">A pagar para</div>
-          <div id="comissaoNome" style="color:#fff; font-size:16px; font-weight:700;"></div>
-          <div id="comissaoPercent" style="color:#e0b976; font-size:12px; margin-top:2px;"></div>
+      <!-- 🔥 CARD DE COMISSÃO COMPLETO — aparece ao filtrar por profissional -->
+      <div id="cardComissao" style="display:none; flex-direction:column; background: linear-gradient(145deg, #1a1200, #111); border: 1px solid #e0b976; border-radius: 20px; padding: 20px 24px; margin-top: 4px; gap: 16px; box-shadow: 0 8px 20px rgba(224,185,118,0.1);">
+        
+        <!-- Cabeçalho com nome e percentual -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2a2a; padding-bottom:14px;">
+          <div>
+            <div style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:4px;">Profissional</div>
+            <div id="comissaoNome" style="color:#fff; font-size:16px; font-weight:700;"></div>
+          </div>
+          <div id="comissaoPercent" style="background:rgba(224,185,118,0.15); color:#e0b976; border:1px solid #e0b976; border-radius:20px; padding:4px 14px; font-size:13px; font-weight:700;"></div>
         </div>
-        <div style="text-align:right;">
-          <div style="color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:4px;">Comissão</div>
-          <div id="comissaoValor" style="color:#e0b976; font-size:28px; font-weight:800;"></div>
+
+        <!-- Três valores lado a lado -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+          
+          <div style="background:#111; border:1px solid #2a2a2a; border-radius:14px; padding:14px 8px;">
+            <div style="color:#888; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:6px;">Faturação</div>
+            <div id="comissaoBruto" style="color:#fff; font-size:16px; font-weight:800;"></div>
+          </div>
+
+          <div style="background:rgba(224,185,118,0.08); border:1px solid #e0b976; border-radius:14px; padding:14px 8px;">
+            <div style="color:#e0b976; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:6px;">Comissão</div>
+            <div id="comissaoValor" style="color:#e0b976; font-size:16px; font-weight:800;"></div>
+          </div>
+
+          <div style="background:rgba(76,175,80,0.08); border:1px solid #4CAF50; border-radius:14px; padding:14px 8px;">
+            <div style="color:#4CAF50; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin-bottom:6px;">Barbearia</div>
+            <div id="comissaoRestante" style="color:#4CAF50; font-size:16px; font-weight:800;"></div>
+          </div>
+
         </div>
       </div>
     </section>
