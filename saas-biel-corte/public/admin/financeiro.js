@@ -208,7 +208,7 @@ async function calcularFinancas() {
     // 🔥 COMISSÃO: Mostra card só quando filtra por colaborador específico (não dono)
     const cardComissaoEl = document.getElementById("cardComissao");
     const profConfig = configProfissionais.find(p => p.id === profSelecionadoAtual);
-    const isColaborador = profConfig && !profConfig.isOwner;
+    const isColaborador = profConfig && profConfig.commission !== undefined; // 🔥 Mostra para qualquer prof com comissão definida, incluindo o dono
 
     if (cardComissaoEl) {
       if (isColaborador && profSelecionadoAtual !== "todos") {
