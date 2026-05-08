@@ -10,6 +10,7 @@ function getParam(name) { return new URLSearchParams(window.location.search).get
 const tenantId = getParam("tenant") || "biel-do-corte";
 
 let workingHours = [];
+let closedDays = []; // 🔥 Dias da semana fechados (0=Dom, 1=Seg... 6=Sáb)
 let allAppointmentsForDay = []; 
 let servicesData = []; 
 let currentSnapshotUnsubscribe = null;
@@ -55,6 +56,7 @@ async function initDashboard() {
   try {
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
+    closedDays = config.closedDays || []; // 🔥 Dias fechados
     servicesData = config.services || [];
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
@@ -490,6 +492,14 @@ function renderAdminDateCards() {
 
     const card = document.createElement("div");
     card.className = "date-card";
+
+    // 🔥 DIAS FECHADOS: Admin vê o dia mas com indicação visual de folga
+    const isClosed = closedDays.includes(d.getDay());
+    if (isClosed) {
+      card.style.opacity = "0.4";
+      card.style.borderColor = "#ff5555";
+      card.title = "Dia de folga";
+    }
     
     if (i === 0) {
       card.classList.add("is-selected");
@@ -497,7 +507,7 @@ function renderAdminDateCards() {
       loadAppointments(isoDate); 
     }
 
-    card.innerHTML = `<span class="date-card__weekday">${i===0?"HOJE":diasSemana[d.getDay()]}</span><span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span><span class="date-card__month">${meses[d.getMonth()]}</span>`;
+    card.innerHTML = `<span class="date-card__weekday" style="${isClosed ? 'color:#ff5555;' : ''}">${i===0?"HOJE":diasSemana[d.getDay()]}</span><span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span><span class="date-card__month">${isClosed ? '🚫' : meses[d.getMonth()]}</span>`;
 
     card.addEventListener("click", () => {
       document.querySelectorAll("#adminDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));

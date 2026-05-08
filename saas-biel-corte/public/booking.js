@@ -14,6 +14,7 @@ const tenantId = getParam("tenant") || "biel-do-corte";
 let barberWhatsapp = "";
 let workingHours = [];
 let servicesById = {};
+let closedDays = []; // 🔥 Dias da semana fechados (0=Dom, 1=Seg... 6=Sáb)
 
 // Estado da seleção
 let selectedProfessionalId = null;
@@ -41,6 +42,7 @@ async function initTenant() {
     
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
+    closedDays = config.closedDays || []; // 🔥 Lê do Firestore
 
     // 🔥 O PULO DO GATO MULTI-TENANT: NOME, TÍTULO E LOGO
     const tenantName = config.name || "Agendamento Premium";
@@ -209,6 +211,7 @@ async function initTenant() {
       }
     }
 
+    renderDateCards(); // 🔥 Renderiza após closedDays estar carregado
     preselectFromUrl();
     updateScheduleLockState();
 
@@ -675,4 +678,4 @@ function renderDateCards() {
   }
 }
 
-renderDateCards();
+// renderDateCards() movido para dentro do initTenant — garante closedDays carregado
