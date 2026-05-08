@@ -655,24 +655,49 @@ function renderDateCards() {
     const day = String(d.getDate()).padStart(2, '0');
     const isoDate = `${year}-${month}-${day}`;
 
+    const isClosed = closedDays.includes(d.getDay());
     const card = document.createElement("div");
     card.className = "date-card";
-    card.innerHTML = `
-      <span class="date-card__weekday">${diasSemana[d.getDay()]}</span>
-      <span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span>
-      <span class="date-card__month">${meses[d.getMonth()]}</span>
-    `;
 
-    card.addEventListener("click", () => {
-      document.querySelectorAll(".date-card").forEach(c => c.classList.remove("is-selected"));
-      card.classList.add("is-selected");
-
-      const dateInput = document.getElementById("date");
-      dateInput.value = isoDate;
-      
-      renderSlots();
-      updateSummaryCard();
-    });
+    if (isClosed) {
+      card.style.opacity = "0.5";
+      card.style.borderColor = "#ff5555";
+      card.style.cursor = "pointer";
+      card.innerHTML = `
+        <span class="date-card__weekday" style="color:#ff5555;">${diasSemana[d.getDay()]}</span>
+        <span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span>
+        <span class="date-card__month" style="color:#ff5555;">🚫</span>
+      `;
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".date-card").forEach(c => c.classList.remove("is-selected"));
+        card.classList.add("is-selected");
+        const dateInput = document.getElementById("date");
+        dateInput.value = isoDate;
+        const slotsDiv = document.getElementById("slots");
+        slotsDiv.innerHTML = `
+          <div style="background:#1a0000; border:1px solid #ff5555; border-radius:16px; padding:20px; text-align:center;">
+            <div style="font-size:32px; margin-bottom:10px;">🚫</div>
+            <div style="color:#ff5555; font-weight:700; font-size:15px; margin-bottom:8px;">Barbearia Fechada</div>
+            <div style="color:#888; font-size:13px; line-height:1.5;">Este dia não está disponível para agendamentos.<br>Para mais informações, entre em contato com o barbeiro.</div>
+            <a href="https://wa.me/${barberWhatsapp}" target="_blank" style="display:inline-block; margin-top:16px; background:#25D366; color:#111; font-weight:700; padding:10px 20px; border-radius:10px; text-decoration:none; font-size:13px;">💬 Falar com o Barbeiro</a>
+          </div>
+        `;
+      });
+    } else {
+      card.innerHTML = `
+        <span class="date-card__weekday">${diasSemana[d.getDay()]}</span>
+        <span class="date-card__day">${String(d.getDate()).padStart(2, '0')}</span>
+        <span class="date-card__month">${meses[d.getMonth()]}</span>
+      `;
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".date-card").forEach(c => c.classList.remove("is-selected"));
+        card.classList.add("is-selected");
+        const dateInput = document.getElementById("date");
+        dateInput.value = isoDate;
+        renderSlots();
+        updateSummaryCard();
+      });
+    }
 
     dateSlider.appendChild(card);
   }
