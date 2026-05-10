@@ -263,7 +263,18 @@ function aplicarPermissoesDeAcesso() {
   mainProfFilter.addEventListener("change", renderAppointmentsList);
   manualProfSelect.addEventListener("change", updateManualSlots);
   document.getElementById("manualService").addEventListener("change", updateManualSlots);
-  document.getElementById("manualTime").addEventListener("change", () => { document.getElementById("btnConfirmManual").disabled = !document.getElementById("manualTime").value; });
+  document.getElementById("manualTime").addEventListener("change", () => {
+    const val = document.getElementById("manualTime").value;
+    const inputLivre = document.getElementById("manualTimeLivre");
+    if (val === "__livre__") {
+      inputLivre.style.display = "block";
+      inputLivre.focus();
+      document.getElementById("btnConfirmManual").disabled = false;
+    } else {
+      inputLivre.style.display = "none";
+      document.getElementById("btnConfirmManual").disabled = !val;
+    }
+  });
 
   renderAdminDateCards();
 
@@ -708,6 +719,11 @@ function updateManualSlots() {
   // 🔥 ADMIN: Sem filtro de horário passado — barbeiro pode registrar atendimentos retroativos
 
   slots.forEach(time => timeSelect.appendChild(new Option(time, time)));
+
+  // 🔥 HORÁRIO LIVRE: Opção para o barbeiro digitar qualquer horário
+  const optLivre = new Option("✏️ Outro horário (digitar)...", "__livre__");
+  timeSelect.appendChild(optLivre);
+
   timeSelect.disabled = false;
 }
 
@@ -715,7 +731,11 @@ document.getElementById("btnConfirmManual").addEventListener("click", async () =
   const btn = document.getElementById("btnConfirmManual");
   btn.disabled = true; btn.textContent = "Aguarde...";
   const service = servicesData.find(s => s.id === document.getElementById("manualService").value);
-  const time = document.getElementById("manualTime").value;
+  const timeSelect = document.getElementById("manualTime").value;
+  // 🔥 HORÁRIO LIVRE: Se barbeiro escolheu "outro horário", usa o input livre
+  const timeLivre = document.getElementById("manualTimeLivre").value.trim();
+  const time = timeSelect === "__livre__" ? timeLivre : timeSelect;
+  if (!time) return alert("Digite um horário válido (ex: 19:00).");
 
   const payload = {
     tenantId: tenantId,

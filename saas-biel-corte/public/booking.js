@@ -15,6 +15,7 @@ let barberWhatsapp = "";
 let workingHours = [];
 let servicesById = {};
 let closedDays = []; // 🔥 Dias da semana fechados (0=Dom, 1=Seg... 6=Sáb)
+let bookingDays = 15; // 🔥 Quantos dias à frente o cliente pode agendar
 
 // Estado da seleção
 let selectedProfessionalId = null;
@@ -43,6 +44,7 @@ async function initTenant() {
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
     closedDays = config.closedDays || []; // 🔥 Lê do Firestore
+    bookingDays = config.bookingDays || 15; // 🔥 Dias de antecedência configurável
 
     // 🔥 O PULO DO GATO MULTI-TENANT: NOME, TÍTULO E LOGO
     const tenantName = config.name || "Agendamento Premium";
@@ -646,7 +648,7 @@ function renderDateCards() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < bookingDays; i++) { // 🔥 Configurável via Firestore
     const d = new Date(today);
     d.setDate(today.getDate() + i);
 
