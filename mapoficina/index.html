@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa do Estoque — Visão Geral</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2e2e2e;
+    --accent-yellow: #f5c518;
+    --accent-orange: #e8621a;
+    --accent-blue: #2d7dd2;
+    --accent-green: #3bbf7a;
+    --accent-red: #e84040;
+    --accent-purple: #9b59b6;
+    --text: #e8e8e8;
+    --muted: #888;
+    --entry-color: #f5c518;
+    --c1-color: #e8621a;
+    --c2-color: #2d7dd2;
+    --c3-color: #3bbf7a;
+    --c4-color: #9b59b6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 24px 32px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 2px;
+    color: var(--accent-yellow);
+    line-height: 1;
+  }
+
+  header p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .legend-item:hover { border-color: var(--border); color: var(--text); }
+  .legend-item .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* SEARCH */
+  .search-wrap {
+    padding: 12px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .search-wrap input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    padding: 8px 14px;
+    width: 280px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-wrap input:focus { border-color: var(--accent-yellow); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-result {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent-yellow);
+    min-width: 160px;
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    gap: 0;
+    padding: 24px 32px;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ENTRY */
+  .entry-sector {
+    background: var(--surface);
+    border: 2px solid var(--entry-color);
+    border-radius: 10px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .entry-sector::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--entry-color);
+  }
+
+  .sector-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sector-label .icon { font-size: 1.1rem; }
+
+  .items-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: default;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tag:hover { opacity: 0.85; transform: translateY(-1px); }
+  .tag.highlight { animation: pulse 0.6s ease; }
+  .tag.dimmed { opacity: 0.18; }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  /* CORRIDORS GRID */
+  .corridors-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media(max-width: 900px) {
+    .corridors-grid { grid-template-columns: 1fr; }
+  }
+
+  .corridor {
+    background: var(--surface);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+
+  .corridor:hover { box-shadow: 0 0 0 1px var(--border); }
+
+  .corridor-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .corridor-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    line-height: 1;
+    opacity: 0.18;
+    width: 36px;
+    flex-shrink: 0;
+  }
+
+  .corridor-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+
+  .corridor-subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
+  .sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .side {
+    padding: 14px 14px 16px;
+    border-right: 1px solid var(--border);
+  }
+
+  .side:last-child { border-right: none; }
+
+  .side-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .side-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .shelf {
+    margin-bottom: 10px;
+  }
+
+  .shelf-zone {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .shelf-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  /* color variants */
+  .entry-tag { color: var(--entry-color); border-color: rgba(245,197,24,0.3); background: rgba(245,197,24,0.06); }
+  .c1-tag { color: var(--c1-color); border-color: rgba(232,98,26,0.3); background: rgba(232,98,26,0.06); }
+  .c2-tag { color: var(--c2-color); border-color: rgba(45,125,210,0.3); background: rgba(45,125,210,0.06); }
+  .c3-tag { color: var(--c3-color); border-color: rgba(59,191,122,0.3); background: rgba(59,191,122,0.06); }
+  .c4-tag { color: var(--c4-color); border-color: rgba(155,89,182,0.3); background: rgba(155,89,182,0.06); }
+
+  /* FLOOR PLAN */
+  .floorplan-section {
+    margin-top: 8px;
+  }
+
+  .floorplan-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+
+  .floorplan {
+    width: 100%;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+
+  svg.map {
+    display: block;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    height: auto;
+  }
+
+  /* tooltip */
+  .tooltip {
+    position: fixed;
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 999;
+    max-width: 220px;
+    line-height: 1.5;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  .tooltip strong { color: var(--accent-yellow); display: block; margin-bottom: 3px; }
+
+  /* print button */
+  .toolbar {
+    padding: 10px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 6px 14px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { border-color: var(--accent-yellow); color: var(--accent-yellow); }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    header { border-color: #ccc; }
+    .tooltip, .toolbar, .search-wrap { display: none !important; }
+    .corridor, .entry-sector, .floorplan { border-color: #ccc; }
+    .tag { print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MAPA DO ESTOQUE</h1>
+    <p>MOTO PEÇAS • LAYOUT INTERATIVO • 4 CORREDORES + ENTRADA</p>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:var(--entry-color)"></span>ENTRADA</div>
+    <div class="legend-item"><span class="dot" style="background:var(--c1-color)"></span>CORREDOR 1</div>
+    <div class="legend-item"><span class="dot" style="background:var(--c2-color)"></span>CORREDOR 2</div>
+    <div class="legend-item"><span class="dot" style="background:var(--c3-color)"></span>CORREDOR 3</div>
+    <div class="legend-item"><span class="dot" style="background:var(--c4-color)"></span>CORREDOR 4</div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="btn" onclick="window.print()">🖨 IMPRIMIR / PDF</button>
+  <button class="btn" onclick="expandAll()">⊞ EXPANDIR TUDO</button>
+  <button class="btn" onclick="clearSearch()">✕ LIMPAR BUSCA</button>
+</div>
+
+<div class="search-wrap">
+  <input type="text" id="searchInput" placeholder="Buscar peça..." oninput="doSearch(this.value)">
+  <span class="search-result" id="searchResult"></span>
+</div>
+
+<div class="layout">
+
+  <!-- ENTRY -->
+  <div class="entry-sector" id="entry">
+    <div class="sector-label" style="color:var(--entry-color)">
+      <span class="icon">🚪</span>
+      SETOR DE ENTRADA — Pré-Corredores / Gaveteiros
+    </div>
+    <div class="items-row" id="entry-items">
+      <span class="tag entry-tag" data-item="Borracha do descanso">Borracha do descanso</span>
+      <span class="tag entry-tag" data-item="Tampa lateral">Tampa lateral</span>
+      <span class="tag entry-tag" data-item="Manicotos">Manicotos</span>
+      <span class="tag entry-tag" data-item="Interruptores de farol">Interruptores de farol</span>
+    </div>
+  </div>
+
+  <!-- CORRIDORS -->
+  <div class="corridors-grid">
+
+    <!-- C1 -->
+    <div class="corridor" id="c1">
+      <div class="corridor-header">
+        <div class="corridor-number" style="color:var(--c1-color)">1</div>
+        <div>
+          <div class="corridor-title" style="color:var(--c1-color)">📍 CORREDOR 1</div>
+          <div class="corridor-subtitle">Relação, Motor e Iluminação Frontal</div>
+        </div>
+      </div>
+      <div class="sides">
+        <div class="side">
+          <div class="side-label">← ESQUERDO</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Cubos de roda traseiros">Cubos traseiros</span>
+              <span class="tag c1-tag" data-item="Cubos de roda dianteiros">Cubos dianteiros</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Extensão</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Kits de Transmissão">Kits Transmissão</span>
+              <span class="tag c1-tag" data-item="Kits de Relação">Kits Relação</span>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="side-label">DIREITO →</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Kits de cilindro">Kits cilindro</span>
+              <span class="tag c1-tag" data-item="Tubos internos da suspensão">Tubos int. suspensão</span>
+              <span class="tag c1-tag" data-item="Tubos externos da suspensão">Tubos ext. suspensão</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Biela">Biela</span>
+              <span class="tag c1-tag" data-item="Árvore de comando">Árvore de comando</span>
+              <span class="tag c1-tag" data-item="Refil da bomba de combustível">Refil bomba comb.</span>
+              <span class="tag c1-tag" data-item="Embreagem da partida">Embreagem partida</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Meio</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Capas de chuva">Capas de chuva</span>
+              <span class="tag c1-tag" data-item="Retrovisores">Retrovisores</span>
+              <span class="tag c1-tag" data-item="Kit partida elétrica">Kit partida elétrica</span>
+              <span class="tag c1-tag" data-item="Câmbio completo">Câmbio completo</span>
+              <span class="tag c1-tag" data-item="Caixa de marcha">Caixa de marcha</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo</div>
+            <div class="shelf-items">
+              <span class="tag c1-tag" data-item="Farol completo com carenagem">Farol c/ carenagem</span>
+              <span class="tag c1-tag" data-item="Farol completo sem carenagem">Farol s/ carenagem</span>
+              <span class="tag c1-tag" data-item="Bloco óptico">Bloco óptico</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2 -->
+    <div class="corridor" id="c2">
+      <div class="corridor-header">
+        <div class="corridor-number" style="color:var(--c2-color)">2</div>
+        <div>
+          <div class="corridor-title" style="color:var(--c2-color)">📍 CORREDOR 2</div>
+          <div class="corridor-subtitle">Alimentação, Painéis, Lanternas e Miudezas</div>
+        </div>
+      </div>
+      <div class="sides">
+        <div class="side">
+          <div class="side-label">← ESQUERDO</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Pistões com anel">Pistões c/ anel</span>
+              <span class="tag c2-tag" data-item="Pistões sem anel">Pistões s/ anel</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Bombas de combustível">Bombas combustível</span>
+              <span class="tag c2-tag" data-item="Boias do tanque">Boias tanque</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Meio</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Painéis completos">Painéis completos</span>
+              <span class="tag c2-tag" data-item="Lanternas traseiras">Lanternas traseiras</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Mesa de direção">Mesa de direção</span>
+              <span class="tag c2-tag" data-item="Tampa do pinhão">Tampa pinhão</span>
+              <span class="tag c2-tag" data-item="Peças complementares de farol">Compl. farol</span>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="side-label">DIREITO →</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Roldana do acelerador de nylon">Roldana acelerador</span>
+              <span class="tag c2-tag" data-item="Pinhões">Pinhões</span>
+              <span class="tag c2-tag" data-item="Kit tensionador de corrente">Kit tensionador</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Rotor da bomba">Rotor bomba</span>
+              <span class="tag c2-tag" data-item="Engrenagem da bomba">Engrenagem bomba</span>
+              <span class="tag c2-tag" data-item="Bomba de óleo">Bomba de óleo</span>
+              <span class="tag c2-tag" data-item="Engrenagem de partida">Engrenagem partida</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Meio</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Fiação chicotes">Fiação / Chicotes</span>
+              <span class="tag c2-tag" data-item="Alças esportivas">Alças esportivas</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo</div>
+            <div class="shelf-items">
+              <span class="tag c2-tag" data-item="Paralamas">Paralamas</span>
+              <span class="tag c2-tag" data-item="Peças plásticas">Peças plásticas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C3 -->
+    <div class="corridor" id="c3">
+      <div class="corridor-header">
+        <div class="corridor-number" style="color:var(--c3-color)">3</div>
+        <div>
+          <div class="corridor-title" style="color:var(--c3-color)">📍 CORREDOR 3</div>
+          <div class="corridor-subtitle">Óleos Mobil, Válvulas, Freios, Elétrica e Pedais</div>
+        </div>
+      </div>
+      <div class="sides">
+        <div class="side">
+          <div class="side-label">← ESQUERDO</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Válvulas de motor">Válvulas motor</span>
+              <span class="tag c3-tag" data-item="Eixos de câmbio">Eixos câmbio</span>
+              <span class="tag c3-tag" data-item="Tampa suporte do painel">Tampa suporte painel</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Discos de freio dianteiros">Discos freio diant.</span>
+              <span class="tag c3-tag" data-item="Discos de freio traseiros">Discos freio tras.</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Meio</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Fiação">Fiação</span>
+              <span class="tag c3-tag" data-item="Carcaça interna do painel">Carcaça int. painel</span>
+              <span class="tag c3-tag" data-item="Lente do painel">Lente do painel</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Suporte do paralama dianteiro">Suporte paralama</span>
+              <span class="tag c3-tag" data-item="Paralamas dianteiros">Paralamas</span>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="side-label">DIREITO →</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Óleos Mobil">Óleos Mobil</span>
+              <span class="tag c3-tag" data-item="Kits de carenagem">Kits carenagem</span>
+              <span class="tag c3-tag" data-item="Retentor da mesa">Retentor mesa</span>
+              <span class="tag c3-tag" data-item="Anéis de vedação">Anéis vedação</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Bobinas de luz">Bobinas de luz</span>
+              <span class="tag c3-tag" data-item="Reguladores retificadores">Reguladores retif.</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Meio</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="CDI">CDI</span>
+              <span class="tag c3-tag" data-item="Bobinas de ignição">Bobinas ignição</span>
+              <span class="tag c3-tag" data-item="Tampa do filtro de ar">Tampa filtro de ar</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo</div>
+            <div class="shelf-items">
+              <span class="tag c3-tag" data-item="Pedais de câmbio">Pedais câmbio</span>
+              <span class="tag c3-tag" data-item="Pedal de partida">Pedal partida</span>
+              <span class="tag c3-tag" data-item="Descansos laterais">Descansos laterais</span>
+              <span class="tag c3-tag" data-item="Suporte de luz paralama">Suporte luz paralama</span>
+              <span class="tag c3-tag" data-item="Tampa da rabeta">Tampa rabeta</span>
+              <span class="tag c3-tag" data-item="Carenagem do farol">Carenagem farol</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C4 -->
+    <div class="corridor" id="c4">
+      <div class="corridor-header">
+        <div class="corridor-number" style="color:var(--c4-color)">4</div>
+        <div>
+          <div class="corridor-title" style="color:var(--c4-color)">📍 CORREDOR 4</div>
+          <div class="corridor-subtitle">Óleos Lubrax, Rodas e Setor de Bicicletas</div>
+        </div>
+      </div>
+      <div class="sides">
+        <div class="side">
+          <div class="side-label">← ESQUERDO</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Óleos Lubrax">Óleos Lubrax</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Câmaras de ar diversas">Câmaras de ar</span>
+              <span class="tag c4-tag" data-item="Guia de corrente">Guia de corrente</span>
+              <span class="tag c4-tag" data-item="Coletor de admissão">Coletor admissão</span>
+              <span class="tag c4-tag" data-item="Câmaras de ar Pirelli">Câmaras Pirelli</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo — Bicicletas</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Selins de bicicleta">Selins</span>
+              <span class="tag c4-tag" data-item="Pneus de bicicleta">Pneus bici.</span>
+              <span class="tag c4-tag" data-item="Guidões de bicicleta">Guidões</span>
+              <span class="tag c4-tag" data-item="Componentes de bicicleta">Compon. bici.</span>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="side-label">DIREITO →</div>
+          <div class="shelf">
+            <div class="shelf-zone">Início</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Baterias Moura">Baterias Moura</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Avançando</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Jantes aros">Jantes / Aros</span>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="shelf-zone">Fundo — Bicicletas</div>
+            <div class="shelf-items">
+              <span class="tag c4-tag" data-item="Selins de bicicleta">Selins</span>
+              <span class="tag c4-tag" data-item="Pneus de bicicleta">Pneus bici.</span>
+              <span class="tag c4-tag" data-item="Guidões de bicicleta">Guidões</span>
+              <span class="tag c4-tag" data-item="Componentes de bicicleta">Compon. bici.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /corridors-grid -->
+
+  <!-- FLOOR PLAN -->
+  <div class="floorplan-section">
+    <div class="floorplan-title">PLANTA BAIXA — VISÃO AÉREA</div>
+    <div class="floorplan">
+      <svg class="map" viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e1e1e" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="860" height="420" fill="#111" rx="6"/>
+        <rect width="860" height="420" fill="url(#grid)" rx="6" opacity="0.5"/>
+
+        <!-- WALLS -->
+        <rect x="10" y="10" width="840" height="400" fill="none" stroke="#333" stroke-width="2" rx="4"/>
+
+        <!-- ENTRANCE DOOR -->
+        <rect x="10" y="180" width="4" height="60" fill="var(--entry-color)" opacity="0.8"/>
+        <text x="4" y="216" fill="var(--entry-color)" font-family="IBM Plex Mono,monospace" font-size="8" transform="rotate(-90,4,216)" text-anchor="middle">ENTRADA</text>
+
+        <!-- ENTRY SECTOR -->
+        <rect x="20" y="100" width="100" height="220" fill="rgba(245,197,24,0.07)" stroke="var(--entry-color)" stroke-width="1.5" rx="4"/>
+        <text x="70" y="118" fill="var(--entry-color)" font-family="Bebas Neue,sans-serif" font-size="10" text-anchor="middle" letter-spacing="1">ENTRADA</text>
+        <text x="70" y="130" fill="#888" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Gaveteiros</text>
+        <!-- entry items -->
+        <text x="70" y="155" fill="rgba(245,197,24,0.7)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Borracha desc.</text>
+        <text x="70" y="168" fill="rgba(245,197,24,0.7)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Tampa lateral</text>
+        <text x="70" y="181" fill="rgba(245,197,24,0.7)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Manicotos</text>
+        <text x="70" y="194" fill="rgba(245,197,24,0.7)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Interrup. farol</text>
+
+        <!-- CORRIDOR 1 -->
+        <rect x="135" y="30" width="170" height="360" fill="rgba(232,98,26,0.05)" stroke="var(--c1-color)" stroke-width="1.5" rx="4"/>
+        <text x="220" y="50" fill="var(--c1-color)" font-family="Bebas Neue,sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">CORREDOR 1</text>
+        <text x="220" y="62" fill="#888" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Relação · Motor · Iluminação</text>
+        <!-- C1 Left shelf -->
+        <rect x="140" y="72" width="70" height="308" fill="rgba(232,98,26,0.09)" stroke="rgba(232,98,26,0.3)" stroke-width="1" rx="2"/>
+        <text x="175" y="88" fill="var(--c1-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">← ESQ</text>
+        <text x="175" y="106" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Cubos roda</text>
+        <text x="175" y="118" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Kits Transmissão</text>
+        <text x="175" y="130" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Kits Relação</text>
+        <!-- C1 Right shelf -->
+        <rect x="225" y="72" width="75" height="308" fill="rgba(232,98,26,0.09)" stroke="rgba(232,98,26,0.3)" stroke-width="1" rx="2"/>
+        <text x="262" y="88" fill="var(--c1-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">DIR →</text>
+        <text x="262" y="106" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Kits cilindro</text>
+        <text x="262" y="118" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Suspensão</text>
+        <text x="262" y="130" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Biela · Cames</text>
+        <text x="262" y="142" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Câmbio / Caixa</text>
+        <text x="262" y="154" fill="rgba(232,98,26,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Faróis / Ópticos</text>
+        <!-- Aisle C1 -->
+        <text x="220" y="205" fill="rgba(232,98,26,0.25)" font-family="Bebas Neue,sans-serif" font-size="28" text-anchor="middle" letter-spacing="4">1</text>
+
+        <!-- CORRIDOR 2 -->
+        <rect x="320" y="30" width="170" height="360" fill="rgba(45,125,210,0.05)" stroke="var(--c2-color)" stroke-width="1.5" rx="4"/>
+        <text x="405" y="50" fill="var(--c2-color)" font-family="Bebas Neue,sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">CORREDOR 2</text>
+        <text x="405" y="62" fill="#888" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Combustível · Painéis · Miudezas</text>
+        <!-- C2 Left -->
+        <rect x="325" y="72" width="70" height="308" fill="rgba(45,125,210,0.09)" stroke="rgba(45,125,210,0.3)" stroke-width="1" rx="2"/>
+        <text x="360" y="88" fill="var(--c2-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">← ESQ</text>
+        <text x="360" y="106" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Pistões</text>
+        <text x="360" y="118" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Bombas comb.</text>
+        <text x="360" y="130" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Painéis</text>
+        <text x="360" y="142" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Lanternas tras.</text>
+        <text x="360" y="154" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Mesa direção</text>
+        <!-- C2 Right -->
+        <rect x="410" y="72" width="75" height="308" fill="rgba(45,125,210,0.09)" stroke="rgba(45,125,210,0.3)" stroke-width="1" rx="2"/>
+        <text x="447" y="88" fill="var(--c2-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">DIR →</text>
+        <text x="447" y="106" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Roldana aceler.</text>
+        <text x="447" y="118" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Pinhões</text>
+        <text x="447" y="130" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Engrenagens</text>
+        <text x="447" y="142" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Fiação</text>
+        <text x="447" y="154" fill="rgba(45,125,210,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Paralamas</text>
+        <text x="405" y="205" fill="rgba(45,125,210,0.25)" font-family="Bebas Neue,sans-serif" font-size="28" text-anchor="middle" letter-spacing="4">2</text>
+
+        <!-- CORRIDOR 3 -->
+        <rect x="505" y="30" width="170" height="360" fill="rgba(59,191,122,0.05)" stroke="var(--c3-color)" stroke-width="1.5" rx="4"/>
+        <text x="590" y="50" fill="var(--c3-color)" font-family="Bebas Neue,sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">CORREDOR 3</text>
+        <text x="590" y="62" fill="#888" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Freios · Elétrica · Pedais</text>
+        <!-- C3 Left -->
+        <rect x="510" y="72" width="70" height="308" fill="rgba(59,191,122,0.09)" stroke="rgba(59,191,122,0.3)" stroke-width="1" rx="2"/>
+        <text x="545" y="88" fill="var(--c3-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">← ESQ</text>
+        <text x="545" y="106" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Válvulas motor</text>
+        <text x="545" y="118" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Discos freio</text>
+        <text x="545" y="130" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Lentes painel</text>
+        <text x="545" y="142" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Paralamas</text>
+        <!-- C3 Right -->
+        <rect x="595" y="72" width="75" height="308" fill="rgba(59,191,122,0.09)" stroke="rgba(59,191,122,0.3)" stroke-width="1" rx="2"/>
+        <text x="632" y="88" fill="var(--c3-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">DIR →</text>
+        <text x="632" y="106" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Óleos Mobil</text>
+        <text x="632" y="118" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">CDI · Bobinas</text>
+        <text x="632" y="130" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Reguladores</text>
+        <text x="632" y="142" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Pedais</text>
+        <text x="632" y="154" fill="rgba(59,191,122,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Descansos lat.</text>
+        <text x="590" y="205" fill="rgba(59,191,122,0.25)" font-family="Bebas Neue,sans-serif" font-size="28" text-anchor="middle" letter-spacing="4">3</text>
+
+        <!-- CORRIDOR 4 -->
+        <rect x="690" y="30" width="160" height="360" fill="rgba(155,89,182,0.05)" stroke="var(--c4-color)" stroke-width="1.5" rx="4"/>
+        <text x="770" y="50" fill="var(--c4-color)" font-family="Bebas Neue,sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">CORREDOR 4</text>
+        <text x="770" y="62" fill="#888" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">Lubrax · Rodas · Bicicletas</text>
+        <!-- C4 Left -->
+        <rect x="695" y="72" width="65" height="308" fill="rgba(155,89,182,0.09)" stroke="rgba(155,89,182,0.3)" stroke-width="1" rx="2"/>
+        <text x="727" y="88" fill="var(--c4-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">← ESQ</text>
+        <text x="727" y="106" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Óleos Lubrax</text>
+        <text x="727" y="118" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Câmaras ar</text>
+        <text x="727" y="130" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Guia corrente</text>
+        <text x="727" y="142" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">🚲 Bicicletas</text>
+        <!-- C4 Right -->
+        <rect x="775" y="72" width="70" height="308" fill="rgba(155,89,182,0.09)" stroke="rgba(155,89,182,0.3)" stroke-width="1" rx="2"/>
+        <text x="810" y="88" fill="var(--c4-color)" font-family="IBM Plex Mono,monospace" font-size="7" text-anchor="middle">DIR →</text>
+        <text x="810" y="106" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Baterias Moura</text>
+        <text x="810" y="118" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">Jantes / Aros</text>
+        <text x="810" y="130" fill="rgba(155,89,182,0.8)" font-family="IBM Plex Mono,monospace" font-size="6.5" text-anchor="middle">🚲 Bicicletas</text>
+        <text x="770" y="205" fill="rgba(155,89,182,0.25)" font-family="Bebas Neue,sans-serif" font-size="28" text-anchor="middle" letter-spacing="4">4</text>
+
+        <!-- Arrow flow -->
+        <path d="M 125 210 L 132 210" stroke="var(--entry-color)" stroke-width="1.5" fill="none" marker-end="url(#arr-y)"/>
+        <path d="M 310 210 L 317 210" stroke="var(--c1-color)" stroke-width="1.5" fill="none" marker-end="url(#arr-o)"/>
+        <path d="M 495 210 L 502 210" stroke="var(--c2-color)" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
+        <path d="M 680 210 L 687 210" stroke="var(--c3-color)" stroke-width="1.5" fill="none" marker-end="url(#arr-g)"/>
+        <defs>
+          <marker id="arr-y" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--entry-color)"/>
+          </marker>
+          <marker id="arr-o" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--c1-color)"/>
+          </marker>
+          <marker id="arr-b" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--c2-color)"/>
+          </marker>
+          <marker id="arr-g" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--c3-color)"/>
+          </marker>
+        </defs>
+
+        <!-- Floor direction label -->
+        <text x="430" y="410" fill="#333" font-family="IBM Plex Mono,monospace" font-size="8" text-anchor="middle">← FUNDOS DO DEPÓSITO</text>
+        <text x="430" y="22" fill="#333" font-family="IBM Plex Mono,monospace" font-size="8" text-anchor="middle">FRENTE / ATENDIMENTO →</text>
+      </svg>
+    </div>
+  </div>
+
+</div><!-- /layout -->
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  const allTags = document.querySelectorAll('.tag');
+  const tooltip = document.getElementById('tooltip');
+  const searchInput = document.getElementById('searchInput');
+  const searchResult = document.getElementById('searchResult');
+
+  // Tooltip
+  allTags.forEach(tag => {
+    tag.addEventListener('mouseenter', e => {
+      tooltip.style.display = 'block';
+      const corridor = tag.closest('[id]');
+      const side = tag.closest('.side');
+      const zone = tag.closest('.shelf')?.querySelector('.shelf-zone')?.textContent || '';
+      const sideLabel = side?.querySelector('.side-label')?.textContent?.trim() || 'Entrada';
+      const corrLabel = corridor?.querySelector('.corridor-title, .sector-label')?.textContent?.trim() || 'Entrada';
+      tooltip.innerHTML = `<strong>${tag.dataset.item}</strong>${corrLabel}<br><span style="color:#666">${sideLabel} — ${zone}</span>`;
+    });
+    tag.addEventListener('mousemove', e => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    });
+    tag.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+
+  function doSearch(val) {
+    val = val.trim().toLowerCase();
+    if (!val) { clearSearch(); return; }
+    let count = 0;
+    allTags.forEach(tag => {
+      const text = (tag.dataset.item || tag.textContent).toLowerCase();
+      if (text.includes(val)) {
+        tag.classList.add('highlight');
+        tag.classList.remove('dimmed');
+        count++;
+      } else {
+        tag.classList.remove('highlight');
+        tag.classList.add('dimmed');
+      }
+    });
+    searchResult.textContent = count > 0 ? `${count} resultado(s) encontrado(s)` : 'Nenhuma peça encontrada';
+    // Scroll first match into view
+    const first = document.querySelector('.tag.highlight');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearSearch() {
+    searchInput.value = '';
+    searchResult.textContent = '';
+    allTags.forEach(tag => { tag.classList.remove('highlight', 'dimmed'); });
+  }
+
+  function expandAll() {
+    // Already expanded — just scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Keyboard shortcut
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+    if (e.key === 'Escape') clearSearch();
+  });
+</script>
+</body>
+</html>
