@@ -10,7 +10,7 @@ const tenantId = getParam("tenant") || "tenant-demo";
 // 🔥 CONFIGURAÇÕES DO SAAS PARA COBRANÇA
 const MEU_WHATSAPP = "5583996675179"; 
 const VALOR_MENSALIDADE = "R$ 35,00"; 
-const MINHA_CHAVE_PIX = "wranclernascimento@gmail.com"; 
+const MINHA_CHAVE_PIX = "wranclernascimento2018@gmail.com"; 
 
 let workingHours = [];
 let allAppointmentsForDay = []; 
