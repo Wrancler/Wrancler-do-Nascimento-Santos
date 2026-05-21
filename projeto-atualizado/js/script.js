@@ -124,9 +124,6 @@ if (newsletterForm) {
     const email = emailInput.value;
     
     if (email) {
-      // Aqui você pode adicionar a lógica para enviar o email
-      // Por exemplo, enviar para um servidor ou serviço de email marketing
-      
       alert('✅ Obrigada por se cadastrar! Em breve você receberá nossas dicas exclusivas no email: ' + email);
       emailInput.value = '';
     }
@@ -172,20 +169,26 @@ if ('IntersectionObserver' in window) {
 }
 
 // ========================================
-// DETECTAR SCROLL E ADICIONAR CLASSE AO BODY
+// STICKY NAVBAR & DETECTAR SCROLL
 // ========================================
-let lastScroll = 0;
+const navbar = document.getElementById('navbar');
 
 window.addEventListener('scroll', function() {
-  const currentScroll = window.pageYOffset;
+  const currentScroll = window.scrollY;
   
+  // Navbar Glass Effect
+  if (currentScroll > 50) {
+    if(navbar) navbar.classList.add('scrolled');
+  } else {
+    if(navbar) navbar.classList.remove('scrolled');
+  }
+  
+  // Lógica original do body
   if (currentScroll > 100) {
     document.body.classList.add('scrolled');
   } else {
     document.body.classList.remove('scrolled');
   }
-  
-  lastScroll = currentScroll;
 });
 
 // ========================================
