@@ -253,29 +253,63 @@ function initializeNavbar() {
     }
   }, 10));
 
-  // Mobile menu toggle
-  if (navToggle) {
+  // Mobile menu toggle - Melhorado
+  if (navToggle && navMenu) {
+    // Toggle ao clicar no botão
     navToggle.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      navToggle.classList.toggle('active');
-      navMenu.classList.toggle('active');
+      const isActive = navToggle.classList.contains('active');
+      
+      if (isActive) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
     });
 
     // Fechar menu ao clicar em link
     navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navToggle.classList.remove('active');
-        navMenu.classList.remove('active');
+      link.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenu();
       });
     });
 
-    // Fechar menu ao clicar fora
+    // Fechar menu ao clicar fora (em qualquer lugar do documento)
     document.addEventListener('click', (e) => {
+      // Se o clique não for no navbar, fechar
       if (!navbar.contains(e.target)) {
-        navToggle.classList.remove('active');
-        navMenu.classList.remove('active');
+        closeMenu();
       }
     });
+
+    // Fechar menu ao fazer scroll
+    window.addEventListener('scroll', () => {
+      closeMenu();
+    });
+
+    // Fechar ao pressionar Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeMenu();
+      }
+    });
+  }
+
+  // Funções auxiliares
+  function openMenu() {
+    navToggle.classList.add('active');
+    navMenu.classList.add('active');
+    navToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden'; // Previne scroll while menu open
+  }
+
+  function closeMenu() {
+    navToggle.classList.remove('active');
+    navMenu.classList.remove('active');
+    navToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = 'auto';
   }
 }
 
@@ -319,27 +353,49 @@ function initializeCounterAnimation() {
   const studentCountEl = document.getElementById('studentCount');
   if (!studentCountEl) return;
 
-  const targetCount = 500;
-  const duration = isReducedMotion ? 0 : 2000;
-  const increment = targetCount / (duration / 16);
+  // Verificar se já foi animado
+  if (studentCountEl.dataset.animated === 'true') return;
+
+  const targetCount = 600; // Alterado para 600+
+  const duration = isReducedMotion ? 0 : 2500; // Um pouco mais lento para ver a animação
+  const fps = 60;
+  const totalFrames = (duration / 1000) * fps;
+  const increment = targetCount / totalFrames;
+  let currentFrame = 0;
   let current = 0;
 
-  const counterInterval = setInterval(() => {
-    current += increment;
-    if (current >= targetCount) {
-      studentCountEl.textContent = targetCount;
-      clearInterval(counterInterval);
-    } else {
-      studentCountEl.textContent = Math.floor(current);
-    }
-  }, 16);
+  function animate() {
+    currentFrame++;
+    current = Math.floor((currentFrame / totalFrames) * targetCount);
 
-  // Cleanup: parar animação se a aba ficar invisível
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      clearInterval(counterInterval);
+    if (currentFrame >= totalFrames) {
+      studentCountEl.textContent = targetCount;
+      studentCountEl.dataset.animated = 'true';
+      return;
     }
+
+    studentCountEl.textContent = current;
+    requestAnimationFrame(animate);
+  }
+
+  // Usar IntersectionObserver para iniciar quando elemento fica visível
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && studentCountEl.dataset.animated !== 'true') {
+        animate();
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.5 // Ativa quando 50% do elemento está visível
   });
+
+  observer.observe(studentCountEl);
+
+  // Fallback: se não houver IntersectionObserver, iniciar logo
+  if (!('IntersectionObserver' in window)) {
+    setTimeout(animate, 500);
+  }
 }
 
 // ========================================
