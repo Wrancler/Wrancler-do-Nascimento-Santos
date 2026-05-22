@@ -18,6 +18,10 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <div id="particles-js"></div>
+
+  <div class="cursor-glow"></div>
+
   <div id="scrollProgress"></div>
 
   <a href="http://wa.me/5583986138621" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Contato via WhatsApp">
@@ -25,7 +29,7 @@
   </a>
 
   <div id="welcomeModal" class="welcome-modal">
-    <div class="welcome-modal-content glass-panel">
+    <div class="welcome-modal-content glass-panel" data-tilt data-tilt-max="5" data-tilt-glare="true" data-tilt-max-glare="0.2">
       <button class="welcome-modal-close" onclick="closeWelcomeModal()">&times;</button>
       <div style="font-size: 64px; margin-bottom: 16px;">💄</div>
       <h2>Bem-vinda!</h2>
@@ -53,10 +57,10 @@
 
   <header class="header">
     <div class="header-overlay"></div>
-    <div class="header-container glass-panel" data-aos="zoom-in">
+    <div class="header-container glass-panel" data-aos="zoom-in" data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.1">
       <div class="header-content">
         <div class="badge-premium">Acesso Vitalício + Certificado</div>
-        <h1 class="header-title">CURSO DE <span class="text-gradient">AUTOMAQUIAGEM</span></h1>
+        <h1 class="header-title">CURSO DE <span class="text-gradient animated-gradient">AUTOMAQUIAGEM</span></h1>
         <p class="header-subtitle">Aprenda a se maquiar de forma profissional e prática com <strong>Jenifer Lima</strong>. Valorize seus traços e eleve sua autoestima! 💄</p>
         
         <div class="student-counter">
@@ -83,34 +87,26 @@
         <h2 class="section-title" data-aos="fade-up">PARA QUEM É ESTE CURSO?</h2>
         
         <div class="features-grid">
-          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="100">
-            <div class="feature-icon">
-              <i class="fas fa-palette"></i>
-            </div>
+          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="100" data-tilt data-tilt-max="10" data-tilt-glare="true" data-tilt-max-glare="0.2">
+            <div class="feature-icon"><i class="fas fa-palette"></i></div>
             <h3>Para Iniciantes</h3>
             <p>Se você nunca pegou em um pincel de maquiagem ou se sente perdida com tantos produtos, este curso é para você!</p>
           </article>
 
-          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="200">
-            <div class="feature-icon">
-              <i class="fas fa-magic"></i>
-            </div>
+          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="200" data-tilt data-tilt-max="10" data-tilt-glare="true" data-tilt-max-glare="0.2">
+            <div class="feature-icon"><i class="fas fa-magic"></i></div>
             <h3>Para Realçar Sua Beleza</h3>
             <p>Aprenda técnicas que estão em alta no mundo da maquiagem para valorizar seus traços e se sentir ainda mais confiante no dia a dia.</p>
           </article>
 
-          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="300">
-            <div class="feature-icon">
-              <i class="fas fa-star"></i>
-            </div>
+          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="300" data-tilt data-tilt-max="10" data-tilt-glare="true" data-tilt-max-glare="0.2">
+            <div class="feature-icon"><i class="fas fa-star"></i></div>
             <h3>Para Ocasiões Especiais</h3>
             <p>Descubra como criar makes incríveis para festas, eventos especiais ou simplesmente para arrasar em qualquer momento.</p>
           </article>
 
-          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="400">
-            <div class="feature-icon">
-              <i class="fas fa-brush"></i>
-            </div>
+          <article class="feature-card glass-panel" data-aos="fade-up" data-aos-delay="400" data-tilt data-tilt-max="10" data-tilt-glare="true" data-tilt-max-glare="0.2">
+            <div class="feature-icon"><i class="fas fa-brush"></i></div>
             <h3>Para Automaquiagem</h3>
             <p>Domine a arte da automaquiagem e aprenda a valorizar os seus traços com as técnicas corretas.</p>
           </article>
@@ -124,83 +120,62 @@
         
         <ul class="content-list glass-panel">
           <li data-aos="fade-right" data-aos-delay="100">
-            <i class="far fa-check-circle"></i>
-            <span>Preparação de Pele</span>
+            <i class="far fa-check-circle"></i><span>Preparação de Pele</span>
           </li>
           <li data-aos="fade-right" data-aos-delay="200">
-            <i class="far fa-check-circle"></i>
-            <span>Técnica de Pele Completa</span>
+            <i class="far fa-check-circle"></i><span>Técnica de Pele Completa</span>
           </li>
           <li data-aos="fade-right" data-aos-delay="300">
-            <i class="far fa-check-circle"></i>
-            <span>4 Técnicas de Olhos: Delineado Gatinho, Fox Eyes, Esfumado Opaco, Sombra Clean</span>
+            <i class="far fa-check-circle"></i><span>4 Técnicas de Olhos: Delineado Gatinho, Fox Eyes, Esfumado Opaco, Sombra Clean</span>
           </li>
           <li data-aos="fade-right" data-aos-delay="400">
-            <i class="far fa-check-circle"></i>
-            <span>Aplicação de Cílios Postiços</span>
+            <i class="far fa-check-circle"></i><span>Aplicação de Cílios Postiços</span>
           </li>
           <li data-aos="fade-right" data-aos-delay="500">
-            <i class="far fa-check-circle"></i>
-            <span>Técnicas de Lábios</span>
+            <i class="far fa-check-circle"></i><span>Técnicas de Lábios</span>
           </li>
         </ul>
-        
-        <p class="content-description" data-aos="fade-up" data-aos-delay="600">
-          Conteúdo direto ao ponto, indicado para iniciantes e apaixonadas por maquiagem!
-        </p>
+        <p class="content-description" data-aos="fade-up" data-aos-delay="600">Conteúdo direto ao ponto, indicado para iniciantes e apaixonadas por maquiagem!</p>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
         <h2 class="section-title" data-aos="fade-up">O QUE AS ALUNAS DIZEM</h2>
-
         <div class="testimonials-grid">
-          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="100">
+          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="100" data-tilt data-tilt-max="5">
             <div class="testimonial-header">
               <img src="imagens/jeniferheader.jpeg" alt="Maria Silva" class="testimonial-avatar" loading="lazy">
               <div>
                 <div class="testimonial-name">Maria Silva</div>
                 <div class="testimonial-rating">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                 </div>
               </div>
             </div>
             <p class="testimonial-text">"Curso incrível! Aprendi técnicas que nunca imaginei. Agora me maquio sozinha e recebo elogios todos os dias!"</p>
           </div>
 
-          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="200">
+          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="200" data-tilt data-tilt-max="5">
             <div class="testimonial-header">
               <img src="imagens/jeniferheader.jpeg" alt="Ana Paula" class="testimonial-avatar" loading="lazy">
               <div>
                 <div class="testimonial-name">Ana Paula</div>
                 <div class="testimonial-rating">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                 </div>
               </div>
             </div>
             <p class="testimonial-text">"Jenifer é uma professora excepcional. Explica tudo de forma clara e didática. Recomendo muito!"</p>
           </div>
 
-          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="300">
+          <div class="testimonial-card glass-panel" data-aos="fade-up" data-aos-delay="300" data-tilt data-tilt-max="5">
             <div class="testimonial-header">
               <img src="imagens/jeniferheader.jpeg" alt="Juliana Costa" class="testimonial-avatar" loading="lazy">
               <div>
                 <div class="testimonial-name">Juliana Costa</div>
                 <div class="testimonial-rating">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                 </div>
               </div>
             </div>
@@ -213,56 +188,27 @@
     <section class="section">
       <div class="container">
         <h2 class="section-title" data-aos="fade-up">PERGUNTAS FREQUENTES</h2>
-
         <div class="faq-container">
           <div class="faq-item glass-panel" data-aos="fade-up" data-aos-delay="100">
             <button class="faq-question" onclick="toggleFAQ(this)">
               <span>Quanto tempo tenho para acessar o curso?</span>
               <i class="fas fa-chevron-down faq-icon"></i>
             </button>
-            <div class="faq-answer">
-              Você terá acesso vitalício ao curso! Pode assistir quantas vezes quiser, no seu próprio ritmo.
-            </div>
+            <div class="faq-answer">Você terá acesso vitalício ao curso! Pode assistir quantas vezes quiser, no seu próprio ritmo.</div>
           </div>
-
           <div class="faq-item glass-panel" data-aos="fade-up" data-aos-delay="150">
             <button class="faq-question" onclick="toggleFAQ(this)">
               <span>Preciso ter experiência prévia com maquiagem?</span>
               <i class="fas fa-chevron-down faq-icon"></i>
             </button>
-            <div class="faq-answer">
-              Não! O curso é perfeito para iniciantes. Começamos do zero e você aprende passo a passo.
-            </div>
+            <div class="faq-answer">Não! O curso é perfeito para iniciantes. Começamos do zero e você aprende passo a passo.</div>
           </div>
-
           <div class="faq-item glass-panel" data-aos="fade-up" data-aos-delay="200">
             <button class="faq-question" onclick="toggleFAQ(this)">
               <span>Quais produtos preciso ter?</span>
               <i class="fas fa-chevron-down faq-icon"></i>
             </button>
-            <div class="faq-answer">
-              Você receberá uma apostila completa com todos os produtos utilizados. Não precisa ter tudo no início, pode ir adquirindo aos poucos.
-            </div>
-          </div>
-
-          <div class="faq-item glass-panel" data-aos="fade-up" data-aos-delay="250">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              <span>O certificado é reconhecido?</span>
-              <i class="fas fa-chevron-down faq-icon"></i>
-            </button>
-            <div class="faq-answer">
-              Sim! Você receberá um certificado digital ao concluir o curso, que pode ser usado para comprovar seus conhecimentos.
-            </div>
-          </div>
-
-          <div class="faq-item glass-panel" data-aos="fade-up" data-aos-delay="300">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              <span>Posso tirar dúvidas durante o curso?</span>
-              <i class="fas fa-chevron-down faq-icon"></i>
-            </button>
-            <div class="faq-answer">
-              Sim! Temos um grupo exclusivo onde você pode tirar dúvidas e interagir com outras alunas.
-            </div>
+            <div class="faq-answer">Você receberá uma apostila completa com todos os produtos utilizados. Não precisa ter tudo no início, pode ir adquirindo aos poucos.</div>
           </div>
         </div>
       </div>
@@ -271,34 +217,26 @@
     <section class="section" id="oferta">
       <div class="container">
         <h2 class="section-title" data-aos="fade-up">O QUE VOCÊ IRÁ RECEBER:</h2>
-        
-        <p class="bonus-intro" data-aos="fade-up" data-aos-delay="100">
-          Além das aulas completas, você terá acesso a materiais exclusivos desenvolvidos por <strong>Jenifer Lima</strong> para transformar sua rotina de maquiagem.
-        </p>
+        <p class="bonus-intro" data-aos="fade-up" data-aos-delay="100">Além das aulas completas, você terá acesso a materiais exclusivos desenvolvidos por <strong>Jenifer Lima</strong> para transformar sua rotina de maquiagem.</p>
 
         <div class="bonus-grid">
-          <div class="bonus-item glass-panel" data-aos="zoom-in" data-aos-delay="200">
-            <div class="bonus-icon">
-              <i class="fas fa-certificate"></i>
-            </div>
+          <div class="bonus-item glass-panel" data-aos="zoom-in" data-tilt data-tilt-scale="1.05">
+            <div class="bonus-icon"><i class="fas fa-certificate"></i></div>
             <p>Certificado digital ao concluir o curso</p>
           </div>
-
-          <div class="bonus-item glass-panel" data-aos="zoom-in" data-aos-delay="300">
-            <div class="bonus-icon">
-              <i class="fas fa-book-open"></i>
-            </div>
-            <p>Apostila com todos os produtos utilizados durante as aulas</p>
+          <div class="bonus-item glass-panel" data-aos="zoom-in" data-tilt data-tilt-scale="1.05">
+            <div class="bonus-icon"><i class="fas fa-book-open"></i></div>
+            <p>Apostila com produtos utilizados nas aulas</p>
           </div>
         </div>
 
-        <div class="certificate-display glass-panel" data-aos="flip-left" data-aos-delay="400">
+        <div class="certificate-display glass-panel" data-aos="flip-left" data-aos-delay="400" data-tilt>
           <img src="imagens/certificadojeni.png" alt="Exemplo de Certificado Digital do Curso Jenifer Lima Makeup" loading="lazy" />
         </div>
 
-        <a href="https://mpago.la/2V7tKgt" target="_blank" rel="noopener noreferrer" class="cta-button-final cta-button primary-glow" data-aos="zoom-in" data-aos-delay="500">
+        <a href="https://mpago.la/2V7tKgt" target="_blank" rel="noopener noreferrer" class="cta-button-final cta-button primary-glow" data-aos="zoom-in">
           <div class="cta-price">Valor promocional de: <strong>R$ xx,xx</strong></div>
-          <div class="cta-action"><i class="fas fa-hand-pointer"></i> Clique para garantir o seu acesso</div>
+          <div class="cta-action"><i class="fas fa-bolt"></i> Clique e Garanta Sua Vaga</div>
         </a>
       </div>
     </section>
@@ -306,10 +244,8 @@
     <section class="section">
       <div class="container" style="text-align: center;">
         <h2 class="section-title" data-aos="fade-up">Receba Dicas Exclusivas</h2>
-        <p style="color: #aaa; margin-bottom: 32px;" data-aos="fade-up" data-aos-delay="100">
-          Cadastre-se e receba conteúdos gratuitos sobre maquiagem direto no seu email!
-        </p>
-        <form class="newsletter-form" data-aos="zoom-in" data-aos-delay="200">
+        <p style="color: #aaa; margin-bottom: 32px;" data-aos="fade-up">Cadastre-se e receba conteúdos gratuitos sobre maquiagem direto no seu email!</p>
+        <form class="newsletter-form" data-aos="zoom-in">
           <input type="email" placeholder="Seu melhor e-mail" class="newsletter-input glass-panel" required />
           <button type="submit" class="newsletter-btn cta-button">Cadastrar</button>
         </form>
@@ -317,10 +253,12 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <p>&copy; 2025 - <strong>Jenifer Lima</strong>. Todos os direitos reservados.</p>
+  <footer class="footer glass-panel" style="border-radius: 0; border-bottom: none; border-left: none; border-right: none;">
+    <p>&copy; 2026 - <strong>Jenifer Lima</strong>. Todos os direitos reservados.</p>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="js/script.js"></script>
 </body>
