@@ -474,19 +474,33 @@ body {
     justify-content: flex-start;
     padding: 16px 20px;
     border-radius: 0;
-    font-size: 1rem;
-    gap: 12px;
+    font-size: 1.1rem;
+    gap: 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+  }
+
+  .nav-link:last-child {
+    border-bottom: none;
+  }
+
+  .nav-link i {
+    color: var(--color-accent);
+    font-size: 1.3rem;
+    min-width: 24px;
   }
 
   .nav-link::before {
     content: '';
     display: inline-block;
     width: 3px;
-    height: 20px;
+    height: 24px;
     background: var(--color-accent);
     border-radius: 2px;
     opacity: 0;
     transition: opacity 0.3s ease;
+    margin-right: 0;
   }
 
   .nav-link:hover::before,
@@ -496,7 +510,8 @@ body {
 
   .nav-link:hover,
   .nav-link:focus-visible {
-    background: rgba(156, 89, 182, 0.1);
+    background: rgba(156, 89, 182, 0.15);
+    padding-left: 24px;
   }
 
   .nav-container {
