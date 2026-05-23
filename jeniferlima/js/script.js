@@ -40,6 +40,29 @@ function throttle(func, limit) {
 }
 
 // ========================================
+// FUNÇÕES DO MENU - ESCOPO GLOBAL (IMPORTANTE!)
+// ========================================
+let navToggle, navMenu, navbar;
+
+function openMenu() {
+  if (!navToggle || !navMenu) return;
+  console.log('🔓 Opening menu');
+  navToggle.classList.add('active');
+  navMenu.classList.add('active');
+  navToggle.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMenu() {
+  if (!navToggle || !navMenu) return;
+  console.log('🔒 Closing menu');
+  navToggle.classList.remove('active');
+  navMenu.classList.remove('active');
+  navToggle.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = 'auto';
+}
+
+// ========================================
 // INICIALIZAR LIBRARIES (AOS, TILT)
 // ========================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // CURSOR NEON INTERATIVO (Desktop Only)
 // ========================================
 function initializeCursorGlow() {
-  if (isTouchDevice()) return; // Não usar em mobile
+  if (isTouchDevice()) return;
 
   const cursorGlow = document.querySelector('.cursor-glow');
   if (!cursorGlow) return;
@@ -96,7 +119,6 @@ function initializeCursorGlow() {
     });
   }, 16));
 
-  // Expandir ao hover em elementos interativos
   const interactiveElements = document.querySelectorAll('a, button, .feature-card, .testimonial-card, .bonus-item');
   interactiveElements.forEach(element => {
     element.addEventListener('mouseenter', () => {
@@ -111,6 +133,17 @@ function initializeCursorGlow() {
       cursorGlow.style.background = 'radial-gradient(circle, rgba(156, 89, 182, 0.1) 0%, transparent 60%)';
     });
   });
+}
+
+// ========================================
+// SCROLL PROGRESS
+// ========================================
+function initializeScrollProgress() {
+  window.addEventListener('scroll', throttle(() => {
+    const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+    const progressBar = document.getElementById('scrollProgress');
+    if (progressBar) progressBar.style.width = scrollPercent + '%';
+  }, 10));
 }
 
 // ========================================
@@ -214,7 +247,6 @@ function initializeParticles() {
   try {
     particlesJS("particles-js", particlesConfig);
 
-    // Ajustar quantidade de partículas em resize
     window.addEventListener('resize', debounce(() => {
       if (window.pJSDom && window.pJSDom[0]) {
         window.pJSDom[0].pJS.particles.number.value = Math.min(
@@ -230,19 +262,22 @@ function initializeParticles() {
 }
 
 // ========================================
-// STICKY NAVBAR & PROGRESS BAR - ULTRA SIMPLES
+// STICKY NAVBAR & MENU
 // ========================================
 function initializeNavbar() {
-  const navbar = document.getElementById('navbar');
-  const navToggle = document.getElementById('navToggle');
-  const navMenu = document.getElementById('navMenu');
+  navbar = document.getElementById('navbar');
+  navToggle = document.getElementById('navToggle');
+  navMenu = document.getElementById('navMenu');
 
   if (!navbar || !navToggle || !navMenu) {
-    console.warn('Navbar elements not found');
+    console.warn('❌ Navbar elements not found');
     return;
   }
 
   console.log('✅ Navbar initialized');
+  console.log('   - navbar:', navbar);
+  console.log('   - navToggle:', navToggle);
+  console.log('   - navMenu:', navMenu);
 
   // ====== SCROLL ======
   window.addEventListener('scroll', throttle(() => {
@@ -259,12 +294,12 @@ function initializeNavbar() {
 
   // ====== MENU TOGGLE ======
   navToggle.addEventListener('click', function(e) {
-    console.log('Toggle clicked');
+    console.log('👆 Toggle clicked');
     e.preventDefault();
     e.stopPropagation();
     
     const isActive = navToggle.classList.contains('active');
-    console.log('Menu is active:', isActive);
+    console.log('   Menu active:', isActive);
     
     if (isActive) {
       closeMenu();
@@ -273,30 +308,28 @@ function initializeNavbar() {
     }
   });
 
-  // ====== FECHAR MENU AO CLICAR EM LINK ======
+  // ====== FECHAR AO CLICAR EM LINK ======
   const navLinks = navMenu.querySelectorAll('.nav-link');
-  console.log('Found nav links:', navLinks.length);
+  console.log('   Found nav links:', navLinks.length);
   
   navLinks.forEach((link, index) => {
     link.addEventListener('click', function(e) {
-      console.log('Link clicked:', index);
+      console.log('🔗 Link clicked:', link.title);
       closeMenu();
     });
   });
 
   // ====== FECHAR AO CLICAR FORA ======
   document.addEventListener('click', function(e) {
-    // Se não clicou no navbar, fechar
     if (!navbar.contains(e.target)) {
       if (navToggle.classList.contains('active')) {
-        console.log('Clicked outside, closing menu');
+        console.log('👆 Clicked outside, closing menu');
         closeMenu();
       }
     }
   });
 
   // ====== FECHAR AO FAZER SCROLL ======
-  let lastScrollTop = 0;
   window.addEventListener('scroll', function() {
     if (navToggle.classList.contains('active')) {
       closeMenu();
@@ -306,29 +339,10 @@ function initializeNavbar() {
   // ====== FECHAR COM ESCAPE ======
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && navToggle.classList.contains('active')) {
-      console.log('Escape pressed, closing menu');
+      console.log('⌨️ Escape pressed, closing menu');
       closeMenu();
     }
   });
-
-  // ====== FUNÇÕES ======
-  function openMenu() {
-    console.log('Opening menu');
-    navToggle.classList.add('active');
-    navMenu.classList.add('active');
-    navToggle.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
-    console.log('Menu opened');
-  }
-
-  function closeMenu() {
-    console.log('Closing menu');
-    navToggle.classList.remove('active');
-    navMenu.classList.remove('active');
-    navToggle.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = 'auto';
-    console.log('Menu closed');
-  }
 }
 
 // ========================================
@@ -338,7 +352,6 @@ function initializeWelcomeModal() {
   const modal = document.getElementById('welcomeModal');
   if (!modal) return;
 
-  // Mostrar modal após 2 segundos (apenas uma vez por sessão)
   if (!sessionStorage.getItem('modalShown')) {
     setTimeout(() => {
       modal.classList.add('show');
@@ -354,7 +367,6 @@ function closeWelcomeModal() {
   }
 }
 
-// Event listener para fechar modal ao clicar fora
 document.addEventListener('DOMContentLoaded', () => {
   const modalEl = document.getElementById('welcomeModal');
   if (modalEl) {
@@ -371,11 +383,10 @@ function initializeCounterAnimation() {
   const studentCountEl = document.getElementById('studentCount');
   if (!studentCountEl) return;
 
-  // Verificar se já foi animado
   if (studentCountEl.dataset.animated === 'true') return;
 
-  const targetCount = 600; // Alterado para 600+
-  const duration = isReducedMotion ? 0 : 2500; // Um pouco mais lento para ver a animação
+  const targetCount = 600;
+  const duration = isReducedMotion ? 0 : 2500;
   const fps = 60;
   const totalFrames = (duration / 1000) * fps;
   const increment = targetCount / totalFrames;
@@ -396,7 +407,6 @@ function initializeCounterAnimation() {
     requestAnimationFrame(animate);
   }
 
-  // Usar IntersectionObserver para iniciar quando elemento fica visível
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting && studentCountEl.dataset.animated !== 'true') {
@@ -405,12 +415,11 @@ function initializeCounterAnimation() {
       }
     });
   }, {
-    threshold: 0.5 // Ativa quando 50% do elemento está visível
+    threshold: 0.5
   });
 
   observer.observe(studentCountEl);
 
-  // Fallback: se não houver IntersectionObserver, iniciar logo
   if (!('IntersectionObserver' in window)) {
     setTimeout(animate, 500);
   }
@@ -427,7 +436,7 @@ function initializeCarousel() {
   const images = carousel.querySelectorAll('.carousel-image');
   const totalImages = images.length;
 
-  if (totalImages <= 1) return; // Não usar carousel se houver apenas 1 imagem
+  if (totalImages <= 1) return;
 
   function autoScrollCarousel() {
     if (totalImages > 0) {
@@ -442,18 +451,15 @@ function initializeCarousel() {
 
   let carouselInterval = setInterval(autoScrollCarousel, 5000);
 
-  // Atualizar índice ao fazer scroll manual
   carousel.addEventListener('scroll', debounce(() => {
     currentImageIndex = Math.round(carousel.scrollLeft / carousel.clientWidth);
   }, 150));
 
-  // Pausar ao passar mouse
   carousel.addEventListener('mouseenter', () => clearInterval(carouselInterval));
   carousel.addEventListener('mouseleave', () => {
     carouselInterval = setInterval(autoScrollCarousel, 5000);
   });
 
-  // Pausar em dispositivos touch
   carousel.addEventListener('touchstart', () => clearInterval(carouselInterval));
   carousel.addEventListener('touchend', () => {
     carouselInterval = setInterval(autoScrollCarousel, 5000);
@@ -471,7 +477,6 @@ function initializeFAQ() {
     if (!button) return;
 
     button.addEventListener('click', () => {
-      // Fechar outros FAQs abertos
       faqItems.forEach(otherItem => {
         if (otherItem !== item) {
           otherItem.classList.remove('active');
@@ -480,7 +485,6 @@ function initializeFAQ() {
         }
       });
 
-      // Toggle this FAQ
       item.classList.toggle('active');
       button.setAttribute('aria-expanded', item.classList.contains('active'));
     });
@@ -529,20 +533,17 @@ function initializeNewsletter() {
     const emailInput = this.querySelector('.newsletter-input');
     const email = emailInput.value.trim();
 
-    // Validação de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       showNotification('Por favor, insira um email válido!', 'error');
       return;
     }
 
-    // Simular envio
     const button = this.querySelector('button');
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'Enviando...';
 
-    // Simular delay de 1 segundo
     setTimeout(() => {
       showNotification('✅ Obrigada! Em breve você receberá dicas exclusivas no seu email.', 'success');
       emailInput.value = '';
@@ -556,7 +557,6 @@ function initializeNewsletter() {
 // NOTIFICATION SYSTEM
 // ========================================
 function showNotification(message, type = 'info') {
-  // Remover notificação anterior se existir
   const existingNotification = document.querySelector('.notification');
   if (existingNotification) {
     existingNotification.remove();
@@ -582,7 +582,6 @@ function showNotification(message, type = 'info') {
 
   document.body.appendChild(notification);
 
-  // Auto-remove após 4 segundos
   setTimeout(() => {
     notification.style.animation = 'slideOut 0.3s ease';
     setTimeout(() => notification.remove(), 300);
@@ -619,150 +618,9 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ========================================
-// PERFORMANCE & OPTIMIZATION
-// ========================================
-
-// Lazy loading para imagens
-if ('IntersectionObserver' in window) {
-  const imageObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        if (img.dataset.src) {
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-        }
-        observer.unobserve(img);
-      }
-    });
-  });
-
-  document.querySelectorAll('img[data-src]').forEach(img => {
-    imageObserver.observe(img);
-  });
-}
-
-// Preload de recursos críticos
-function preloadResources() {
-  if (!('link' in document.createElement('link'))) return;
-
-  const link = document.createElement('link');
-  link.rel = 'preload';
-  link.as = 'image';
-  link.href = 'imagens/jenitop2.jpeg';
-  document.head.appendChild(link);
-}
-
-window.addEventListener('load', () => {
-  preloadResources();
-});
-
-// ========================================
-// SISTEMA DE CACHE
-// ========================================
-
-// Cache local para dados não sensíveis
-const LocalCache = {
-  set(key, value, minutesToExpire = 60) {
-    const now = new Date();
-    const item = {
-      value: value,
-      expiry: now.getTime() + minutesToExpire * 60000
-    };
-    localStorage.setItem(key, JSON.stringify(item));
-  },
-
-  get(key) {
-    const itemStr = localStorage.getItem(key);
-    if (!itemStr) return null;
-
-    const item = JSON.parse(itemStr);
-    const now = new Date();
-
-    if (now.getTime() > item.expiry) {
-      localStorage.removeItem(key);
-      return null;
-    }
-
-    return item.value;
-  },
-
-  remove(key) {
-    localStorage.removeItem(key);
-  }
-};
-
-// ========================================
-// ANALYTICS SIMPLES (GDPR compliant)
-// ========================================
-
-function trackEvent(eventName, eventData = {}) {
-  // Enviar apenas para seu próprio servidor, sem dados pessoais
-  if (navigator.sendBeacon) {
-    const data = new FormData();
-    data.append('event', eventName);
-    data.append('timestamp', new Date().toISOString());
-    data.append('page', window.location.pathname);
-    
-    // Apenas métricas não sensíveis
-    Object.entries(eventData).forEach(([key, value]) => {
-      if (!['email', 'phone', 'name'].includes(key)) {
-        data.append(key, value);
-      }
-    });
-
-    navigator.sendBeacon('/analytics', data);
-  }
-}
-
-// Track eventos importantes
-document.addEventListener('DOMContentLoaded', () => {
-  // Track CTAs clicadas
-  document.querySelectorAll('.cta-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      trackEvent('cta_click', { button: btn.textContent });
-    });
-  });
-
-  // Track scroll até seções
-  const sections = document.querySelectorAll('.section');
-  const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const sectionId = entry.target.id || entry.target.querySelector('h2')?.textContent;
-        trackEvent('section_view', { section: sectionId });
-      }
-    });
-  });
-
-  sections.forEach(section => sectionObserver.observe(section));
-});
-
-// ========================================
-// TRATAMENTO DE ERROS
-// ========================================
-
-window.addEventListener('error', (event) => {
-  console.error('Global error:', event.error);
-  // Log para seu serviço de erro (ex: Sentry)
-});
-
-// ========================================
-// SERVICE WORKER (Optional PWA)
-// ========================================
-
-if ('serviceWorker' in navigator && 'caches' in window) {
-  window.addEventListener('load', () => {
-    // Registrar SW se necessário
-    // navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
-  });
-}
-
-// ========================================
 // FINAL INITIALIZATION CHECK
 // ========================================
-
-console.log('%cJenifer Lima Makeup - Site carregado com sucesso! 💄', 'color: #ff69b4; font-weight: bold; font-size: 14px;');
+console.log('%c🎨 Jenifer Lima Makeup - Site carregado!', 'color: #ff69b4; font-weight: bold; font-size: 14px;');
 console.log('Touch Device:', isTouchDevice());
 console.log('Dark Mode:', isDarkMode);
 console.log('Reduced Motion:', isReducedMotion);
