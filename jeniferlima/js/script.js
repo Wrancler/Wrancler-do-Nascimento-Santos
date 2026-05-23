@@ -230,16 +230,21 @@ function initializeParticles() {
 }
 
 // ========================================
-// STICKY NAVBAR & PROGRESS BAR
+// STICKY NAVBAR & PROGRESS BAR - ULTRA SIMPLES
 // ========================================
 function initializeNavbar() {
   const navbar = document.getElementById('navbar');
   const navToggle = document.getElementById('navToggle');
   const navMenu = document.getElementById('navMenu');
 
-  if (!navbar) return;
+  if (!navbar || !navToggle || !navMenu) {
+    console.warn('Navbar elements not found');
+    return;
+  }
 
-  // Scroll event com throttle
+  console.log('✅ Navbar initialized');
+
+  // ====== SCROLL ======
   window.addEventListener('scroll', throttle(() => {
     const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
     const progressBar = document.getElementById('scrollProgress');
@@ -252,68 +257,78 @@ function initializeNavbar() {
     }
   }, 10));
 
-  // Função para abrir menu
-  function openMenu() {
-    if (navToggle && navMenu) {
-      navToggle.classList.add('active');
-      navMenu.classList.add('active');
-      navToggle.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
+  // ====== MENU TOGGLE ======
+  navToggle.addEventListener('click', function(e) {
+    console.log('Toggle clicked');
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isActive = navToggle.classList.contains('active');
+    console.log('Menu is active:', isActive);
+    
+    if (isActive) {
+      closeMenu();
+    } else {
+      openMenu();
     }
-  }
+  });
 
-  // Função para fechar menu
-  function closeMenu() {
-    if (navToggle && navMenu) {
-      navToggle.classList.remove('active');
-      navMenu.classList.remove('active');
-      navToggle.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = 'auto';
-    }
-  }
+  // ====== FECHAR MENU AO CLICAR EM LINK ======
+  const navLinks = navMenu.querySelectorAll('.nav-link');
+  console.log('Found nav links:', navLinks.length);
+  
+  navLinks.forEach((link, index) => {
+    link.addEventListener('click', function(e) {
+      console.log('Link clicked:', index);
+      closeMenu();
+    });
+  });
 
-  // Toggle ao clicar no hamburger
-  if (navToggle) {
-    navToggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
+  // ====== FECHAR AO CLICAR FORA ======
+  document.addEventListener('click', function(e) {
+    // Se não clicou no navbar, fechar
+    if (!navbar.contains(e.target)) {
       if (navToggle.classList.contains('active')) {
+        console.log('Clicked outside, closing menu');
         closeMenu();
-      } else {
-        openMenu();
       }
-    });
-  }
+    }
+  });
 
-  // Fechar ao clicar em link
-  if (navMenu) {
-    const navLinks = navMenu.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        closeMenu();
-      });
-    });
-  }
-
-  // Fechar ao clicar fora
-  document.addEventListener('click', (e) => {
-    if (navToggle && navMenu && !navbar.contains(e.target)) {
+  // ====== FECHAR AO FAZER SCROLL ======
+  let lastScrollTop = 0;
+  window.addEventListener('scroll', function() {
+    if (navToggle.classList.contains('active')) {
       closeMenu();
     }
   });
 
-  // Fechar ao fazer scroll
-  window.addEventListener('scroll', () => {
-    closeMenu();
-  });
-
-  // Fechar ao pressionar Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+  // ====== FECHAR COM ESCAPE ======
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && navToggle.classList.contains('active')) {
+      console.log('Escape pressed, closing menu');
       closeMenu();
     }
   });
+
+  // ====== FUNÇÕES ======
+  function openMenu() {
+    console.log('Opening menu');
+    navToggle.classList.add('active');
+    navMenu.classList.add('active');
+    navToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    console.log('Menu opened');
+  }
+
+  function closeMenu() {
+    console.log('Closing menu');
+    navToggle.classList.remove('active');
+    navMenu.classList.remove('active');
+    navToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = 'auto';
+    console.log('Menu closed');
+  }
 }
 
 // ========================================

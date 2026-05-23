@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste Menu Hamburger</title>
+  <title>Menu Hamburger - DEBUG</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     * {
@@ -12,13 +12,18 @@
       box-sizing: border-box;
     }
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #07070a;
-      color: #f4f4f5;
+    html {
+      scroll-behavior: smooth;
     }
 
-    /* NAVBAR */
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #07070a;
+      color: #f4f4f5;
+      line-height: 1.6;
+    }
+
+    /* ====== NAVBAR ====== */
     .glass-nav {
       position: fixed;
       top: 0;
@@ -27,9 +32,17 @@
       width: 100%;
       z-index: 1000;
       padding: 12px 0;
-      background: rgba(7, 7, 10, 0.7);
+      transition: all 0.4s ease;
+      background: transparent;
+      border-bottom: 1px solid transparent;
+    }
+
+    .glass-nav.scrolled {
+      background: rgba(7, 7, 10, 0.95);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
     .nav-container {
@@ -43,16 +56,20 @@
     }
 
     .nav-brand {
-      font-weight: bold;
-      font-size: 1.2rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      letter-spacing: 1px;
       white-space: nowrap;
+      flex: 1;
     }
 
     .nav-brand span {
       color: #ff69b4;
     }
 
-    /* HAMBURGER */
+    /* ====== HAMBURGER ====== */
     .nav-toggle {
       display: none;
       flex-direction: column;
@@ -61,21 +78,33 @@
       border: none;
       cursor: pointer;
       padding: 8px;
+      z-index: 1001;
       min-width: 44px;
       min-height: 44px;
+      align-items: center;
+    }
+
+    .nav-toggle:hover {
+      opacity: 0.8;
     }
 
     .nav-toggle span {
       width: 24px;
       height: 2px;
       background: white;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 1px;
       display: block;
+    }
+
+    .nav-toggle span:nth-child(2) {
+      width: 18px;
     }
 
     .nav-toggle.active span:nth-child(1) {
       transform: rotate(45deg) translate(9px, 9px);
       background: #ff69b4;
+      width: 24px;
     }
 
     .nav-toggle.active span:nth-child(2) {
@@ -85,25 +114,28 @@
     .nav-toggle.active span:nth-child(3) {
       transform: rotate(-45deg) translate(8px, -8px);
       background: #ff69b4;
+      width: 24px;
     }
 
-    /* MENU */
+    /* ====== MENU REDES SOCIAIS ====== */
     .nav-socials {
       display: flex;
       gap: 16px;
       align-items: center;
+      justify-content: flex-end;
     }
 
     .nav-link {
       color: white;
       font-size: 1.2rem;
+      transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 44px;
       min-height: 44px;
       text-decoration: none;
-      transition: all 0.3s ease;
+      border-radius: 50%;
     }
 
     .nav-link:hover {
@@ -111,7 +143,11 @@
       transform: translateY(-2px);
     }
 
-    /* MOBILE */
+    .nav-link i {
+      pointer-events: none;
+    }
+
+    /* ====== MOBILE MENU ====== */
     @media (max-width: 768px) {
       .nav-toggle {
         display: flex;
@@ -126,19 +162,25 @@
         z-index: 999;
         flex-direction: column;
         gap: 0;
-        background: rgba(7, 7, 10, 0.95);
+        background: rgba(7, 7, 10, 0.98);
         backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         padding: 0;
         margin: 0;
         border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+        border-top: 1px solid rgba(255, 105, 180, 0.1);
         max-height: 0;
-        overflow: hidden;
-        overflow-y: auto;
-        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: visible;
+        pointer-events: none;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), pointer-events 0.4s;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
       }
 
       .nav-socials.active {
-        max-height: 400px;
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        pointer-events: auto;
       }
 
       .nav-link {
@@ -146,7 +188,7 @@
         justify-content: flex-start;
         padding: 16px 20px;
         border-radius: 0;
-        font-size: 1rem;
+        font-size: 1.1rem;
         gap: 16px;
         border-bottom: 1px solid rgba(255, 105, 180, 0.1);
       }
@@ -163,42 +205,98 @@
       .nav-link i {
         color: #ff69b4;
         font-size: 1.3rem;
+        min-width: 24px;
+      }
+
+      .nav-container {
+        padding: 0 16px;
       }
     }
 
-    /* CONTENT */
+    /* ====== HEADER ====== */
     header {
       margin-top: 60px;
       padding: 40px 20px;
       text-align: center;
+      min-height: 50vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-    }
-
-    .content {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-
-    .section {
-      padding: 40px 20px;
-      border-bottom: 1px solid rgba(255, 105, 180, 0.1);
-      min-height: 50vh;
-    }
-
-    h2 {
-      font-size: 1.5rem;
+      font-size: 2.5rem;
       margin-bottom: 20px;
       color: #ff69b4;
     }
 
     p {
-      line-height: 1.6;
+      font-size: 1.1rem;
       color: #aaa;
+      margin-bottom: 20px;
+    }
+
+    .debug-box {
+      background: rgba(156, 89, 182, 0.1);
+      border: 1px solid #ff69b4;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .debug-box strong {
+      color: #ff69b4;
+    }
+
+    /* ====== CONTENT ====== */
+    .section {
+      padding: 60px 20px;
+      border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+      min-height: 50vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: #ff69b4;
+    }
+
+    .section p {
+      max-width: 600px;
+      color: #ccc;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 10px 20px;
+      background: rgba(156, 89, 182, 0.2);
+      border: 1px solid #ff69b4;
+      border-radius: 20px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .status.ok {
+      background: rgba(37, 211, 102, 0.2);
+      border-color: #25d366;
+      color: #25d366;
+    }
+
+    .status.error {
+      background: rgba(255, 107, 107, 0.2);
+      border-color: #ff6b6b;
+      color: #ff6b6b;
     }
   </style>
 </head>
@@ -209,7 +307,7 @@
       <div class="nav-brand">Jenifer Lima <span>Makeup</span></div>
       
       <!-- HAMBURGER -->
-      <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
         <span></span>
         <span></span>
         <span></span>
@@ -217,19 +315,19 @@
 
       <!-- REDES SOCIAIS -->
       <div class="nav-socials" id="navMenu">
-        <a href="https://wa.me/5583986138621" class="nav-link" title="WhatsApp" target="_blank">
+        <a href="https://wa.me/5583986138621" class="nav-link" title="WhatsApp" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-whatsapp"></i>
         </a>
-        <a href="https://www.instagram.com/jeniferlimamakeup/" class="nav-link" title="Instagram" target="_blank">
+        <a href="https://www.instagram.com/jeniferlimamakeup/" class="nav-link" title="Instagram" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-instagram"></i>
         </a>
-        <a href="https://www.tiktok.com/@jeniferlimamakeup" class="nav-link" title="TikTok" target="_blank">
+        <a href="https://www.tiktok.com/@jeniferlimamakeup" class="nav-link" title="TikTok" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-tiktok"></i>
         </a>
-        <a href="https://www.youtube.com/@jeniferlimamakeup/shorts" class="nav-link" title="YouTube" target="_blank">
+        <a href="https://www.youtube.com/@jeniferlimamakeup/shorts" class="nav-link" title="YouTube" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-youtube"></i>
         </a>
-        <a href="https://www.facebook.com/share/1Bm5FNhvYk/" class="nav-link" title="Facebook" target="_blank">
+        <a href="https://www.facebook.com/share/1Bm5FNhvYk/" class="nav-link" title="Facebook" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-facebook"></i>
         </a>
       </div>
@@ -238,92 +336,158 @@
 
   <!-- HEADER -->
   <header>
-    <h1>🎨 Teste do Menu Hamburger</h1>
-    <p>Redimensione a janela para menos de 768px e teste o menu</p>
+    <h1>🎨 Menu Hamburger - Teste Completo</h1>
+    <p>Abra este arquivo em seu navegador e teste em MOBILE (< 768px)</p>
+    
+    <div class="debug-box">
+      <p><strong>📱 Para testar em mobile:</strong></p>
+      <p>F12 → Toggle Device Toolbar (Ctrl+Shift+M) → iPhone 12</p>
+      <p><strong id="menu-status" class="status error">Clique para abrir o menu</strong></p>
+    </div>
   </header>
 
-  <!-- CONTENT -->
-  <div class="content">
-    <section class="section">
-      <h2>📱 Teste em Mobile</h2>
-      <p>
-        Abra o DevTools (F12), clique em "Toggle device toolbar" (Ctrl+Shift+M) e escolha um dispositivo mobile como iPhone 12.
-        Depois clique no hamburger menu e veja se as redes sociais aparecem corretamente.
-      </p>
-      <p style="margin-top: 20px;">
-        O menu deve:
-        <br>✅ Aparecer ao clicar no hamburger
-        <br>✅ Mostrar os 5 ícones de redes sociais
-        <br>✅ Fechar ao clicar em um link
-        <br>✅ Fechar ao clicar fora do menu
-        <br>✅ Fechar ao fazer scroll
-      </p>
-    </section>
+  <section class="section">
+    <h2>✅ Checklist de Teste</h2>
+    <p style="text-align: left; max-width: 600px;">
+      ☐ Redimensione para mobile (< 768px)<br>
+      ☐ Clique no hamburger (☰) - deve virar X<br>
+      ☐ Veja os 5 ícones aparecerem<br>
+      ☐ Clique em um ícone - menu deve fechar<br>
+      ☐ Clique no hamburger de novo - menu abre<br>
+      ☐ Faça scroll - menu deve fechar<br>
+      ☐ Pressione Escape - menu deve fechar<br>
+      ☐ Clique fora do menu - deve fechar
+    </p>
+  </section>
 
-    <section class="section">
-      <h2>🎯 O que verificar</h2>
-      <p>
-        1. Clique no hamburger (☰) que aparece em mobile<br>
-        2. Veja se aparecem os 5 ícones: WhatsApp, Instagram, TikTok, YouTube, Facebook<br>
-        3. Teste clicar em um ícone - o menu deve fechar<br>
-        4. Teste clicar fora do menu - deve fechar<br>
-        5. Faça scroll - o menu deve fechar automaticamente
-      </p>
-    </section>
+  <section class="section">
+    <h2>🖥️ Desktop (> 768px)</h2>
+    <p>
+      Em desktop, o hamburger desaparece e os 5 ícones ficam sempre visíveis<br>
+      na barra de navegação (lado direito)
+    </p>
+  </section>
 
-    <section class="section">
-      <h2>💻 Em Desktop</h2>
-      <p>
-        Em desktop (acima de 768px), os ícones de redes sociais devem aparecer
-        sempre visíveis na barra de navegação, sem hamburger menu.
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>🐛 Debugar com Console</h2>
-      <p>
-        Se houver problemas, abra o DevTools Console (F12 → Console) e procure por mensagens de erro em vermelho.
-      </p>
-    </section>
-  </div>
+  <section class="section">
+    <h2>📊 Informações Técnicas</h2>
+    <div class="debug-box" style="text-align: left;">
+      <p><strong>Janela atual:</strong> <span id="window-width">-</span>px</p>
+      <p><strong>Menu ativo:</strong> <span id="menu-active">Não</span></p>
+      <p><strong>Toggle visível:</strong> <span id="toggle-visible">Não</span></p>
+      <p><strong>Pointer-events:</strong> <span id="pointer-events">-</span></p>
+    </div>
+  </section>
 
   <script>
-    // Script simples para testar o menu
+    console.log('%c🎨 MENU HAMBURGER DEBUG', 'color: #ff69b4; font-weight: bold; font-size: 16px;');
+
     const navToggle = document.getElementById('navToggle');
     const navMenu = document.getElementById('navMenu');
     const navLinks = navMenu.querySelectorAll('.nav-link');
 
-    // Abrir/Fechar menu
-    navToggle.addEventListener('click', (e) => {
+    console.log('✅ Elements found:', {
+      toggle: !!navToggle,
+      menu: !!navMenu,
+      links: navLinks.length
+    });
+
+    // ====== MENU TOGGLE ======
+    navToggle.addEventListener('click', function(e) {
+      console.log('🖱️ Toggle clicked');
+      e.preventDefault();
       e.stopPropagation();
-      navToggle.classList.toggle('active');
-      navMenu.classList.toggle('active');
-    });
-
-    // Fechar ao clicar em link
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navToggle.classList.remove('active');
-        navMenu.classList.remove('active');
-      });
-    });
-
-    // Fechar ao clicar fora
-    document.addEventListener('click', (e) => {
-      if (!document.querySelector('.glass-nav').contains(e.target)) {
-        navToggle.classList.remove('active');
-        navMenu.classList.remove('active');
+      
+      const isActive = navToggle.classList.contains('active');
+      console.log('Current state:', isActive ? 'OPEN' : 'CLOSED');
+      
+      if (isActive) {
+        closeMenu();
+      } else {
+        openMenu();
       }
     });
 
-    // Fechar ao fazer scroll
-    window.addEventListener('scroll', () => {
-      navToggle.classList.remove('active');
-      navMenu.classList.remove('active');
+    // ====== FECHAR AO CLICAR EM LINK ======
+    navLinks.forEach((link, index) => {
+      link.addEventListener('click', function() {
+        console.log('🔗 Link clicked:', index);
+        closeMenu();
+      });
     });
 
-    console.log('✅ Menu script carregado com sucesso!');
-    console.log('📱 Redimensione para < 768px para ver o menu hamburger');
+    // ====== FECHAR AO CLICAR FORA ======
+    document.addEventListener('click', function(e) {
+      const navbar = document.getElementById('navbar');
+      if (!navbar.contains(e.target)) {
+        if (navToggle.classList.contains('active')) {
+          console.log('👆 Clicked outside, closing');
+          closeMenu();
+        }
+      }
+    });
+
+    // ====== FECHAR AO FAZER SCROLL ======
+    window.addEventListener('scroll', function() {
+      if (navToggle.classList.contains('active')) {
+        console.log('📜 Scrolled, closing menu');
+        closeMenu();
+      }
+    });
+
+    // ====== FECHAR COM ESCAPE ======
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && navToggle.classList.contains('active')) {
+        console.log('⌨️ Escape pressed, closing');
+        closeMenu();
+      }
+    });
+
+    // ====== FUNCTIONS ======
+    function openMenu() {
+      console.log('📖 OPENING MENU');
+      navToggle.classList.add('active');
+      navMenu.classList.add('active');
+      navToggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      updateStatus('Menu aberto ✅');
+    }
+
+    function closeMenu() {
+      console.log('📕 CLOSING MENU');
+      navToggle.classList.remove('active');
+      navMenu.classList.remove('active');
+      navToggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = 'auto';
+      updateStatus('Menu fechado');
+    }
+
+    // ====== DEBUG INFO ======
+    function updateStatus(text) {
+      const status = document.getElementById('menu-status');
+      if (status) {
+        status.textContent = text;
+        status.classList.toggle('ok', navToggle.classList.contains('active'));
+      }
+    }
+
+    function updateDebug() {
+      const width = window.innerWidth;
+      const isActive = navToggle.classList.contains('active');
+      const toggleVisible = window.getComputedStyle(navToggle).display !== 'none';
+      const pointerEvents = window.getComputedStyle(navMenu).pointerEvents;
+
+      document.getElementById('window-width').textContent = width;
+      document.getElementById('menu-active').textContent = isActive ? 'Sim ✅' : 'Não';
+      document.getElementById('toggle-visible').textContent = toggleVisible ? 'Sim ✅' : 'Não';
+      document.getElementById('pointer-events').textContent = pointerEvents;
+    }
+
+    // Update on resize
+    window.addEventListener('resize', updateDebug);
+    window.addEventListener('load', updateDebug);
+    updateDebug();
+
+    console.log('%c✅ Script loaded successfully!', 'color: #25d366; font-weight: bold;');
   </script>
 </body>
 </html>
