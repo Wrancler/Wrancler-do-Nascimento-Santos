@@ -492,7 +492,7 @@ function renderAdminDateCards() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-  for (let i = -3; i <= 14; i++) {
+  for (let i = -3; i <= 40; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
 
