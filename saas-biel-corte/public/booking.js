@@ -13,7 +13,6 @@ const tenantId = getParam("tenant") || "biel-do-corte";
 
 let barberWhatsapp = "";
 let workingHours = [];
-let workingHoursByDay = null; // 🔥 Horários por dia da semana
 let servicesById = {};
 let closedDays = []; // 🔥 Dias da semana fechados (0=Dom, 1=Seg... 6=Sáb)
 let bookingDays = 15; // 🔥 Quantos dias à frente o cliente pode agendar
@@ -44,7 +43,6 @@ async function initTenant() {
     
     barberWhatsapp = config.whatsapp.replace(/[^\d]/g, "");
     workingHours = config.workingHours;
-    workingHoursByDay = config.workingHoursByDay || null; // 🔥 Horários por dia
     closedDays = config.closedDays || []; // 🔥 Lê do Firestore
     bookingDays = config.bookingDays || 15; // 🔥 Dias de antecedência configurável
 
@@ -467,14 +465,8 @@ async function renderSlots() {
       date
     });
 
-    // 🔥 Usa horário específico do dia se workingHoursByDay estiver configurado
-    const diaSemana = new Date(date + "T12:00:00").getDay();
-    const horariosDodia = workingHoursByDay
-      ? (workingHoursByDay[String(diaSemana)] || workingHours)
-      : workingHours;
-
     const slots = generateAvailableSlots(
-      horariosDodia,
+      workingHours,
       appointments,
       service.durationMinutes
     );
