@@ -657,7 +657,7 @@ function renderDateCards() {
     const day = String(d.getDate()).padStart(2, '0');
     const isoDate = `${year}-${month}-${day}`;
 
-    const isClosed = false; // 🔥 TEMPORÁRIO: bloqueio de dias desativado (feriado/exceção) — reverter para: closedDays.includes(d.getDay())
+    const isClosed = closedDays.includes(d.getDay())
     const card = document.createElement("div");
     card.className = "date-card";
 

@@ -505,7 +505,7 @@ function renderAdminDateCards() {
     card.className = "date-card";
 
     // 🔥 DIAS FECHADOS: Admin vê o dia mas com indicação visual de folga
-    const isClosed = false; // 🔥 TEMPORÁRIO: bloqueio de dias desativado (feriado/exceção) — reverter para: closedDays.includes(d.getDay())
+    const isClosed = closedDays.includes(d.getDay())
     if (isClosed) {
       card.style.opacity = "0.4";
       card.style.borderColor = "#ff5555";
