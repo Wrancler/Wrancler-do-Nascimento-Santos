@@ -70,10 +70,10 @@ async function initTenant() {
     const professionalsSection = document.getElementById("professionalsSection"); 
     professionalsDiv.innerHTML = ""; 
 
-    // 🔥 CORREÇÃO: A variável que estava faltando foi restaurada aqui!
+    // 🔥 CORREÇÃO: A variável que estava faltando foi restaurada aqui
     const profs = config.professionals || []; 
     
-    // 🔥 LÓGICA DO LOBO SOLITÁRIO RECUPERADA
+    // 🔥 LÓGICA DO LOBO SOLITÁRIO
     if (profs.length === 1) {
       const p = profs[0];
       selectedProfessionalId = p.id;
