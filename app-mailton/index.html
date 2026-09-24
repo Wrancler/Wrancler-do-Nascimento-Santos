@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mailton Maia - Agendamento</title>
-    <!-- Tailwind CSS para um design rápido, moderno e avançado -->
+    <title>Mailton Maia - Agendamento Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Poppins para um toque elegante) -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
@@ -17,7 +14,7 @@
                 extend: {
                     fontFamily: { sans: ['Poppins', 'sans-serif'] },
                     colors: {
-                        brand: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' }, // Tons de dourado/âmbar
+                        brand: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' },
                         dark: { 800: '#1F2937', 900: '#111827' }
                     }
                 }
@@ -25,11 +22,11 @@
         }
     </script>
     <style>
-        /* Oculta a barra de rolagem para parecer um app nativo */
-        ::-webkit-scrollbar { display: none; }
+        /* Oculta a barra de rolagem mas mantém o scroll funcionando */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         body { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Animação suave para o modal */
         .modal-enter { animation: slideUp 0.3s ease-out forwards; }
         @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -39,133 +36,273 @@
 </head>
 <body class="bg-black text-gray-200 font-sans antialiased">
 
-    <!-- Container imitando a tela do celular -->
-    <div class="max-w-md mx-auto bg-dark-900 min-h-screen relative shadow-2xl border-x border-gray-800">
+    <div class="max-w-md mx-auto bg-dark-900 min-h-screen relative shadow-2xl border-x border-gray-800 pb-12">
         
-        <!-- HEADER: Perfil do Profissional -->
-        <header class="pt-12 pb-6 px-6 bg-gradient-to-b from-dark-800 to-dark-900 text-center rounded-b-3xl shadow-lg relative">
-            <div class="absolute top-4 right-4 text-brand-500">
-                <i class="fa-solid fa-share-nodes text-xl"></i>
-            </div>
-            
-            <!-- Substitua o src pela foto recortada dele -->
-            <img src="img/perfil.jpg" alt="Mailton Maia" class="w-28 h-28 mx-auto rounded-full border-4 border-brand-500 object-cover shadow-lg shadow-brand-500/20">
-            
-            <h1 class="text-2xl font-bold text-white mt-4 tracking-wide">Mailton Maia</h1>
-            <p class="text-brand-400 text-sm font-medium mt-1">DESIGNER DE SOBRANCELHAS E MICROPIGMENTADOR</p>
+        <!-- HEADER -->
+        <header class="pt-10 pb-6 px-6 bg-gradient-to-b from-dark-800 to-dark-900 text-center rounded-b-3xl shadow-lg relative">
+            <img src="img/perfil.jpg" alt="Mailton Maia" class="w-24 h-24 mx-auto rounded-full border-4 border-brand-500 object-cover shadow-lg shadow-brand-500/20" onerror="this.src='https://ui-avatars.com/api/?name=Mailton+Maia&background=F59E0B&color=111827'">
+            <h1 class="text-2xl font-bold text-white mt-3 tracking-wide">Mailton Maia</h1>
+            <p class="text-brand-400 text-xs font-semibold uppercase tracking-wider mt-1">Designer de Sobrancelhas e Micropigmentador</p>
             <p class="text-gray-400 text-xs mt-2"><i class="fa-solid fa-location-dot mr-1"></i> Várzea Nova / Santa Rita-PB</p>
         </header>
 
-        <!-- MAIN: Lista de Serviços -->
-        <main class="px-6 py-6 pb-24">
-            <h2 class="text-lg font-semibold text-white mb-4 border-b border-gray-800 pb-2">Selecione o Serviço</h2>
+        <!-- SERVIÇOS -->
+        <main class="px-6 py-6">
+            <h2 class="text-base font-semibold text-white mb-4 border-b border-gray-800 pb-2 flex items-center justify-between">
+                <span>Serviços Disponíveis</span>
+                <span class="text-xs text-brand-400 font-normal">Selecione para marcar</span>
+            </h2>
             
-            <div class="space-y-4">
-                <!-- Serviço 1 -->
-                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Design de Sobrancelha')">
+            <div class="space-y-3">
+                <div class="bg-dark-800 rounded-2xl p-4 flex justify-between items-center border border-gray-700/60 hover:border-brand-500/50 transition cursor-pointer" onclick="abrirModal(1, 'Design de Sobrancelha', 'R$ 35,00', '30 min')">
                     <div>
-                        <h3 class="font-semibold text-white">Design de Sobrancelha</h3>
+                        <h3 class="font-semibold text-white text-sm">Design de Sobrancelha</h3>
                         <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 30 min</p>
+                        <p class="text-brand-400 font-bold text-sm mt-1">R$ 35,00</p>
                     </div>
-                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
-                        Agendar
-                    </button>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-xs shadow-md shadow-brand-500/20">Agendar</button>
                 </div>
 
-                <!-- Serviço 2 -->
-                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Micropigmentação')">
+                <div class="bg-dark-800 rounded-2xl p-4 flex justify-between items-center border border-gray-700/60 hover:border-brand-500/50 transition cursor-pointer" onclick="abrirModal(2, 'Micropigmentação', 'R$ 250,00', '1h 30 min')">
                     <div>
-                        <h3 class="font-semibold text-white">Micropigmentação</h3>
+                        <h3 class="font-semibold text-white text-sm">Micropigmentação</h3>
                         <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 1h 30 min</p>
+                        <p class="text-brand-400 font-bold text-sm mt-1">R$ 250,00</p>
                     </div>
-                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
-                        Agendar
-                    </button>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-xs shadow-md shadow-brand-500/20">Agendar</button>
                 </div>
 
-                <!-- Serviço 3 -->
-                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Retoque / Manutenção')">
+                <div class="bg-dark-800 rounded-2xl p-4 flex justify-between items-center border border-gray-700/60 hover:border-brand-500/50 transition cursor-pointer" onclick="abrirModal(3, 'Retoque / Manutenção', 'R$ 100,00', '45 min')">
                     <div>
-                        <h3 class="font-semibold text-white">Retoque / Manutenção</h3>
+                        <h3 class="font-semibold text-white text-sm">Retoque / Manutenção</h3>
                         <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 45 min</p>
+                        <p class="text-brand-400 font-bold text-sm mt-1">R$ 100,00</p>
                     </div>
-                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
-                        Agendar
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Ficha de Anamnese Callout (Mostrando que o sistema é inteligente) -->
-            <div class="mt-8 bg-gradient-to-r from-dark-800 to-gray-800 p-4 rounded-2xl border border-gray-700 flex items-center">
-                <div class="bg-brand-500/20 p-3 rounded-full text-brand-500 mr-4">
-                    <i class="fa-solid fa-file-medical"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-white">Ficha de Anamnese Integrada</h4>
-                    <p class="text-xs text-gray-400 mt-1">O sistema envia o formulário para a cliente antes do atendimento.</p>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-xs shadow-md shadow-brand-500/20">Agendar</button>
                 </div>
             </div>
         </main>
 
-        <!-- MODAL DE ESCOLHA DE HORÁRIO (Simulação) -->
-        <div id="modalHorario" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
-            <!-- Área clicável para fechar -->
+        <!-- MODAL DE AGENDAMENTO -->
+        <div id="modalHorario" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col justify-end">
             <div class="flex-1 w-full" onclick="fecharModal()"></div>
             
-            <!-- Conteúdo do Modal -->
-            <div class="bg-dark-900 w-full max-w-md mx-auto rounded-t-3xl p-6 modal-enter border-t border-gray-700 relative">
-                <div class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6"></div>
+            <div class="bg-dark-900 w-full max-w-md mx-auto rounded-t-3xl p-6 modal-enter border-t border-gray-700 max-h-[95vh] overflow-y-auto hide-scroll">
+                <div class="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4"></div>
                 
-                <h3 class="text-xl font-bold text-white mb-1" id="nomeServicoModal">Nome do Serviço</h3>
-                <p class="text-gray-400 text-sm mb-6">Escolha o melhor dia e horário</p>
-                
-                <!-- Simulação de Dias -->
-                <div class="flex space-x-3 overflow-x-auto pb-2 mb-4">
-                    <div class="bg-brand-500 text-dark-900 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px] font-bold">
-                        <span class="text-xs">HOJE</span>
-                        <span class="text-xl">23</span>
+                <div class="flex justify-between items-start mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-white" id="modalServicoNome">Serviço</h3>
+                        <p class="text-brand-400 text-xs font-semibold" id="modalServicoInfo">Valor e Duração</p>
                     </div>
-                    <div class="bg-dark-800 border border-gray-700 text-gray-300 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px]">
-                        <span class="text-xs">QUI</span>
-                        <span class="text-lg">24</span>
+                    <button onclick="fecharModal()" class="text-gray-400 hover:text-white text-lg bg-dark-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- Dados do Cliente -->
+                <div class="space-y-3 mb-6">
+                    <div>
+                        <input type="text" id="clienteNome" placeholder="O seu Nome Completo" class="w-full bg-dark-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition">
                     </div>
-                    <div class="bg-dark-800 border border-gray-700 text-gray-300 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px]">
-                        <span class="text-xs">SEX</span>
-                        <span class="text-lg">25</span>
+                    <div>
+                        <input type="tel" id="clienteTelefone" placeholder="O seu WhatsApp (com DDD)" class="w-full bg-dark-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition">
                     </div>
                 </div>
 
-                <!-- Simulação de Horários -->
-                <div class="grid grid-cols-3 gap-3 mb-8">
-                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">09:00</button>
-                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">10:30</button>
-                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">14:00</button>
-                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition text-gray-600 line-through cursor-not-allowed">15:30</button>
-                    <button class="bg-brand-500 text-dark-900 py-2 rounded-lg text-sm font-bold shadow-md">16:00</button>
+                <!-- Novo Carrossel de Datas -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="block text-xs text-gray-300 font-medium">Escolha a Data:</label>
+                        <span id="mesAtualLabel" class="text-xs text-brand-400 font-semibold"></span>
+                    </div>
+                    <!-- Container com rolagem horizontal -->
+                    <div id="carrosselDatas" class="flex space-x-2 overflow-x-auto pb-2 hide-scroll snap-x">
+                        <!-- Datas geradas via JS -->
+                    </div>
                 </div>
 
-                <button class="w-full bg-brand-500 text-dark-900 font-bold text-lg py-4 rounded-xl shadow-lg shadow-brand-500/20" onclick="fecharModal()">
+                <!-- Horários -->
+                <div class="mb-6">
+                    <label class="block text-xs text-gray-300 font-medium mb-2">Horários Disponíveis:</label>
+                    <div class="grid grid-cols-3 gap-2" id="gridHorarios">
+                        <p class="text-xs text-gray-500 col-span-3 text-center py-4 bg-dark-800 rounded-xl border border-gray-700 border-dashed">Selecione uma data acima.</p>
+                    </div>
+                </div>
+
+                <button id="btnConfirmar" onclick="enviarAgendamento()" class="w-full bg-brand-500 text-dark-900 font-bold text-sm py-4 rounded-xl shadow-lg shadow-brand-500/20 active:scale-95 transition">
                     Confirmar Agendamento
                 </button>
             </div>
         </div>
-
     </div>
 
-    <!-- Scripts de Interação -->
     <script>
-        const modal = document.getElementById('modalHorario');
-        const tituloServico = document.getElementById('nomeServicoModal');
+        let servicoSelecionadoId = null;
+        let servicoNomeAtual = '';
+        let servicoValorAtual = '';
+        let dataSelecionada = null;
+        let horarioSelecionado = null;
 
-        function abrirModal(servico) {
-            tituloServico.textContent = servico;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function abrirModal(id, nome, valor, duracao) {
+            servicoSelecionadoId = id;
+            servicoNomeAtual = nome;
+            servicoValorAtual = valor;
+            
+            document.getElementById('modalServicoNome').textContent = nome;
+            document.getElementById('modalServicoInfo').textContent = `${valor} • ${duracao}`;
+            
+            resetarSelecoes();
+            gerarDatasCarrossel();
+            
+            document.getElementById('modalHorario').classList.remove('hidden');
         }
 
         function fecharModal() {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            document.getElementById('modalHorario').classList.add('hidden');
+        }
+
+        function resetarSelecoes() {
+            dataSelecionada = null;
+            horarioSelecionado = null;
+            document.getElementById('gridHorarios').innerHTML = '<p class="text-xs text-gray-500 col-span-3 text-center py-4 bg-dark-800 rounded-xl border border-gray-700 border-dashed">Selecione uma data acima.</p>';
+        }
+
+        // Gera os próximos 15 dias (pulando domingos)
+        function gerarDatasCarrossel() {
+            const container = document.getElementById('carrosselDatas');
+            container.innerHTML = '';
+            
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+            
+            const hoje = new Date();
+            document.getElementById('mesAtualLabel').textContent = meses[hoje.getMonth()];
+
+            for(let i = 0; i < 20; i++) {
+                let data = new Date();
+                data.setDate(hoje.getDate() + i);
+
+                // Se for domingo (0), não cria o botão
+                if(data.getDay() === 0) continue;
+
+                const diaStr = String(data.getDate()).padStart(2, '0');
+                const mesStr = String(data.getMonth() + 1).padStart(2, '0');
+                const anoStr = data.getFullYear();
+                const dataFormatada = `${anoStr}-${mesStr}-${diaStr}`;
+                
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-data flex-none snap-start flex flex-col items-center justify-center p-3 rounded-xl min-w-[70px] border border-gray-700 bg-dark-800 text-gray-300 transition hover:border-brand-500';
+                
+                btn.innerHTML = `
+                    <span class="text-[10px] font-medium mb-1 tracking-wider">${diasSemana[data.getDay()]}</span>
+                    <span class="text-xl font-bold">${diaStr}</span>
+                `;
+
+                btn.onclick = () => selecionarData(btn, dataFormatada);
+                container.appendChild(btn);
+            }
+        }
+
+        async function selecionarData(botao, dataFormatoSQL) {
+            dataSelecionada = dataFormatoSQL;
+            
+            // Estilização dos botões de data
+            document.querySelectorAll('.btn-data').forEach(b => {
+                b.classList.remove('bg-brand-500', 'text-dark-900', 'border-brand-500');
+                b.classList.add('bg-dark-800', 'text-gray-300', 'border-gray-700');
+            });
+            botao.classList.remove('bg-dark-800', 'text-gray-300', 'border-gray-700');
+            botao.classList.add('bg-brand-500', 'text-dark-900', 'border-brand-500');
+
+            const grid = document.getElementById('gridHorarios');
+            grid.innerHTML = '<p class="text-xs text-brand-400 col-span-3 text-center py-4 bg-brand-500/10 rounded-xl border border-brand-500/20"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Buscando horários...</p>';
+            horarioSelecionado = null;
+
+            try {
+                // É AQUI que ele vai buscar no Python. O Python DEVE estar rodando!
+                const response = await fetch(`http://127.0.0.1:5000/api/horarios?data=${dataSelecionada}`);
+                if (!response.ok) throw new Error('Erro na comunicação');
+                
+                const horarios = await response.json();
+                grid.innerHTML = ''; 
+
+                if (horarios.length === 0) {
+                    grid.innerHTML = '<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20"><i class="fa-solid fa-calendar-xmark mr-2"></i>Agenda lotada neste dia.</p>';
+                    return;
+                }
+
+                horarios.forEach(hora => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-horario bg-dark-800 border border-gray-700 py-3 rounded-xl text-sm font-semibold hover:border-brand-500 transition text-gray-200';
+                    btn.textContent = hora;
+                    btn.onclick = function() { selecionarHorario(this, hora); };
+                    grid.appendChild(btn);
+                });
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20">Erro ao carregar. Verifique o terminal Python.</p>';
+            }
+        }
+
+        function selecionarHorario(botao, horario) {
+            horarioSelecionado = horario;
+            document.querySelectorAll('.btn-horario').forEach(b => {
+                b.classList.remove('bg-brand-500', 'text-dark-900', 'border-brand-500');
+                b.classList.add('bg-dark-800', 'text-gray-200');
+            });
+            botao.classList.remove('bg-dark-800', 'text-gray-200');
+            botao.classList.add('bg-brand-500', 'text-dark-900', 'border-brand-500');
+        }
+
+        async function enviarAgendamento() {
+            const nome = document.getElementById('clienteNome').value.trim();
+            const telefone = document.getElementById('clienteTelefone').value.trim();
+
+            if (!nome || !telefone || !dataSelecionada || !horarioSelecionado) {
+                alert('Por favor, preencha todos os campos e escolha uma data e horário.');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>A processar...';
+
+            const payload = {
+                nome_cliente: nome,
+                telefone_cliente: telefone,
+                servico_id: servicoSelecionadoId,
+                data_hora: `${dataSelecionada} ${horarioSelecionado}`
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/agendar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const resultado = await response.json();
+
+                if (response.ok) {
+                    const numeroMailton = "5583900000000"; 
+                    const dataBR = dataSelecionada.split('-').reverse().join('/'); 
+                    const linkCancelamento = `http://127.0.0.1:5000/cancelar/${resultado.token_cancelamento}`;
+
+                    const textoWhatsApp = `✅ *NOVO AGENDAMENTO SITE!*\n\nOlá Mailton! Acabei de me agendar pelo seu sistema:\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefone}\n✨ *Serviço:* ${servicoNomeAtual} (${servicoValorAtual})\n📅 *Data:* ${dataBR} às ${horarioSelecionado}\n\n🔗 *Meu link para cancelar (caso precise):*\n${linkCancelamento}`;
+                    
+                    window.location.href = `https://api.whatsapp.com/send?phone=${numeroMailton}&text=${encodeURIComponent(textoWhatsApp)}`;
+                } else {
+                    alert('Erro: ' + (resultado.erro || 'Falha ao agendar'));
+                    btn.disabled = false;
+                    btn.textContent = 'Confirmar Agendamento';
+                }
+            } catch (err) {
+                alert('Não foi possível conectar ao servidor Python.');
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Agendamento';
+            }
         }
     </script>
 </body>
