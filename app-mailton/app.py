@@ -85,4 +85,5 @@ def horarios_livres():
 
 if __name__ == '__main__':
     print("Servidor do WN Beauty System a iniciar...")
-    app.run(debug=True, port=5000)
+    # O host='0.0.0.0' permite que o telemóvel acesse o servidor
+    app.run(host='0.0.0.0', debug=True, port=5000)
