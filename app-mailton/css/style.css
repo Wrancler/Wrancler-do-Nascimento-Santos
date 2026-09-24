@@ -1,7 +1,7 @@
     
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        body { background-color: #09090be5; -ms-overflow-style: none; scrollbar-width: none; }
+        body { background-color: #09090b; -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Animação suave do Modal Premium */
         .modal-enter { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
