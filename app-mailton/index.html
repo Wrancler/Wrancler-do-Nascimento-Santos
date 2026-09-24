@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mailton Maia - Agendamento</title>
+    <!-- Tailwind CSS para um design rápido, moderno e avançado -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Poppins para um toque elegante) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        brand: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' }, // Tons de dourado/âmbar
+                        dark: { 800: '#1F2937', 900: '#111827' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Oculta a barra de rolagem para parecer um app nativo */
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animação suave para o modal */
+        .modal-enter { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-200 font-sans antialiased">
+
+    <!-- Container imitando a tela do celular -->
+    <div class="max-w-md mx-auto bg-dark-900 min-h-screen relative shadow-2xl border-x border-gray-800">
+        
+        <!-- HEADER: Perfil do Profissional -->
+        <header class="pt-12 pb-6 px-6 bg-gradient-to-b from-dark-800 to-dark-900 text-center rounded-b-3xl shadow-lg relative">
+            <div class="absolute top-4 right-4 text-brand-500">
+                <i class="fa-solid fa-share-nodes text-xl"></i>
+            </div>
+            
+            <!-- Substitua o src pela foto recortada dele -->
+            <img src="img/perfil.jpg" alt="Mailton Maia" class="w-28 h-28 mx-auto rounded-full border-4 border-brand-500 object-cover shadow-lg shadow-brand-500/20">
+            
+            <h1 class="text-2xl font-bold text-white mt-4 tracking-wide">Mailton Maia</h1>
+            <p class="text-brand-400 text-sm font-medium mt-1">DESIGNER DE SOBRANCELHAS E MICROPIGMENTADOR</p>
+            <p class="text-gray-400 text-xs mt-2"><i class="fa-solid fa-location-dot mr-1"></i> Várzea Nova / Santa Rita-PB</p>
+        </header>
+
+        <!-- MAIN: Lista de Serviços -->
+        <main class="px-6 py-6 pb-24">
+            <h2 class="text-lg font-semibold text-white mb-4 border-b border-gray-800 pb-2">Selecione o Serviço</h2>
+            
+            <div class="space-y-4">
+                <!-- Serviço 1 -->
+                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Design de Sobrancelha')">
+                    <div>
+                        <h3 class="font-semibold text-white">Design de Sobrancelha</h3>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 30 min</p>
+                    </div>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
+                        Agendar
+                    </button>
+                </div>
+
+                <!-- Serviço 2 -->
+                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Micropigmentação')">
+                    <div>
+                        <h3 class="font-semibold text-white">Micropigmentação</h3>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 1h 30 min</p>
+                    </div>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
+                        Agendar
+                    </button>
+                </div>
+
+                <!-- Serviço 3 -->
+                <div class="bg-dark-800 rounded-2xl p-4 shadow-md flex justify-between items-center border border-gray-700/50 transition active:scale-95" onclick="abrirModal('Retoque / Manutenção')">
+                    <div>
+                        <h3 class="font-semibold text-white">Retoque / Manutenção</h3>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fa-regular fa-clock mr-1"></i> 45 min</p>
+                    </div>
+                    <button class="bg-brand-500 text-dark-900 font-bold py-2 px-4 rounded-xl text-sm shadow-md shadow-brand-500/30">
+                        Agendar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Ficha de Anamnese Callout (Mostrando que o sistema é inteligente) -->
+            <div class="mt-8 bg-gradient-to-r from-dark-800 to-gray-800 p-4 rounded-2xl border border-gray-700 flex items-center">
+                <div class="bg-brand-500/20 p-3 rounded-full text-brand-500 mr-4">
+                    <i class="fa-solid fa-file-medical"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-white">Ficha de Anamnese Integrada</h4>
+                    <p class="text-xs text-gray-400 mt-1">O sistema envia o formulário para a cliente antes do atendimento.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- MODAL DE ESCOLHA DE HORÁRIO (Simulação) -->
+        <div id="modalHorario" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
+            <!-- Área clicável para fechar -->
+            <div class="flex-1 w-full" onclick="fecharModal()"></div>
+            
+            <!-- Conteúdo do Modal -->
+            <div class="bg-dark-900 w-full max-w-md mx-auto rounded-t-3xl p-6 modal-enter border-t border-gray-700 relative">
+                <div class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6"></div>
+                
+                <h3 class="text-xl font-bold text-white mb-1" id="nomeServicoModal">Nome do Serviço</h3>
+                <p class="text-gray-400 text-sm mb-6">Escolha o melhor dia e horário</p>
+                
+                <!-- Simulação de Dias -->
+                <div class="flex space-x-3 overflow-x-auto pb-2 mb-4">
+                    <div class="bg-brand-500 text-dark-900 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px] font-bold">
+                        <span class="text-xs">HOJE</span>
+                        <span class="text-xl">23</span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 text-gray-300 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px]">
+                        <span class="text-xs">QUI</span>
+                        <span class="text-lg">24</span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 text-gray-300 flex flex-col items-center justify-center p-3 rounded-xl min-w-[60px]">
+                        <span class="text-xs">SEX</span>
+                        <span class="text-lg">25</span>
+                    </div>
+                </div>
+
+                <!-- Simulação de Horários -->
+                <div class="grid grid-cols-3 gap-3 mb-8">
+                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">09:00</button>
+                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">10:30</button>
+                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition">14:00</button>
+                    <button class="bg-dark-800 border border-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-brand-500 hover:text-dark-900 transition text-gray-600 line-through cursor-not-allowed">15:30</button>
+                    <button class="bg-brand-500 text-dark-900 py-2 rounded-lg text-sm font-bold shadow-md">16:00</button>
+                </div>
+
+                <button class="w-full bg-brand-500 text-dark-900 font-bold text-lg py-4 rounded-xl shadow-lg shadow-brand-500/20" onclick="fecharModal()">
+                    Confirmar Agendamento
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts de Interação -->
+    <script>
+        const modal = document.getElementById('modalHorario');
+        const tituloServico = document.getElementById('nomeServicoModal');
+
+        function abrirModal(servico) {
+            tituloServico.textContent = servico;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function fecharModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
