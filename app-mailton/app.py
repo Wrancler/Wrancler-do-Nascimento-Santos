@@ -83,11 +83,6 @@ def horarios_livres():
     
     return jsonify(horarios_disponiveis)
 
-if __name__ == '__main__':
-    print("Servidor do WN Beauty System a iniciar...")
-    # O host='0.0.0.0' permite que o telemóvel acesse o servidor
-    app.run(host='0.0.0.0', debug=True, port=5000)
-
 # --- ROTA 4: Painel Administrativo (Finanças, Agenda e Meses) ---
 @app.route('/api/admin/dashboard', methods=['GET'])
 def admin_dashboard():
@@ -115,7 +110,6 @@ def admin_dashboard():
         "meses": [dict(m) for m in meses]
     })
 
-
 # --- ROTA 5: Abrir ou Fechar um Mês ---
 @app.route('/api/admin/mes', methods=['POST'])
 def alternar_mes():
@@ -133,3 +127,7 @@ def alternar_mes():
     conn.close()
     
     return jsonify({"mensagem": f"Mês {ano_mes} agora está {status}!"})
+
+if __name__ == '__main__':
+    print("Servidor do WN Beauty System a iniciar...")
+    app.run(host='0.0.0.0', debug=True, port=5000)

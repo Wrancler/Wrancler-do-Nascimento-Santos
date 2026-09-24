@@ -13,55 +13,234 @@
             theme: {
                 extend: {
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: { brand: { 400: '#FCD34D', 500: '#F59E0B', 600: '#D97706' }, surface: '#18181b' }
+                    colors: { brand: { 400: '#FCD34D', 500: '#F59E0B', 600: '#D97706' }, surface: '#18181b', surfaceHover: '#27272a' }
                 }
             }
         }
     </script>
+    <style>
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Transições suaves para os separadores */
+        .tab-content { transition: opacity 0.3s ease; }
+    </style>
 </head>
-<body class="bg-[#09090b] text-gray-200 font-sans antialiased pb-12">
+<body class="bg-[#09090b] text-gray-200 font-sans antialiased">
 
-    <div class="max-w-md mx-auto min-h-screen relative shadow-2xl border-x border-white/5">
+    <!-- 1. TELA DE LOGIN (Barreira de Segurança) -->
+    <div id="loginScreen" class="fixed inset-0 bg-[#09090b] z-[100] flex flex-col justify-center items-center px-6 transition-opacity duration-500">
+        <div class="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mb-6 border border-brand-500/20 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+            <i class="fa-solid fa-lock text-3xl text-brand-500"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2">Acesso Restrito</h1>
+        <p class="text-gray-400 text-sm text-center mb-8">Digite sua senha administrativa para gerenciar o WN Barber System.</p>
         
-        <!-- HEADER ADMIN -->
-        <header class="pt-10 pb-6 px-6 bg-surface border-b border-white/10 sticky top-0 z-50">
+        <div class="w-full max-w-sm space-y-4">
+            <input type="password" id="senhaAdmin" placeholder="Sua Senha" class="w-full bg-surface border border-white/10 rounded-2xl px-5 py-4 text-center text-xl text-white tracking-widest focus:outline-none focus:border-brand-500 transition-all">
+            <button onclick="fazerLogin()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-lg py-4 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.98] transition-transform">
+                Entrar
+            </button>
+            <p id="erroLogin" class="text-red-400 text-xs text-center hidden mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Senha incorreta.</p>
+        </div>
+    </div>
+
+    <!-- 2. APLICAÇÃO PRINCIPAL (Escondida até o login) -->
+    <div id="mainApp" class="max-w-md mx-auto min-h-screen relative shadow-2xl border-x border-white/5 pb-20 hidden opacity-0 transition-opacity duration-500">
+        
+        <!-- HEADER DINÂMICO -->
+        <header class="pt-10 pb-4 px-6 bg-surface/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-40">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold text-white">Painel de Gestão</h1>
-                    <p class="text-brand-500 text-xs font-bold uppercase tracking-widest mt-1">Mailton Maia</p>
+                    <h1 class="text-xl font-bold text-white" id="headerTitulo">Minha Agenda</h1>
+                    <p class="text-brand-500 text-[10px] font-bold uppercase tracking-widest mt-1">Mailton Maia</p>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 border border-brand-500/30">
-                    <i class="fa-solid fa-chart-pie"></i>
-                </div>
+                <button onclick="sair()" class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
             </div>
         </header>
 
-        <main class="px-5 py-6 space-y-6">
-            <!-- CARTÃO DE RECEITA -->
-            <div class="bg-gradient-to-br from-brand-600 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(245,158,11,0.2)] text-black relative overflow-hidden">
-                <i class="fa-solid fa-wallet absolute -right-4 -bottom-4 text-7xl text-black/10"></i>
-                <p class="text-sm font-bold uppercase tracking-wider opacity-80 mb-1">Faturamento Previsto</p>
-                <h2 class="text-4xl font-black tracking-tight" id="faturamentoTotal">R$ 0,00</h2>
+        <!-- SEPARADOR 1: AGENDA -->
+        <main id="tabAgenda" class="tab-content block px-5 py-6">
+            <!-- Navegação de Dias -->
+            <div class="flex justify-between items-end mb-4">
+                <h2 class="text-sm font-semibold text-white">Selecione o Dia</h2>
+                <span class="text-xs text-brand-500 font-bold uppercase tracking-wider" id="mesAtualAgenda">SETEMBRO</span>
+            </div>
+            <div id="carrosselDiasAdmin" class="flex space-x-3 overflow-x-auto pb-4 hide-scroll snap-x mb-2">
+                <!-- Dias injetados via JS -->
             </div>
 
-            <!-- GESTÃO DE MESES -->
-            <div>
-                <h3 class="text-lg font-semibold text-white mb-3">Liberar Agendamentos</h3>
-                <div class="bg-surface rounded-3xl p-5 border border-white/10" id="containerMeses">
-                    <p class="text-xs text-gray-500 text-center"><i class="fa-solid fa-spinner fa-spin mr-2"></i>A carregar meses...</p>
-                </div>
+            <!-- Botões de Ação do Dia -->
+            <div class="flex gap-3 mb-6">
+                <button class="flex-1 bg-surface border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 text-sm text-gray-300 hover:border-brand-500 hover:text-brand-400 transition-colors">
+                    <i class="fa-solid fa-plus"></i> Novo Encaixe
+                </button>
+                <button class="flex-1 bg-surface border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 text-sm text-gray-300 hover:border-red-500 hover:text-red-400 transition-colors">
+                    <i class="fa-solid fa-lock"></i> Bloqueios
+                </button>
             </div>
 
-            <!-- LISTA DE AGENDAMENTOS -->
-            <div>
-                <h3 class="text-lg font-semibold text-white mb-3">Últimos Agendamentos</h3>
-                <div class="space-y-3" id="listaAgendamentos">
-                    <p class="text-xs text-gray-500 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-2"></i>A buscar dados...</p>
-                </div>
+            <h3 class="text-lg font-semibold text-white mb-3 flex items-center justify-between">
+                Agendamentos
+                <span class="bg-brand-500 text-black text-[10px] font-bold px-2 py-1 rounded-md" id="qtdAgendamentosDia">0</span>
+            </h3>
+            <div class="space-y-3" id="listaAgendamentosDia">
+                <!-- Agendamentos injetados via JS -->
+                <p class="text-xs text-gray-500 text-center py-8 bg-surface rounded-2xl border border-white/5 border-dashed">Selecione um dia para ver a agenda.</p>
             </div>
         </main>
+
+        <!-- SEPARADOR 2: FINANÇAS -->
+        <main id="tabFinancas" class="tab-content hidden px-5 py-6">
+            <!-- Filtros de Tempo -->
+            <div class="flex p-1 bg-surface rounded-xl mb-6 border border-white/5">
+                <button class="flex-1 py-2 text-xs font-bold rounded-lg bg-white/10 text-white shadow-sm">Hoje</button>
+                <button class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white">Semana</button>
+                <button class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white">Mês</button>
+            </div>
+
+            <!-- Cartão de Receita -->
+            <div class="bg-gradient-to-br from-brand-600 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(245,158,11,0.2)] text-black relative overflow-hidden mb-6">
+                <i class="fa-solid fa-wallet absolute -right-4 -bottom-4 text-7xl text-black/10"></i>
+                <p class="text-sm font-bold uppercase tracking-wider opacity-80 mb-1">Faturamento (Hoje)</p>
+                <h2 class="text-4xl font-black tracking-tight" id="faturamentoAdmin">R$ 0,00</h2>
+            </div>
+
+            <h3 class="text-lg font-semibold text-white mb-3">Histórico Recebido</h3>
+            <div class="space-y-3" id="listaFinancas">
+                <!-- Histórico injetado via JS -->
+            </div>
+        </main>
+
+        <!-- SEPARADOR 3: CONFIGURAÇÕES -->
+        <main id="tabConfig" class="tab-content hidden px-5 py-6 space-y-8">
+            
+            <!-- Gestão de Meses (Herdado do anterior) -->
+            <section>
+                <h3 class="text-lg font-semibold text-white mb-3">Liberação de Agenda</h3>
+                <div class="bg-surface rounded-3xl p-2 border border-white/10" id="containerMesesAdmin">
+                    <p class="text-xs text-gray-500 text-center py-4">A carregar...</p>
+                </div>
+            </section>
+
+            <!-- Gestão de Serviços -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-semibold text-white">Meus Serviços</h3>
+                    <button class="text-brand-500 text-xs font-bold"><i class="fa-solid fa-plus mr-1"></i>Adicionar</button>
+                </div>
+                <div class="bg-surface rounded-3xl p-2 border border-white/10 space-y-1" id="containerServicosAdmin">
+                    <p class="text-xs text-gray-500 text-center py-4">A carregar...</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR (Bottom Nav) -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-surface/90 backdrop-blur-lg border-t border-white/10 pb-safe pt-2 px-6 z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+            <div class="flex justify-between items-center pb-2">
+                <!-- Botão Agenda -->
+                <button onclick="mudarAba('Agenda')" class="nav-btn flex flex-col items-center gap-1 w-16 text-brand-500 transition-colors group">
+                    <div class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
+                        <i class="fa-regular fa-calendar-check text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-bold">Agenda</span>
+                </button>
+                
+                <!-- Botão Finanças -->
+                <button onclick="mudarAba('Financas')" class="nav-btn flex flex-col items-center gap-1 w-16 text-gray-500 hover:text-gray-300 transition-colors group">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center group-hover:bg-white/5 transition-colors">
+                        <i class="fa-solid fa-chart-line text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold">Finanças</span>
+                </button>
+                
+                <!-- Botão Configurações -->
+                <button onclick="mudarAba('Config')" class="nav-btn flex flex-col items-center gap-1 w-16 text-gray-500 hover:text-gray-300 transition-colors group">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center group-hover:bg-white/5 transition-colors">
+                        <i class="fa-solid fa-gear text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold">Ajustes</span>
+                </button>
+            </div>
+        </nav>
     </div>
 
     <script src="js/admin.js"></script>
+    <script>
+        // Lógica visual básica para a SPA
+        function fazerLogin() {
+            const senha = document.getElementById('senhaAdmin').value;
+            // Para testes, a senha é "1234"
+            if (senha === "1234") {
+                document.getElementById('loginScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    const app = document.getElementById('mainApp');
+                    app.classList.remove('hidden');
+                    // Pequeno delay para a animação de entrada ficar fluida
+                    setTimeout(() => app.style.opacity = '1', 50); 
+                    
+                    // Aqui você chamará a função do admin.js para carregar os dados
+                    // carregarDadosAdmin(); 
+                }, 500);
+            } else {
+                document.getElementById('erroLogin').classList.remove('hidden');
+            }
+        }
+
+        function sair() {
+            document.getElementById('senhaAdmin').value = '';
+            document.getElementById('erroLogin').classList.add('hidden');
+            document.getElementById('mainApp').style.opacity = '0';
+            
+            setTimeout(() => {
+                document.getElementById('mainApp').classList.add('hidden');
+                const login = document.getElementById('loginScreen');
+                login.classList.remove('hidden');
+                setTimeout(() => login.style.opacity = '1', 50);
+            }, 500);
+        }
+
+        function mudarAba(aba) {
+            // Oculta todas as abas
+            document.getElementById('tabAgenda').classList.add('hidden');
+            document.getElementById('tabFinancas').classList.add('hidden');
+            document.getElementById('tabConfig').classList.add('hidden');
+            
+            // Reseta a cor dos botões do menu
+            const botoes = document.querySelectorAll('.nav-btn');
+            botoes.forEach(btn => {
+                btn.classList.remove('text-brand-500');
+                btn.classList.add('text-gray-500');
+                btn.querySelector('div').classList.remove('bg-brand-500/10');
+                btn.querySelector('span').classList.remove('font-bold');
+                btn.querySelector('span').classList.add('font-semibold');
+            });
+
+            // Ativa a aba selecionada
+            document.getElementById('tab' + aba).classList.remove('hidden');
+            
+            // Atualiza o Título e o Botão correspondente
+            let btnAtivo;
+            if (aba === 'Agenda') {
+                document.getElementById('headerTitulo').textContent = 'Minha Agenda';
+                btnAtivo = botoes[0];
+            } else if (aba === 'Financas') {
+                document.getElementById('headerTitulo').textContent = 'Controle Financeiro';
+                btnAtivo = botoes[1];
+            } else if (aba === 'Config') {
+                document.getElementById('headerTitulo').textContent = 'Configurações';
+                btnAtivo = botoes[2];
+            }
+
+            // Pinta o botão ativo de dourado
+            btnAtivo.classList.remove('text-gray-500', 'hover:text-gray-300');
+            btnAtivo.classList.add('text-brand-500');
+            btnAtivo.querySelector('div').classList.add('bg-brand-500/10');
+            btnAtivo.querySelector('span').classList.remove('font-semibold');
+            btnAtivo.querySelector('span').classList.add('font-bold');
+        }
+    </script>
 </body>
 </html>
