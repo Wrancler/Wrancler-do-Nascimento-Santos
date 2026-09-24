@@ -88,12 +88,12 @@ if __name__ == '__main__':
     # O host='0.0.0.0' permite que o telemóvel acesse o servidor
     app.run(host='0.0.0.0', debug=True, port=5000)
 
-# --- ROTA 4: Painel Administrativo (Finanças e Lista de Agendamentos) ---
+# --- ROTA 4: Painel Administrativo (Finanças, Agenda e Meses) ---
 @app.route('/api/admin/dashboard', methods=['GET'])
 def admin_dashboard():
     conn = get_db_connection()
     
-    # Puxa todos os agendamentos cruzando dados do cliente e valor do serviço
+    # 1. Puxa os agendamentos e finanças
     query = '''
         SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico, 
                s.valor, a.data_hora, a.status 
@@ -103,15 +103,18 @@ def admin_dashboard():
         ORDER BY a.data_hora DESC
     '''
     agendamentos = conn.execute(query).fetchall()
-    
-    # Calcula a receita total de agendamentos válidos (não cancelados)
     receita_total = sum([ag['valor'] for ag in agendamentos if ag['status'] != 'cancelado'])
+    
+    # 2. Puxa os meses que já foram configurados no banco
+    meses = conn.execute('SELECT ano_mes, status FROM meses_abertos').fetchall()
     
     conn.close()
     return jsonify({
         "receita_total": receita_total,
-        "agendamentos": [dict(ag) for ag in agendamentos]
+        "agendamentos": [dict(ag) for ag in agendamentos],
+        "meses": [dict(m) for m in meses]
     })
+
 
 # --- ROTA 5: Abrir ou Fechar um Mês ---
 @app.route('/api/admin/mes', methods=['POST'])
