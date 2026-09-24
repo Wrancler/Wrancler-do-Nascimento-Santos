@@ -87,3 +87,46 @@ if __name__ == '__main__':
     print("Servidor do WN Beauty System a iniciar...")
     # O host='0.0.0.0' permite que o telemóvel acesse o servidor
     app.run(host='0.0.0.0', debug=True, port=5000)
+
+# --- ROTA 4: Painel Administrativo (Finanças e Lista de Agendamentos) ---
+@app.route('/api/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    conn = get_db_connection()
+    
+    # Puxa todos os agendamentos cruzando dados do cliente e valor do serviço
+    query = '''
+        SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico, 
+               s.valor, a.data_hora, a.status 
+        FROM agendamentos a
+        JOIN clientes c ON a.cliente_id = c.id
+        JOIN servicos s ON a.servico_id = s.id
+        ORDER BY a.data_hora DESC
+    '''
+    agendamentos = conn.execute(query).fetchall()
+    
+    # Calcula a receita total de agendamentos válidos (não cancelados)
+    receita_total = sum([ag['valor'] for ag in agendamentos if ag['status'] != 'cancelado'])
+    
+    conn.close()
+    return jsonify({
+        "receita_total": receita_total,
+        "agendamentos": [dict(ag) for ag in agendamentos]
+    })
+
+# --- ROTA 5: Abrir ou Fechar um Mês ---
+@app.route('/api/admin/mes', methods=['POST'])
+def alternar_mes():
+    dados = request.json
+    ano_mes = dados.get('ano_mes')
+    status = dados.get('status') # 'aberto' ou 'fechado'
+    
+    conn = get_db_connection()
+    # Atualiza ou insere o estado do mês
+    conn.execute('''
+        INSERT INTO meses_abertos (ano_mes, status) VALUES (?, ?)
+        ON CONFLICT(ano_mes) DO UPDATE SET status = excluded.status
+    ''', (ano_mes, status))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"mensagem": f"Mês {ano_mes} agora está {status}!"})

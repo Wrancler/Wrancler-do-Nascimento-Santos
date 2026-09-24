@@ -151,7 +151,7 @@ async function enviarAgendamento() {
             btn.classList.remove('from-brand-500', 'to-brand-400', 'text-black', 'shadow-[0_0_20px_rgba(245,158,11,0.3)]');
             btn.classList.add('bg-green-500', 'text-white', 'shadow-[0_0_20px_rgba(34,197,94,0.3)]');
 
-            const numeroMailton = "5583900000000"; 
+            const numeroMailton = "5583988856096"; 
             const dataBR = dataSelecionada.split('-').reverse().join('/'); 
             
             // IP Atualizado no link de cancelamento

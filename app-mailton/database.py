@@ -52,6 +52,18 @@ def criar_banco():
     )
     ''')
 
+    # 5. Tabela de Controlo de Meses (Autonomia do Profissional)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS meses_abertos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ano_mes TEXT UNIQUE NOT NULL, -- Exemplo: '2026-09', '2026-10'
+        status TEXT DEFAULT 'fechado' -- 'aberto' ou 'fechado'
+    )
+    ''')
+    
+    # Insere o mês atual como aberto por padrão para testes
+    cursor.execute("INSERT OR IGNORE INTO meses_abertos (ano_mes, status) VALUES ('2026-09', 'aberto')")
+
     # --- DADOS DE TESTE PARA O MAILTON ---
     # Vamos inserir o Mailton e os serviços dele para podermos testar a API
     cursor.execute("SELECT COUNT(*) FROM profissionais")
