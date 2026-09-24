@@ -9,18 +9,15 @@ CORS(app)
 
 def get_db_connection():
     conn = sqlite3.connect('wn_beauty_system.db')
-    conn.row_factory = sqlite3.Row # Permite aceder às colunas pelo nome (ex: linha['nome'])
+    conn.row_factory = sqlite3.Row
     return conn
 
 # --- ROTA 1: Enviar os serviços para o HTML ---
 @app.route('/api/servicos', methods=['GET'])
 def listar_servicos():
     conn = get_db_connection()
-    # Puxa os serviços do profissional de ID 1 (Mailton)
     servicos = conn.execute('SELECT id, nome, duracao_minutos, valor FROM servicos WHERE profissional_id = 1').fetchall()
     conn.close()
-    
-    # Converte os resultados para um formato que o JavaScript entende (JSON)
     return jsonify([dict(servico) for servico in servicos])
 
 # --- ROTA 2: Receber e gravar o agendamento ---
@@ -28,11 +25,10 @@ def listar_servicos():
 def criar_agendamento():
     dados = request.json
     
-    # Extrai os dados enviados pelo cliente no site
     nome_cliente = dados.get('nome_cliente')
     telefone_cliente = dados.get('telefone_cliente')
     servico_id = dados.get('servico_id')
-    data_hora = dados.get('data_hora') # Formato esperado: YYYY-MM-DD HH:MM
+    data_hora = dados.get('data_hora')
     
     if not all([nome_cliente, telefone_cliente, servico_id, data_hora]):
         return jsonify({"erro": "Faltam dados obrigatórios"}), 400
@@ -40,7 +36,6 @@ def criar_agendamento():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Verifica se o cliente já existe pelo telefone. Se não, regista-o.
     cursor.execute("SELECT id FROM clientes WHERE telefone = ?", (telefone_cliente,))
     cliente = cursor.fetchone()
     
@@ -50,10 +45,8 @@ def criar_agendamento():
         cursor.execute("INSERT INTO clientes (nome, telefone) VALUES (?, ?)", (nome_cliente, telefone_cliente))
         cliente_id = cursor.lastrowid
         
-    # 2. Gera o token único e seguro para o link de cancelamento
     token = str(uuid.uuid4())
     
-    # 3. Regista o agendamento oficial
     cursor.execute(
         "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento) VALUES (?, ?, ?, ?)",
         (cliente_id, servico_id, data_hora, token)
@@ -62,13 +55,34 @@ def criar_agendamento():
     conn.commit()
     conn.close()
     
-    # Retorna sucesso e envia o token de volta (útil para testes)
     return jsonify({
         "mensagem": "Agendamento confirmado com sucesso!", 
         "token_cancelamento": token
     }), 201
 
+# --- ROTA 3: Buscar horários disponíveis na data escolhida ---
+@app.route('/api/horarios', methods=['GET'])
+def horarios_livres():
+    data = request.args.get('data') 
+    
+    if not data:
+        return jsonify({"erro": "Data não fornecida"}), 400
+
+    horarios_expediente = ['09:00', '10:30', '14:00', '15:30', '17:00']
+    
+    conn = get_db_connection()
+    
+    ocupados = conn.execute(
+        "SELECT strftime('%H:%M', data_hora) as hora FROM agendamentos WHERE date(data_hora) = ? AND status != 'cancelado'", 
+        (data,)
+    ).fetchall()
+    conn.close()
+    
+    horarios_ocupados = [h['hora'] for h in ocupados]
+    horarios_disponiveis = [h for h in horarios_expediente if h not in horarios_ocupados]
+    
+    return jsonify(horarios_disponiveis)
+
 if __name__ == '__main__':
-    # Inicia o servidor na porta 5000
     print("Servidor do WN Beauty System a iniciar...")
     app.run(debug=True, port=5000)
