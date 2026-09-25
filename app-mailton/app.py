@@ -68,20 +68,41 @@ def horarios_livres():
     if not data:
         return jsonify({"erro": "Data não fornecida"}), 400
 
+    # Tempo base de atendimento (isso poderá vir do banco futuramente)
     horarios_expediente = ['09:00', '10:30', '14:00', '15:30', '17:00']
     
     conn = get_db_connection()
     
+    # 1. Verifica se o dia INTEIRO está bloqueado (hora_bloqueio IS NULL)
+    dia_bloqueado = conn.execute(
+        "SELECT id FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data,)
+    ).fetchone()
+    
+    if dia_bloqueado:
+        conn.close()
+        return jsonify([]) # Retorna lista vazia, bloqueando o dia no front-end
+        
+    # 2. Busca horários específicos bloqueados pelo Mailton
+    bloqueios_parciais = conn.execute(
+        "SELECT hora_bloqueio FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NOT NULL", (data,)
+    ).fetchall()
+    horarios_bloqueados_admin = [b['hora_bloqueio'] for b in bloqueios_parciais]
+
+    # 3. Busca horários já agendados por clientes
     ocupados = conn.execute(
         "SELECT strftime('%H:%M', data_hora) as hora FROM agendamentos WHERE date(data_hora) = ? AND status != 'cancelado'", 
         (data,)
     ).fetchall()
+    horarios_ocupados_clientes = [h['hora'] for h in ocupados]
+    
     conn.close()
     
-    horarios_ocupados = [h['hora'] for h in ocupados]
-    horarios_disponiveis = [h for h in horarios_expediente if h not in horarios_ocupados]
+    # Remove da lista os horários agendados e os bloqueados manualmente
+    todos_indisponiveis = set(horarios_bloqueados_admin + horarios_ocupados_clientes)
+    horarios_disponiveis = [h for h in horarios_expediente if h not in todos_indisponiveis]
     
     return jsonify(horarios_disponiveis)
+
 
 # --- ROTA 4: Painel Administrativo (Finanças, Agenda e Meses) ---
 @app.route('/api/admin/dashboard', methods=['GET'])
@@ -131,3 +152,43 @@ def alternar_mes():
 if __name__ == '__main__':
     print("Servidor do WN Beauty System a iniciar...")
     app.run(host='0.0.0.0', debug=True, port=5000)
+
+    # --- ROTA 6: Listar bloqueios de um mês (Painel Admin) ---
+@app.route('/api/admin/bloqueios/<ano_mes>', methods=['GET'])
+def listar_bloqueios(ano_mes):
+    conn = get_db_connection()
+    # Busca bloqueios que começam com o ano e mês solicitados (ex: '2026-09')
+    bloqueios = conn.execute(
+        "SELECT * FROM bloqueios WHERE data_bloqueio LIKE ? ORDER BY data_bloqueio, hora_bloqueio", 
+        (f"{ano_mes}%",)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(b) for b in bloqueios])
+
+# --- ROTA 7: Adicionar ou Remover Bloqueio ---
+@app.route('/api/admin/bloquear', methods=['POST', 'DELETE'])
+def gerenciar_bloqueio():
+    dados = request.json
+    data_bloqueio = dados.get('data_bloqueio')
+    hora_bloqueio = dados.get('hora_bloqueio') # Opcional
+    
+    conn = get_db_connection()
+    
+    if request.method == 'POST':
+        # Cria um novo bloqueio
+        conn.execute(
+            "INSERT INTO bloqueios (data_bloqueio, hora_bloqueio) VALUES (?, ?)",
+            (data_bloqueio, hora_bloqueio)
+        )
+        mensagem = "Bloqueio registrado com sucesso."
+    elif request.method == 'DELETE':
+        # Remove um bloqueio existente
+        if hora_bloqueio:
+            conn.execute("DELETE FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio = ?", (data_bloqueio, hora_bloqueio))
+        else:
+            conn.execute("DELETE FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data_bloqueio,))
+        mensagem = "Bloqueio removido."
+        
+    conn.commit()
+    conn.close()
+    return jsonify({"mensagem": mensagem})

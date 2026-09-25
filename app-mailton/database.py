@@ -60,6 +60,16 @@ def criar_banco():
         status TEXT DEFAULT 'fechado' -- 'aberto' ou 'fechado'
     )
     ''')
+
+    # 6. Tabela de Bloqueios Específicos (Dias ou Horários)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS bloqueios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data_bloqueio TEXT NOT NULL, -- Formato: 'YYYY-MM-DD'
+        hora_bloqueio TEXT, -- Formato: 'HH:MM' (Se for NULL, o dia todo está bloqueado)
+        motivo TEXT
+    )
+    ''')
     
     # Insere o mês atual como aberto por padrão para testes
     cursor.execute("INSERT OR IGNORE INTO meses_abertos (ano_mes, status) VALUES ('2026-09', 'aberto')")
