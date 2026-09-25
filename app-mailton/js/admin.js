@@ -1,4 +1,5 @@
 const IP_SERVIDOR = '192.168.0.7';
+let dataSelecionadaAdmin = null;
 
 // Agora os dados só são carregados quando o Mailton faz login
 async function carregarDadosAdmin() {
@@ -53,6 +54,8 @@ function inicializarAgenda(agendamentos) {
 }
 
 function filtrarAgendamentosPorDia(botao, dataFiltro, todosAgendamentos) {
+    dataSelecionadaAdmin = dataFiltro;
+
     // Destaca o botão selecionado
     document.querySelectorAll('.btn-dia-admin').forEach(b => {
         b.classList.remove('bg-brand-500', 'text-black', 'border-brand-500');
@@ -143,5 +146,99 @@ async function alternarMesAdmin(anoMes, statusAtual) {
         carregarDadosAdmin(); 
     } catch (erro) {
         alert('Erro ao alterar o mês.');
+    }
+}
+
+// --- LÓGICA DE BLOQUEIOS (EXCEÇÕES) ---
+function abrirModalBloqueios() {
+    if (!dataSelecionadaAdmin) {
+        alert('Selecione um dia no calendário primeiro!');
+        return;
+    }
+    
+    // Formata a data para exibir bonito (ex: 24/09/2026)
+    const partes = dataSelecionadaAdmin.split('-');
+    document.getElementById('tituloDataBloqueio').textContent = `${partes[2]}/${partes[1]}/${partes[0]}`;
+    
+    const modal = document.getElementById('modalBloqueios');
+    modal.classList.remove('hidden');
+    
+    // Carrega o estado atual de bloqueios daquele dia
+    carregarEstadoBloqueios();
+}
+
+function fecharModalBloqueios() {
+    document.getElementById('modalBloqueios').classList.add('hidden');
+}
+
+async function carregarEstadoBloqueios() {
+    const grid = document.getElementById('gridBloqueiosHorarios');
+    const btnDia = document.getElementById('btnBloquearDia');
+    
+    const anoMes = dataSelecionadaAdmin.substring(0, 7); // Ex: "2026-09"
+    
+    try {
+        const response = await fetch(`http://${IP_SERVIDOR}:5000/api/admin/bloqueios/${anoMes}`);
+        const todosBloqueios = await response.json();
+        
+        // Filtra só os bloqueios do dia que o Mailton escolheu
+        const bloqueiosHoje = todosBloqueios.filter(b => b.data_bloqueio === dataSelecionadaAdmin);
+        
+        // Verifica se o dia inteiro está bloqueado (hora_bloqueio = null)
+        const diaInteiroBloqueado = bloqueiosHoje.some(b => b.hora_bloqueio === null);
+        
+        // Configura o Botão do Dia Inteiro
+        if (diaInteiroBloqueado) {
+            btnDia.textContent = 'Desbloquear';
+            btnDia.className = 'text-xs font-bold px-4 py-2 rounded-xl transition-colors bg-white/10 text-white hover:bg-white/20';
+            btnDia.onclick = () => alternarBloqueioServidor(null, true);
+        } else {
+            btnDia.textContent = 'Bloquear';
+            btnDia.className = 'text-xs font-bold px-4 py-2 rounded-xl transition-colors bg-red-500 text-white hover:bg-red-400';
+            btnDia.onclick = () => alternarBloqueioServidor(null, false);
+        }
+        
+        // Configura os Botões de Horários Específicos
+        const horarios_expediente = ['09:00', '10:30', '14:00', '15:30', '17:00'];
+        grid.innerHTML = '';
+        
+        horarios_expediente.forEach(hora => {
+            const isBloqueado = diaInteiroBloqueado || bloqueiosHoje.some(b => b.hora_bloqueio === hora);
+            
+            const div = document.createElement('div');
+            div.className = `flex justify-between items-center p-3 rounded-xl border transition-colors ${isBloqueado ? 'bg-red-500/10 border-red-500/30' : 'bg-surfaceHover border-white/5'}`;
+            
+            div.innerHTML = `
+                <span class="text-sm font-bold ${isBloqueado ? 'text-red-400' : 'text-white'}">${hora}</span>
+                <button onclick="alternarBloqueioServidor('${hora}', ${isBloqueado})" class="text-xs px-3 py-1.5 rounded-lg font-bold ${isBloqueado ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}" ${diaInteiroBloqueado ? 'disabled style="opacity: 0.5;"' : ''}>
+                    ${isBloqueado ? 'Desbloquear' : 'Bloquear'}
+                </button>
+            `;
+            grid.appendChild(div);
+        });
+        
+    } catch (err) {
+        console.error("Erro ao carregar bloqueios", err);
+    }
+}
+
+async function alternarBloqueioServidor(hora_bloqueio, isJaBloqueado) {
+    const metodo = isJaBloqueado ? 'DELETE' : 'POST';
+    const payload = {
+        data_bloqueio: dataSelecionadaAdmin,
+        hora_bloqueio: hora_bloqueio
+    };
+    
+    try {
+        await fetch(`http://${IP_SERVIDOR}:5000/api/admin/bloquear`, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        // Refaz a leitura instantânea na tela, sem recarregar a página
+        carregarEstadoBloqueios();
+    } catch (erro) {
+        alert("Erro ao aplicar bloqueio.");
     }
 }
