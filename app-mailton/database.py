@@ -1,9 +1,12 @@
 import sqlite3
 import uuid
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def criar_banco():
     # Conecta (ou cria) o banco de dados
-    conn = sqlite3.connect('wn_beauty_system.db')
+    conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
     cursor = conn.cursor()
 
     # 1. Tabela de Profissionais (Para suportar vários clientes no seu SaaS)

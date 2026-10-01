@@ -1,16 +1,88 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template, send_from_directory
+from werkzeug.security import check_password_hash, generate_password_hash
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from functools import wraps
 import sqlite3
 import uuid
+import os
 
-app = Flask(__name__)
-# Permite que o front-end em HTML comunique com esta API sem bloqueios
-CORS(app) 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# static_folder=None porque vamos servir os arquivos (css/js/img) manualmente abaixo,
+# mantendo os mesmos caminhos relativos que o index.html e o admin.html já usam.
+app = Flask(__name__, static_folder=None)
 
 def get_db_connection():
-    conn = sqlite3.connect('wn_beauty_system.db')
+    conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
     conn.row_factory = sqlite3.Row
     return conn
+
+# --- ROTAS DE PÁGINAS E ARQUIVOS ESTÁTICOS ---
+@app.route('/')
+def pagina_cliente():
+    return send_from_directory(BASE_DIR, 'index.html')
+
+@app.route('/admin')
+@app.route('/admin.html')
+def pagina_admin():
+    return send_from_directory(BASE_DIR, 'admin.html')
+
+@app.route('/css/<path:nome_arquivo>')
+def arquivos_css(nome_arquivo):
+    return send_from_directory(os.path.join(BASE_DIR, 'css'), nome_arquivo)
+
+@app.route('/js/<path:nome_arquivo>')
+def arquivos_js(nome_arquivo):
+    return send_from_directory(os.path.join(BASE_DIR, 'js'), nome_arquivo)
+
+@app.route('/img/<path:nome_arquivo>')
+def arquivos_img(nome_arquivo):
+    return send_from_directory(os.path.join(BASE_DIR, 'img'), nome_arquivo)
+
+# --- CONFIGURAÇÃO DE SEGURANÇA DO PAINEL ADMIN ---
+# IMPORTANTE: em produção, defina estas variáveis de ambiente ANTES de rodar o servidor
+# (nunca deixe a senha real em texto puro no código). Veja o final deste arquivo
+# para o comando que gera o hash de uma senha nova.
+SECRET_KEY = os.environ.get('WN_SECRET_KEY', 'troque-esta-chave-antes-de-ir-para-producao')
+ADMIN_PASSWORD_HASH = os.environ.get(
+    'WN_ADMIN_PASSWORD_HASH',
+    generate_password_hash('2020')  # senha padrão só para testar localmente
+)
+TOKEN_MAX_AGE_SEGUNDOS = 60 * 60 * 8  # o token expira depois de 8 horas
+
+serializer = URLSafeTimedSerializer(SECRET_KEY)
+
+def gerar_token_admin():
+    return serializer.dumps({'admin': True})
+
+def token_valido(token):
+    try:
+        dados = serializer.loads(token, max_age=TOKEN_MAX_AGE_SEGUNDOS)
+        return dados.get('admin') is True
+    except (BadSignature, SignatureExpired):
+        return False
+
+def requer_login_admin(funcao):
+    """Decorador: bloqueia a rota se não vier um token válido no header Authorization."""
+    @wraps(funcao)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({"erro": "Não autenticado"}), 401
+        token = auth_header.split(' ', 1)[1]
+        if not token_valido(token):
+            return jsonify({"erro": "Sessão inválida ou expirada"}), 401
+        return funcao(*args, **kwargs)
+    return wrapper
+
+# --- ROTA DE LOGIN DO ADMIN ---
+@app.route('/api/admin/login', methods=['POST'])
+def login_admin():
+    dados = request.json or {}
+    senha = dados.get('senha', '')
+    if check_password_hash(ADMIN_PASSWORD_HASH, senha):
+        return jsonify({"token": gerar_token_admin()})
+    return jsonify({"erro": "Senha incorreta"}), 401
 
 # --- ROTA 1: Enviar os serviços para o HTML ---
 @app.route('/api/servicos', methods=['GET'])
@@ -106,6 +178,7 @@ def horarios_livres():
 
 # --- ROTA 4: Painel Administrativo (Finanças, Agenda e Meses) ---
 @app.route('/api/admin/dashboard', methods=['GET'])
+@requer_login_admin
 def admin_dashboard():
     conn = get_db_connection()
     
@@ -133,6 +206,7 @@ def admin_dashboard():
 
 # --- ROTA 5: Abrir ou Fechar um Mês ---
 @app.route('/api/admin/mes', methods=['POST'])
+@requer_login_admin
 def alternar_mes():
     dados = request.json
     ano_mes = dados.get('ano_mes')
@@ -151,10 +225,13 @@ def alternar_mes():
 
 if __name__ == '__main__':
     print("Servidor do WN Beauty System a iniciar...")
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    # Em produção, defina WN_DEBUG=false no ambiente antes de iniciar o servidor.
+    modo_debug = os.environ.get('WN_DEBUG', 'true').lower() == 'true'
+    app.run(host='0.0.0.0', debug=modo_debug, port=5000)
 
     # --- ROTA 6: Listar bloqueios de um mês (Painel Admin) ---
 @app.route('/api/admin/bloqueios/<ano_mes>', methods=['GET'])
+@requer_login_admin
 def listar_bloqueios(ano_mes):
     conn = get_db_connection()
     # Busca bloqueios que começam com o ano e mês solicitados (ex: '2026-09')
@@ -167,6 +244,7 @@ def listar_bloqueios(ano_mes):
 
 # --- ROTA 7: Adicionar ou Remover Bloqueio ---
 @app.route('/api/admin/bloquear', methods=['POST', 'DELETE'])
+@requer_login_admin
 def gerenciar_bloqueio():
     dados = request.json
     data_bloqueio = dados.get('data_bloqueio')
@@ -192,3 +270,59 @@ def gerenciar_bloqueio():
     conn.commit()
     conn.close()
     return jsonify({"mensagem": mensagem})
+
+
+# --- ROTA 8: Página de Cancelamento (aberta pelo cliente via link do WhatsApp) ---
+@app.route('/cancelar/<token>', methods=['GET'])
+def pagina_cancelamento(token):
+    conn = get_db_connection()
+    agendamento = conn.execute('''
+        SELECT a.status, a.data_hora, c.nome as cliente, s.nome as servico, s.valor
+        FROM agendamentos a
+        JOIN clientes c ON a.cliente_id = c.id
+        JOIN servicos s ON a.servico_id = s.id
+        WHERE a.token_cancelamento = ?
+    ''', (token,)).fetchone()
+    conn.close()
+
+    if not agendamento:
+        return render_template('cancelar.html', encontrado=False), 404
+
+    agendamento = dict(agendamento)
+
+    # Formata "2026-09-30 14:00" como "30/09/2026 às 14:00"
+    try:
+        partes_data, hora = agendamento['data_hora'].split(' ')
+        ano, mes, dia = partes_data.split('-')
+        agendamento['data_formatada'] = f"{dia}/{mes}/{ano} às {hora}"
+    except (ValueError, KeyError):
+        agendamento['data_formatada'] = agendamento['data_hora']
+
+    return render_template('cancelar.html', encontrado=True, agendamento=agendamento, token=token)
+
+
+# --- ROTA 9: Efetivar o Cancelamento ---
+@app.route('/api/cancelar/<token>', methods=['POST'])
+def cancelar_agendamento(token):
+    conn = get_db_connection()
+    agendamento = conn.execute(
+        "SELECT id, status FROM agendamentos WHERE token_cancelamento = ?", (token,)
+    ).fetchone()
+
+    if not agendamento:
+        conn.close()
+        return jsonify({"erro": "Agendamento não encontrado."}), 404
+
+    if agendamento['status'] == 'cancelado':
+        conn.close()
+        return jsonify({"mensagem": "Este agendamento já estava cancelado."}), 200
+
+    if agendamento['status'] == 'concluido':
+        conn.close()
+        return jsonify({"erro": "Este atendimento já foi concluído e não pode ser cancelado."}), 400
+
+    conn.execute("UPDATE agendamentos SET status = 'cancelado' WHERE id = ?", (agendamento['id'],))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"mensagem": "Agendamento cancelado com sucesso."})

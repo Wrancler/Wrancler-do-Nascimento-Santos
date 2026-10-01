@@ -202,10 +202,27 @@
     <script src="js/admin.js"></script>
     <script>
         // Lógica visual básica para a SPA
-        function fazerLogin() {
+        async function fazerLogin() {
             const senha = document.getElementById('senhaAdmin').value;
-            // Para testes, a senha é "2020"
-            if (senha === "2020") {
+            const erroLogin = document.getElementById('erroLogin');
+            erroLogin.classList.add('hidden');
+
+            try {
+                // A senha agora é validada no servidor, nunca no JavaScript do navegador
+                const response = await fetch(`/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+
+                if (!response.ok) {
+                    erroLogin.classList.remove('hidden');
+                    return;
+                }
+
+                const dados = await response.json();
+                localStorage.setItem('wn_admin_token', dados.token);
+
                 document.getElementById('loginScreen').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('loginScreen').classList.add('hidden');
@@ -214,15 +231,15 @@
                     // Pequeno delay para a animação de entrada ficar fluida
                     setTimeout(() => app.style.opacity = '1', 50); 
                     
-                    // Aqui você chamará a função do admin.js para carregar os dados
-                     carregarDadosAdmin(); 
+                    carregarDadosAdmin(); 
                 }, 500);
-            } else {
-                document.getElementById('erroLogin').classList.remove('hidden');
+            } catch (erro) {
+                erroLogin.classList.remove('hidden');
             }
         }
 
         function sair() {
+            localStorage.removeItem('wn_admin_token');
             document.getElementById('senhaAdmin').value = '';
             document.getElementById('erroLogin').classList.add('hidden');
             document.getElementById('mainApp').style.opacity = '0';

@@ -78,8 +78,7 @@ async function selecionarData(botao, dataFormatoSQL) {
     horarioSelecionado = null;
 
     try {
-        // IP Atualizado para consulta de horários
-        const response = await fetch(`http://192.168.0.7:5000/api/horarios?data=${dataSelecionada}`);
+        const response = await fetch(`/api/horarios?data=${dataSelecionada}`);
         if (!response.ok) throw new Error('Erro na comunicação');
         
         const horarios = await response.json();
@@ -136,8 +135,7 @@ async function enviarAgendamento() {
     };
 
     try {
-        // IP Atualizado para gravar o agendamento
-        const response = await fetch('http://192.168.0.7:5000/api/agendar', {
+        const response = await fetch('/api/agendar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -154,8 +152,8 @@ async function enviarAgendamento() {
             const numeroMailton = "5583988856096"; 
             const dataBR = dataSelecionada.split('-').reverse().join('/'); 
             
-            // IP Atualizado no link de cancelamento
-            const linkCancelamento = `http://192.168.0.7:5000/cancelar/${resultado.token_cancelamento}`;
+            // Usa o domínio atual (funciona local ou em produção, sem IP fixo)
+            const linkCancelamento = `${window.location.origin}/cancelar/${resultado.token_cancelamento}`;
 
             const textoWhatsApp = `✅ *NOVO AGENDAMENTO SITE!*\n\nOlá Mailton! Acabei de me agendar pelo seu sistema:\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefone}\n✨ *Serviço:* ${servicoNomeAtual} (${servicoValorAtual})\n📅 *Data:* ${dataBR} às ${horarioSelecionado}\n\n🔗 *Meu link para cancelar (caso precise):*\n${linkCancelamento}`;
             

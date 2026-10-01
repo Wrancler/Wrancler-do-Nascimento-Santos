@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Cancelar Agendamento - Mailton Maia</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { background-color: #09090b; font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-sm w-full bg-[#18181b] border border-white/10 rounded-3xl p-7 text-center shadow-2xl">
+
+        {% if not encontrado %}
+            <!-- LINK INVÁLIDO / TOKEN NÃO EXISTE -->
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-400 mb-4"></i>
+            <h1 class="text-xl font-bold text-white mb-2">Link inválido</h1>
+            <p class="text-sm text-gray-400">Não encontramos nenhum agendamento com este link. Ele pode ter sido digitado errado ou já não existe mais.</p>
+
+        {% elif agendamento.status == 'cancelado' %}
+            <!-- JÁ FOI CANCELADO ANTES -->
+            <i class="fa-solid fa-circle-check text-4xl text-gray-400 mb-4"></i>
+            <h1 class="text-xl font-bold text-white mb-2">Já cancelado</h1>
+            <p class="text-sm text-gray-400">Este agendamento já havia sido cancelado anteriormente. Nenhuma ação é necessária.</p>
+
+        {% elif agendamento.status == 'concluido' %}
+            <!-- JÁ FOI CONCLUÍDO, NÃO PODE CANCELAR -->
+            <i class="fa-solid fa-circle-info text-4xl text-gray-400 mb-4"></i>
+            <h1 class="text-xl font-bold text-white mb-2">Atendimento concluído</h1>
+            <p class="text-sm text-gray-400">Este atendimento já foi realizado e não pode mais ser cancelado.</p>
+
+        {% else %}
+            <!-- ESTADO NORMAL: PODE CANCELAR -->
+            <i class="fa-regular fa-calendar-xmark text-4xl mb-4" style="color:#F59E0B"></i>
+            <h1 class="text-xl font-bold text-white mb-2">Cancelar Agendamento</h1>
+
+            <div class="text-left bg-black/30 rounded-2xl p-4 my-4 text-sm space-y-2">
+                <p class="flex justify-between"><span class="text-gray-500">Cliente</span> <span class="text-white font-semibold">{{ agendamento.cliente }}</span></p>
+                <p class="flex justify-between"><span class="text-gray-500">Serviço</span> <span class="text-white font-semibold">{{ agendamento.servico }}</span></p>
+                <p class="flex justify-between"><span class="text-gray-500">Data</span> <span class="text-white font-semibold">{{ agendamento.data_formatada }}</span></p>
+            </div>
+
+            <p class="text-xs text-gray-500 mb-5">Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.</p>
+
+            <button id="btnCancelar" onclick="confirmarCancelamento()" class="w-full bg-red-500 hover:bg-red-400 text-white font-bold py-3.5 rounded-2xl transition-all active:scale-[0.98]">
+                Sim, cancelar agendamento
+            </button>
+
+            <div id="resultado" class="mt-4 text-sm hidden"></div>
+
+            <script>
+                const TOKEN = "{{ token }}";
+
+                async function confirmarCancelamento() {
+                    const btn = document.getElementById('btnCancelar');
+                    const resultado = document.getElementById('resultado');
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Cancelando...';
+
+                    try {
+                        const response = await fetch(`/api/cancelar/${TOKEN}`, { method: 'POST' });
+                        const dados = await response.json();
+
+                        resultado.classList.remove('hidden');
+
+                        if (response.ok) {
+                            btn.classList.add('hidden');
+                            resultado.innerHTML = `<i class="fa-solid fa-circle-check text-green-400 mr-2"></i>${dados.mensagem}`;
+                        } else {
+                            resultado.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400 mr-2"></i>${dados.erro || 'Erro ao cancelar.'}`;
+                            btn.disabled = false;
+                            btn.innerHTML = 'Sim, cancelar agendamento';
+                        }
+                    } catch (erro) {
+                        resultado.classList.remove('hidden');
+                        resultado.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-400 mr-2"></i>Erro ao conectar ao servidor.';
+                        btn.disabled = false;
+                        btn.innerHTML = 'Sim, cancelar agendamento';
+                    }
+                }
+            </script>
+        {% endif %}
+
+    </div>
+</body>
+</html>

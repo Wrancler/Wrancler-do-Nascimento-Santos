@@ -1,10 +1,32 @@
-const IP_SERVIDOR = '192.168.0.7';
 let dataSelecionadaAdmin = null;
+
+// Monta os headers de autenticação para as rotas /api/admin/*
+function getAuthHeaders(comContentType = false) {
+    const token = localStorage.getItem('wn_admin_token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    if (comContentType) headers['Content-Type'] = 'application/json';
+    return headers;
+}
+
+// Se a sessão expirou ou o token é inválido, o servidor responde 401.
+// Nesse caso, forçamos o Mailton a fazer login de novo.
+function verificarSessao(response) {
+    if (response.status === 401) {
+        alert('Sua sessão expirou. Faça login novamente.');
+        localStorage.removeItem('wn_admin_token');
+        location.reload();
+        return false;
+    }
+    return true;
+}
 
 // Agora os dados só são carregados quando o Mailton faz login
 async function carregarDadosAdmin() {
     try {
-        const response = await fetch(`http://${IP_SERVIDOR}:5000/api/admin/dashboard`);
+        const response = await fetch(`/api/admin/dashboard`, {
+            headers: getAuthHeaders()
+        });
+        if (!verificarSessao(response)) return;
         const dados = await response.json();
         
         // Atualiza a vista de Finanças
@@ -138,11 +160,12 @@ function renderizarMesesAdmin(mesesNoBanco) {
 async function alternarMesAdmin(anoMes, statusAtual) {
     const novoStatus = statusAtual === 'aberto' ? 'fechado' : 'aberto';
     try {
-        await fetch(`http://${IP_SERVIDOR}:5000/api/admin/mes`, {
+        const response = await fetch(`/api/admin/mes`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(true),
             body: JSON.stringify({ ano_mes: anoMes, status: novoStatus })
         });
+        if (!verificarSessao(response)) return;
         carregarDadosAdmin(); 
     } catch (erro) {
         alert('Erro ao alterar o mês.');
@@ -178,7 +201,10 @@ async function carregarEstadoBloqueios() {
     const anoMes = dataSelecionadaAdmin.substring(0, 7); // Ex: "2026-09"
     
     try {
-        const response = await fetch(`http://${IP_SERVIDOR}:5000/api/admin/bloqueios/${anoMes}`);
+        const response = await fetch(`/api/admin/bloqueios/${anoMes}`, {
+            headers: getAuthHeaders()
+        });
+        if (!verificarSessao(response)) return;
         const todosBloqueios = await response.json();
         
         // Filtra só os bloqueios do dia que o Mailton escolheu
@@ -230,11 +256,12 @@ async function alternarBloqueioServidor(hora_bloqueio, isJaBloqueado) {
     };
     
     try {
-        await fetch(`http://${IP_SERVIDOR}:5000/api/admin/bloquear`, {
+        const response = await fetch(`/api/admin/bloquear`, {
             method: metodo,
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(true),
             body: JSON.stringify(payload)
         });
+        if (!verificarSessao(response)) return;
         
         // Refaz a leitura instantânea na tela, sem recarregar a página
         carregarEstadoBloqueios();
