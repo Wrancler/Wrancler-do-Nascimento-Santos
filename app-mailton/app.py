@@ -2,9 +2,11 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from functools import wraps
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import uuid
 import os
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,6 +18,82 @@ def get_db_connection():
     conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
     conn.row_factory = sqlite3.Row
     return conn
+
+# --- REGRAS DA AGENDA ---
+HORARIOS_EXPEDIENTE = ['09:00', '10:30', '14:00', '15:30', '17:00']  # Etapa 2: virá do banco
+INTERVALO_SLOT_MIN = 90   # quanto tempo um horário bloqueado pelo admin ocupa na agenda
+FUSO_BRASIL = timezone(timedelta(hours=-3))  # o servidor do PythonAnywhere roda em UTC
+
+MENSAGENS_INDISPONIVEL = {
+    'data_invalida': 'Data inválida.',
+    'data_passada': 'Essa data já passou.',
+    'mes_fechado': 'A agenda deste mês ainda não foi aberta.',
+    'dia_bloqueado': 'Este dia não está disponível para agendamento.',
+}
+
+def agora_brasil():
+    return datetime.now(FUSO_BRASIL).replace(tzinfo=None)
+
+def hora_para_minutos(hhmm):
+    h, m = hhmm.split(':')
+    return int(h) * 60 + int(m)
+
+def calcular_horarios_livres(conn, data, duracao_min):
+    """Devolve (horarios_livres, motivo). O motivo é None quando a agenda do dia está aberta.
+    Um horário só fica livre se o serviço inteiro (início + duração) couber sem encostar
+    em outro agendamento ou em um bloqueio do admin."""
+    try:
+        dia = datetime.strptime(data, '%Y-%m-%d')
+    except (ValueError, TypeError):
+        return [], 'data_invalida'
+
+    agora = agora_brasil()
+    if dia.date() < agora.date():
+        return [], 'data_passada'
+
+    # Mês que não foi aberto pelo admin = fechado (mesmo padrão da tela de Configurações)
+    mes = conn.execute("SELECT status FROM meses_abertos WHERE ano_mes = ?", (data[:7],)).fetchone()
+    if not mes or mes['status'] != 'aberto':
+        return [], 'mes_fechado'
+
+    dia_bloqueado = conn.execute(
+        "SELECT 1 FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data,)
+    ).fetchone()
+    if dia_bloqueado:
+        return [], 'dia_bloqueado'
+
+    # Intervalos já ocupados no dia, em minutos: (início, fim)
+    ocupados = []
+    for b in conn.execute(
+        "SELECT hora_bloqueio FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NOT NULL", (data,)
+    ):
+        inicio = hora_para_minutos(b['hora_bloqueio'])
+        ocupados.append((inicio, inicio + INTERVALO_SLOT_MIN))
+
+    agendados = conn.execute('''
+        SELECT strftime('%H:%M', a.data_hora) AS hora, s.duracao_minutos AS duracao
+        FROM agendamentos a
+        JOIN servicos s ON a.servico_id = s.id
+        WHERE date(a.data_hora) = ? AND a.status != 'cancelado'
+    ''', (data,)).fetchall()
+    for ag in agendados:
+        inicio = hora_para_minutos(ag['hora'])
+        ocupados.append((inicio, inicio + ag['duracao']))
+
+    # Se for hoje, horários que já passaram não aparecem
+    minutos_agora = agora.hour * 60 + agora.minute if dia.date() == agora.date() else -1
+
+    livres = []
+    for hora in HORARIOS_EXPEDIENTE:
+        inicio = hora_para_minutos(hora)
+        fim = inicio + duracao_min
+        if inicio <= minutos_agora:
+            continue
+        if any(inicio < o_fim and o_inicio < fim for o_inicio, o_fim in ocupados):
+            continue
+        livres.append(hora)
+    return livres, None
+
 
 # --- ROTAS DE PÁGINAS E ARQUIVOS ESTÁTICOS ---
 @app.route('/')
@@ -95,85 +173,99 @@ def listar_servicos():
 # --- ROTA 2: Receber e gravar o agendamento ---
 @app.route('/api/agendar', methods=['POST'])
 def criar_agendamento():
-    dados = request.json
-    
-    nome_cliente = dados.get('nome_cliente')
-    telefone_cliente = dados.get('telefone_cliente')
+    dados = request.get_json(silent=True) or {}
+
+    nome_cliente = (dados.get('nome_cliente') or '').strip()[:80]
+    telefone_cliente = re.sub(r'\D', '', str(dados.get('telefone_cliente') or ''))
     servico_id = dados.get('servico_id')
-    data_hora = dados.get('data_hora')
-    
+    data_hora = (dados.get('data_hora') or '').strip()
+
     if not all([nome_cliente, telefone_cliente, servico_id, data_hora]):
         return jsonify({"erro": "Faltam dados obrigatórios"}), 400
+    if len(nome_cliente) < 2:
+        return jsonify({"erro": "Informe seu nome completo."}), 400
+    if not 10 <= len(telefone_cliente) <= 13:
+        return jsonify({"erro": "Informe um WhatsApp válido, com DDD."}), 400
+    try:
+        datetime.strptime(data_hora, '%Y-%m-%d %H:%M')
+    except ValueError:
+        return jsonify({"erro": "Data ou horário inválido."}), 400
+
+    data, hora = data_hora.split(' ')
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM clientes WHERE telefone = ?", (telefone_cliente,))
-    cliente = cursor.fetchone()
-    
-    if cliente:
-        cliente_id = cliente['id']
-    else:
-        cursor.execute("INSERT INTO clientes (nome, telefone) VALUES (?, ?)", (nome_cliente, telefone_cliente))
-        cliente_id = cursor.lastrowid
-        
-    token = str(uuid.uuid4())
-    
-    cursor.execute(
-        "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento) VALUES (?, ?, ?, ?)",
-        (cliente_id, servico_id, data_hora, token)
-    )
-    
-    conn.commit()
-    conn.close()
-    
+    try:
+        # Trava o banco até o fim: evita que duas pessoas peguem o mesmo horário ao mesmo tempo
+        conn.execute("BEGIN IMMEDIATE")
+
+        servico = conn.execute(
+            "SELECT id, duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+        ).fetchone()
+        if not servico:
+            return jsonify({"erro": "Serviço não encontrado."}), 400
+
+        livres, motivo = calcular_horarios_livres(conn, data, servico['duracao_minutos'])
+        if hora not in livres:
+            mensagem = MENSAGENS_INDISPONIVEL.get(motivo, "Esse horário não está mais disponível. Escolha outro.")
+            return jsonify({"erro": mensagem}), 409
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM clientes WHERE telefone = ?", (telefone_cliente,))
+        cliente = cursor.fetchone()
+
+        if cliente:
+            cliente_id = cliente['id']
+        else:
+            cursor.execute("INSERT INTO clientes (nome, telefone) VALUES (?, ?)", (nome_cliente, telefone_cliente))
+            cliente_id = cursor.lastrowid
+
+        token = str(uuid.uuid4())
+        cursor.execute(
+            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento) VALUES (?, ?, ?, ?)",
+            (cliente_id, servico['id'], f"{data} {hora}", token)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     return jsonify({
-        "mensagem": "Agendamento confirmado com sucesso!", 
+        "mensagem": "Agendamento confirmado com sucesso!",
         "token_cancelamento": token
     }), 201
 
 # --- ROTA 3: Buscar horários disponíveis na data escolhida ---
 @app.route('/api/horarios', methods=['GET'])
 def horarios_livres():
-    data = request.args.get('data') 
-    
+    data = request.args.get('data')
     if not data:
         return jsonify({"erro": "Data não fornecida"}), 400
 
-    # Tempo base de atendimento (isso poderá vir do banco futuramente)
-    horarios_expediente = ['09:00', '10:30', '14:00', '15:30', '17:00']
-    
     conn = get_db_connection()
-    
-    # 1. Verifica se o dia INTEIRO está bloqueado (hora_bloqueio IS NULL)
-    dia_bloqueado = conn.execute(
-        "SELECT id FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data,)
-    ).fetchone()
-    
-    if dia_bloqueado:
-        conn.close()
-        return jsonify([]) # Retorna lista vazia, bloqueando o dia no front-end
-        
-    # 2. Busca horários específicos bloqueados pelo Mailton
-    bloqueios_parciais = conn.execute(
-        "SELECT hora_bloqueio FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NOT NULL", (data,)
-    ).fetchall()
-    horarios_bloqueados_admin = [b['hora_bloqueio'] for b in bloqueios_parciais]
+    try:
+        servico_id = request.args.get('servico_id', type=int)
+        if servico_id:
+            servico = conn.execute(
+                "SELECT duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+            ).fetchone()
+            if not servico:
+                return jsonify({"erro": "Serviço não encontrado."}), 404
+            duracao = servico['duracao_minutos']
+        else:
+            # Sem serviço informado, usa o menor tempo (mostra tudo que poderia caber)
+            menor = conn.execute(
+                "SELECT MIN(duracao_minutos) AS d FROM servicos WHERE profissional_id = 1"
+            ).fetchone()
+            duracao = menor['d'] or 30
 
-    # 3. Busca horários já agendados por clientes
-    ocupados = conn.execute(
-        "SELECT strftime('%H:%M', data_hora) as hora FROM agendamentos WHERE date(data_hora) = ? AND status != 'cancelado'", 
-        (data,)
-    ).fetchall()
-    horarios_ocupados_clientes = [h['hora'] for h in ocupados]
-    
-    conn.close()
-    
-    # Remove da lista os horários agendados e os bloqueados manualmente
-    todos_indisponiveis = set(horarios_bloqueados_admin + horarios_ocupados_clientes)
-    horarios_disponiveis = [h for h in horarios_expediente if h not in todos_indisponiveis]
-    
-    return jsonify(horarios_disponiveis)
+        horarios, motivo = calcular_horarios_livres(conn, data, duracao)
+    finally:
+        conn.close()
+
+    return jsonify({
+        "horarios": horarios,
+        "motivo": motivo,
+        "mensagem": MENSAGENS_INDISPONIVEL.get(motivo)
+    })
 
 
 # --- ROTA 4: Painel Administrativo (Finanças, Agenda e Meses) ---
@@ -208,10 +300,13 @@ def admin_dashboard():
 @app.route('/api/admin/mes', methods=['POST'])
 @requer_login_admin
 def alternar_mes():
-    dados = request.json
+    dados = request.get_json(silent=True) or {}
     ano_mes = dados.get('ano_mes')
     status = dados.get('status') # 'aberto' ou 'fechado'
-    
+
+    if not re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])', ano_mes or '') or status not in ('aberto', 'fechado'):
+        return jsonify({"erro": "Mês ou status inválido."}), 400
+
     conn = get_db_connection()
     # Atualiza ou insere o estado do mês
     conn.execute('''
@@ -223,13 +318,7 @@ def alternar_mes():
     
     return jsonify({"mensagem": f"Mês {ano_mes} agora está {status}!"})
 
-if __name__ == '__main__':
-    print("Servidor do WN Beauty System a iniciar...")
-    # Em produção, defina WN_DEBUG=false no ambiente antes de iniciar o servidor.
-    modo_debug = os.environ.get('WN_DEBUG', 'true').lower() == 'true'
-    app.run(host='0.0.0.0', debug=modo_debug, port=5000)
-
-    # --- ROTA 6: Listar bloqueios de um mês (Painel Admin) ---
+# --- ROTA 6: Listar bloqueios de um mês (Painel Admin) ---
 @app.route('/api/admin/bloqueios/<ano_mes>', methods=['GET'])
 @requer_login_admin
 def listar_bloqueios(ano_mes):
@@ -246,18 +335,30 @@ def listar_bloqueios(ano_mes):
 @app.route('/api/admin/bloquear', methods=['POST', 'DELETE'])
 @requer_login_admin
 def gerenciar_bloqueio():
-    dados = request.json
+    dados = request.get_json(silent=True) or {}
     data_bloqueio = dados.get('data_bloqueio')
-    hora_bloqueio = dados.get('hora_bloqueio') # Opcional
-    
+    hora_bloqueio = dados.get('hora_bloqueio') or None # Opcional
+
+    try:
+        datetime.strptime(data_bloqueio or '', '%Y-%m-%d')
+    except ValueError:
+        return jsonify({"erro": "Data inválida."}), 400
+    if hora_bloqueio and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', hora_bloqueio):
+        return jsonify({"erro": "Horário inválido."}), 400
+
     conn = get_db_connection()
     
     if request.method == 'POST':
-        # Cria um novo bloqueio
-        conn.execute(
-            "INSERT INTO bloqueios (data_bloqueio, hora_bloqueio) VALUES (?, ?)",
+        # Cria um novo bloqueio (sem duplicar o que já existe)
+        ja_existe = conn.execute(
+            "SELECT 1 FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS ?",
             (data_bloqueio, hora_bloqueio)
-        )
+        ).fetchone()
+        if not ja_existe:
+            conn.execute(
+                "INSERT INTO bloqueios (data_bloqueio, hora_bloqueio) VALUES (?, ?)",
+                (data_bloqueio, hora_bloqueio)
+            )
         mensagem = "Bloqueio registrado com sucesso."
     elif request.method == 'DELETE':
         # Remove um bloqueio existente
@@ -326,3 +427,10 @@ def cancelar_agendamento(token):
     conn.close()
 
     return jsonify({"mensagem": "Agendamento cancelado com sucesso."})
+
+
+if __name__ == '__main__':
+    print("Servidor do WN Beauty System a iniciar...")
+    # Em produção, defina WN_DEBUG=false no ambiente antes de iniciar o servidor.
+    modo_debug = os.environ.get('WN_DEBUG', 'true').lower() == 'true'
+    app.run(host='0.0.0.0', debug=modo_debug, port=5000)

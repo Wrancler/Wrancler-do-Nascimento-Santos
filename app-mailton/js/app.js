@@ -78,14 +78,17 @@ async function selecionarData(botao, dataFormatoSQL) {
     horarioSelecionado = null;
 
     try {
-        const response = await fetch(`/api/horarios?data=${dataSelecionada}`);
+        const response = await fetch(`/api/horarios?data=${dataSelecionada}&servico_id=${servicoSelecionadoId}`);
         if (!response.ok) throw new Error('Erro na comunicação');
         
-        const horarios = await response.json();
+        const resultado = await response.json();
+        const horarios = resultado.horarios;
         grid.innerHTML = ''; 
 
         if (horarios.length === 0) {
-            grid.innerHTML = '<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20"><i class="fa-solid fa-calendar-xmark mr-2"></i>Agenda lotada neste dia.</p>';
+            // O servidor diz o motivo (mês fechado, dia bloqueado...). Sem motivo = dia lotado.
+            const mensagem = resultado.mensagem || 'Agenda lotada neste dia.';
+            grid.innerHTML = `<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20"><i class="fa-solid fa-calendar-xmark mr-2"></i>${mensagem}</p>`;
             return;
         }
 
@@ -172,9 +175,15 @@ async function enviarAgendamento() {
             }, 1500);
 
         } else {
-            alert('Erro: ' + (resultado.erro || 'Falha ao agendar'));
+            alert(resultado.erro || 'Falha ao agendar');
             btn.disabled = false;
             btn.textContent = 'Confirmar Agendamento';
+
+            // Horário foi ocupado por outra pessoa enquanto este cliente escolhia: atualiza a lista
+            if (response.status === 409) {
+                const btnData = document.querySelector('.btn-data.bg-brand-500');
+                if (btnData) selecionarData(btnData, dataSelecionada);
+            }
         }
     } catch (err) {
         alert('Não foi possível conectar ao servidor Python.');

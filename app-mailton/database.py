@@ -1,6 +1,7 @@
 import sqlite3
 import uuid
 import os
+from datetime import datetime, timedelta, timezone
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -74,8 +75,14 @@ def criar_banco():
     )
     ''')
     
-    # Insere o mês atual como aberto por padrão para testes
-    cursor.execute("INSERT OR IGNORE INTO meses_abertos (ano_mes, status) VALUES ('2026-09', 'aberto')")
+    # Abre por padrão o mês atual e o próximo (o Mailton controla o resto pelo painel)
+    hoje = datetime.now(timezone(timedelta(hours=-3)))
+    proximo = (hoje.replace(day=1) + timedelta(days=32)).replace(day=1)
+    for ref in (hoje, proximo):
+        cursor.execute(
+            "INSERT OR IGNORE INTO meses_abertos (ano_mes, status) VALUES (?, 'aberto')",
+            (ref.strftime('%Y-%m'),)
+        )
 
     # --- DADOS DE TESTE PARA O MAILTON ---
     # Vamos inserir o Mailton e os serviços dele para podermos testar a API
