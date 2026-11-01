@@ -11,6 +11,7 @@ const tenantId = getParam("tenant") || "biel-do-corte";
 
 let workingHours = [];
 let closedDays = []; // 🔥 Dias da semana fechados (0=Dom, 1=Seg... 6=Sáb)
+let bookingDays = 40; // 🔥 Quantos dias à frente a agenda do admin mostra (acompanha o booking)
 let allAppointmentsForDay = []; 
 let servicesData = []; 
 let currentSnapshotUnsubscribe = null;
@@ -57,6 +58,7 @@ async function initDashboard() {
     const config = await getTenantConfig(tenantId);
     workingHours = config.workingHours || [];
     closedDays = config.closedDays || []; // 🔥 Dias fechados
+    bookingDays = Number(config.bookingDays) || 40; // 🔥 Mesmo valor que o cliente usa no booking
     servicesData = config.services || [];
     profissionaisConfig = config.professionals || [];
     adminPinConfig = config.financePin || "0000";
@@ -492,7 +494,7 @@ function renderAdminDateCards() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-  for (let i = -3; i <= 40; i++) {
+  for (let i = -3; i <= bookingDays; i++) { // 🔥 Acompanha o bookingDays do Firestore
     const d = new Date(today);
     d.setDate(today.getDate() + i);
 
