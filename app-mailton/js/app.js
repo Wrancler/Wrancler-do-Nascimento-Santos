@@ -3,14 +3,100 @@ let servicoNomeAtual = '';
 let servicoValorAtual = '';
 let dataSelecionada = null;
 let horarioSelecionado = null;
+let servicosCache = [];
+let diasAtendimento = [1, 2, 3, 4, 5, 6]; // 0 = domingo ... 6 = sábado (atualizado pelo servidor)
 
-function abrirModal(id, nome, valor, duracao) {
-    servicoSelecionadoId = id;
-    servicoNomeAtual = nome;
-    servicoValorAtual = valor;
+// --- FORMATAÇÃO ---
+function formatarDuracao(minutos) {
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    if (h && m) return `${h}h ${m} min`;
+    if (h) return `${h}h`;
+    return `${m} min`;
+}
+
+function formatarValor(valor) {
+    return 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// "R$ 25" quando o valor é inteiro, "R$ 49,99" quando tem centavos
+function formatarValorCurto(valor) {
+    return Number.isInteger(Number(valor)) ? `R$ ${Number(valor)}` : formatarValor(valor);
+}
+
+function escaparHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+}
+
+// --- LISTA DE SERVIÇOS (vem do banco, o Mailton edita pelo painel) ---
+function criarCardServico(s) {
+    return `
+        <div class="group bg-surface/50 backdrop-blur-md rounded-3xl p-5 border border-white/10 hover:border-brand-500/50 hover:bg-surface transition-all duration-300 cursor-pointer shadow-lg"
+             role="button" tabindex="0" onclick="abrirModal(${s.id})"
+             onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirModal(${s.id}); }">
+            <div class="flex justify-between items-center gap-4">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-white text-lg leading-snug group-hover:text-brand-400 transition-colors">${escaparHtml(s.nome)}</h3>
+                    <div class="flex items-center gap-3 mt-2">
+                        <span class="bg-white/5 text-gray-300 text-sm px-3 py-1 rounded-md font-medium flex items-center gap-2">
+                            <i class="fa-regular fa-clock text-brand-500"></i> ${formatarDuracao(s.duracao_minutos)}
+                        </span>
+                    </div>
+                </div>
+                <div class="text-right flex flex-col items-end shrink-0">
+                    <p class="text-white font-bold text-xl">${formatarValorCurto(s.valor)}</p>
+                    <span class="mt-2 text-brand-500 text-base font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        Agendar <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </span>
+                </div>
+            </div>
+        </div>`;
+}
+
+async function carregarServicos() {
+    const lista = document.getElementById('listaServicos');
+    lista.innerHTML = '<p class="text-base text-gray-400 text-center py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando serviços...</p>';
+
+    try {
+        const [respServicos, respExpediente] = await Promise.all([
+            fetch('/api/servicos'),
+            fetch('/api/expediente')
+        ]);
+        if (!respServicos.ok) throw new Error('Falha ao buscar serviços');
+
+        servicosCache = await respServicos.json();
+        if (respExpediente.ok) {
+            const expediente = await respExpediente.json();
+            diasAtendimento = expediente.dias;
+        }
+
+        if (servicosCache.length === 0) {
+            lista.innerHTML = '<p class="text-base text-gray-400 text-center py-10">Nenhum serviço disponível no momento. Fale com o Mailton pelo WhatsApp, logo abaixo.</p>';
+            return;
+        }
+        lista.innerHTML = servicosCache.map(criarCardServico).join('');
+    } catch (err) {
+        console.error(err);
+        lista.innerHTML = `
+            <div class="text-center py-10">
+                <p class="text-base text-red-400 mb-4">Não foi possível carregar os serviços.</p>
+                <button type="button" onclick="carregarServicos()" class="px-6 py-3 rounded-2xl bg-white/10 text-white font-semibold text-base">Tentar de novo</button>
+            </div>`;
+    }
+}
+
+function abrirModal(id) {
+    const servico = servicosCache.find(s => s.id === id);
+    if (!servico) return;
+
+    servicoSelecionadoId = servico.id;
+    servicoNomeAtual = servico.nome;
+    servicoValorAtual = formatarValor(servico.valor);
     
-    document.getElementById('modalServicoNome').textContent = nome;
-    document.getElementById('modalServicoInfo').textContent = `${valor} • ${duracao}`;
+    document.getElementById('modalServicoNome').textContent = servico.nome;
+    document.getElementById('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
     
     resetarSelecoes();
     gerarDatasCarrossel();
@@ -36,13 +122,17 @@ function gerarDatasCarrossel() {
     const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
     
     const hoje = new Date();
-    document.getElementById('mesAtualLabel').textContent = meses[hoje.getMonth()];
+    const mesesMostrados = [];
 
-    for(let i = 0; i < 20; i++) {
+    for(let i = 0; i < 28; i++) {
         let data = new Date();
         data.setDate(hoje.getDate() + i);
 
-        if(data.getDay() === 0) continue;
+        // Só aparecem os dias em que o Mailton atende (definido no painel)
+        if (!diasAtendimento.includes(data.getDay())) continue;
+
+        const nomeMes = meses[data.getMonth()];
+        if (!mesesMostrados.includes(nomeMes)) mesesMostrados.push(nomeMes);
 
         const diaStr = String(data.getDate()).padStart(2, '0');
         const mesStr = String(data.getMonth() + 1).padStart(2, '0');
@@ -61,6 +151,8 @@ function gerarDatasCarrossel() {
         btn.onclick = () => selecionarData(btn, dataFormatada);
         container.appendChild(btn);
     }
+
+    document.getElementById('mesAtualLabel').textContent = mesesMostrados.join(' / ');
 }
 
 async function selecionarData(botao, dataFormatoSQL) {
@@ -191,3 +283,6 @@ async function enviarAgendamento() {
         btn.textContent = 'Confirmar Agendamento';
     }
 }
+
+// Ao abrir a página, busca os serviços no servidor
+carregarServicos();

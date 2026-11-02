@@ -1,16 +1,41 @@
 import sqlite3
-import uuid
 import os
 from datetime import datetime, timedelta, timezone
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARQUIVO_BANCO = os.path.join(BASE_DIR, 'wn_beauty_system.db')
+
+# Serviços reais do Mailton: (nome, duração em minutos, valor em R$)
+# Tudo isto pode ser editado depois pelo painel admin; aqui é só o ponto de partida.
+SERVICOS_MAILTON = [
+    ('Design personalizado', 30, 25.00),
+    ('Design + henna', 60, 35.00),
+    ('Epilação no buço', 30, 10.00),                          # duração a confirmar
+    ('Brow lamination', 60, 100.00),                          # duração a confirmar
+    ('Micropigmentação fio a fio', 120, 250.00),
+    ('Micropigmentação shadow', 120, 250.00),
+    ('Retoque de micropigmentação (até 1 mês)', 120, 80.00),
+    ('Neutralização de micropigmentação', 60, 75.00),
+    ('Super combo (design + henna + esfoliação + buço)', 90, 49.99),  # duração a confirmar
+]
+
+# Expediente de partida: segunda a sábado, 09:00-11:30 e 13:00-21:00
+# (dia_semana segue o padrão do JavaScript: 0 = domingo ... 6 = sábado)
+DIAS_ATENDIMENTO_PADRAO = [1, 2, 3, 4, 5, 6]
+FAIXAS_PADRAO = [('09:00', '11:30'), ('13:00', '21:00')]
+INTERVALO_PADRAO_MIN = 30
+
+
+def colunas(cursor, tabela):
+    return {linha[1] for linha in cursor.execute(f"PRAGMA table_info({tabela})")}
+
 
 def criar_banco():
     # Conecta (ou cria) o banco de dados
-    conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
+    conn = sqlite3.connect(ARQUIVO_BANCO)
     cursor = conn.cursor()
 
-    # 1. Tabela de Profissionais (Para suportar vários clientes no seu SaaS)
+    # 1. Tabela de Profissionais
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS profissionais (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +45,7 @@ def criar_banco():
     )
     ''')
 
-    # 2. Tabela de Serviços (Cada profissional tem os seus)
+    # 2. Tabela de Serviços
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS servicos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +66,7 @@ def criar_banco():
     )
     ''')
 
-    # 4. Tabela de Agendamentos (O Coração do Sistema)
+    # 4. Tabela de Agendamentos
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS agendamentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +81,7 @@ def criar_banco():
     )
     ''')
 
-    # 5. Tabela de Controlo de Meses (Autonomia do Profissional)
+    # 5. Controle de meses abertos/fechados
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS meses_abertos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +90,7 @@ def criar_banco():
     )
     ''')
 
-    # 6. Tabela de Bloqueios Específicos (Dias ou Horários)
+    # 6. Bloqueios específicos (dias ou horários)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS bloqueios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +99,32 @@ def criar_banco():
         motivo TEXT
     )
     ''')
-    
+
+    # 7. Expediente: faixas de atendimento por dia da semana (pode haver mais de uma por dia)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS expediente (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dia_semana INTEGER NOT NULL, -- 0 = domingo ... 6 = sábado
+        inicio TEXT NOT NULL,        -- 'HH:MM'
+        fim TEXT NOT NULL            -- 'HH:MM'
+    )
+    ''')
+
+    # 8. Configurações gerais (chave/valor)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS configuracoes (
+        chave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL
+    )
+    ''')
+
+    # --- MIGRAÇÕES: bancos criados antes desta versão ganham as colunas novas ---
+    if 'ativo' not in colunas(cursor, 'servicos'):
+        cursor.execute("ALTER TABLE servicos ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1")
+    if 'ordem' not in colunas(cursor, 'servicos'):
+        cursor.execute("ALTER TABLE servicos ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0")
+
+    # --- VALORES INICIAIS ---
     # Abre por padrão o mês atual e o próximo (o Mailton controla o resto pelo painel)
     hoje = datetime.now(timezone(timedelta(hours=-3)))
     proximo = (hoje.replace(day=1) + timedelta(days=32)).replace(day=1)
@@ -84,23 +134,34 @@ def criar_banco():
             (ref.strftime('%Y-%m'),)
         )
 
-    # --- DADOS DE TESTE PARA O MAILTON ---
-    # Vamos inserir o Mailton e os serviços dele para podermos testar a API
+    cursor.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('intervalo_min', ?)",
+                   (str(INTERVALO_PADRAO_MIN),))
+
+    cursor.execute("SELECT COUNT(*) FROM expediente")
+    if cursor.fetchone()[0] == 0:
+        for dia in DIAS_ATENDIMENTO_PADRAO:
+            for inicio, fim in FAIXAS_PADRAO:
+                cursor.execute("INSERT INTO expediente (dia_semana, inicio, fim) VALUES (?, ?, ?)",
+                               (dia, inicio, fim))
+
+    # Banco novo: cria o profissional e os serviços reais
     cursor.execute("SELECT COUNT(*) FROM profissionais")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO profissionais (nome, nicho, telefone) VALUES ('Mailton Maia', 'Sobrancelhas e Micropigmentação', '5583900000000')")
+        cursor.execute(
+            "INSERT INTO profissionais (nome, nicho, telefone) VALUES ('Mailton Maia', 'Sobrancelhas e Micropigmentação', '5583988856096')"
+        )
         mailton_id = cursor.lastrowid
-        
-        servicos = [
-            (mailton_id, 'Design de Sobrancelha', 30, 35.00),
-            (mailton_id, 'Micropigmentação', 90, 250.00),
-            (mailton_id, 'Retoque / Manutenção', 45, 100.00)
-        ]
-        cursor.executemany("INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor) VALUES (?, ?, ?, ?)", servicos)
-        print("Banco de dados criado e dados do Mailton inseridos com sucesso!")
+        for ordem, (nome, duracao, valor) in enumerate(SERVICOS_MAILTON, start=1):
+            cursor.execute(
+                "INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor, ordem) VALUES (?, ?, ?, ?, ?)",
+                (mailton_id, nome, duracao, valor, ordem)
+            )
+        print("Banco de dados criado com os serviços do Mailton!")
 
     conn.commit()
     conn.close()
 
+
 if __name__ == '__main__':
     criar_banco()
+    print("Banco de dados atualizado.")

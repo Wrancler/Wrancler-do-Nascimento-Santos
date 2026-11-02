@@ -20,14 +20,13 @@ def get_db_connection():
     return conn
 
 # --- REGRAS DA AGENDA ---
-HORARIOS_EXPEDIENTE = ['09:00', '10:30', '14:00', '15:30', '17:00']  # Etapa 2: virá do banco
-INTERVALO_SLOT_MIN = 90   # quanto tempo um horário bloqueado pelo admin ocupa na agenda
 FUSO_BRASIL = timezone(timedelta(hours=-3))  # o servidor do PythonAnywhere roda em UTC
 
 MENSAGENS_INDISPONIVEL = {
     'data_invalida': 'Data inválida.',
     'data_passada': 'Essa data já passou.',
     'mes_fechado': 'A agenda deste mês ainda não foi aberta.',
+    'sem_expediente': 'Não há atendimento neste dia.',
     'dia_bloqueado': 'Este dia não está disponível para agendamento.',
 }
 
@@ -38,10 +37,44 @@ def hora_para_minutos(hhmm):
     h, m = hhmm.split(':')
     return int(h) * 60 + int(m)
 
+def minutos_para_hora(minutos):
+    return f"{minutos // 60:02d}:{minutos % 60:02d}"
+
+def obter_intervalo(conn):
+    """De quanto em quanto tempo os horários são oferecidos (padrão 30 min)."""
+    linha = conn.execute("SELECT valor FROM configuracoes WHERE chave = 'intervalo_min'").fetchone()
+    try:
+        valor = int(linha['valor'])
+    except (TypeError, ValueError):
+        return 30
+    return valor if 5 <= valor <= 240 else 30
+
+def dia_da_semana(data):
+    """0 = domingo ... 6 = sábado (mesmo padrão do JavaScript)."""
+    return (datetime.strptime(data, '%Y-%m-%d').weekday() + 1) % 7
+
+def obter_faixas_do_dia(conn, dia_semana):
+    """Faixas de atendimento do dia, em minutos: [(inicio, fim), ...]"""
+    linhas = conn.execute(
+        "SELECT inicio, fim FROM expediente WHERE dia_semana = ? ORDER BY inicio", (dia_semana,)
+    ).fetchall()
+    return [(hora_para_minutos(l['inicio']), hora_para_minutos(l['fim'])) for l in linhas]
+
+def gerar_grade(conn, data):
+    """Todos os inícios possíveis no dia, de intervalo em intervalo, dentro de cada faixa."""
+    intervalo = obter_intervalo(conn)
+    grade = []
+    for inicio, fim in obter_faixas_do_dia(conn, dia_da_semana(data)):
+        t = inicio
+        while t + intervalo <= fim:
+            grade.append(minutos_para_hora(t))
+            t += intervalo
+    return grade
+
 def calcular_horarios_livres(conn, data, duracao_min):
     """Devolve (horarios_livres, motivo). O motivo é None quando a agenda do dia está aberta.
-    Um horário só fica livre se o serviço inteiro (início + duração) couber sem encostar
-    em outro agendamento ou em um bloqueio do admin."""
+    Um horário só fica livre se o serviço inteiro (início + duração) couber dentro da faixa
+    de atendimento e sem encostar em outro agendamento ou em um bloqueio do admin."""
     try:
         dia = datetime.strptime(data, '%Y-%m-%d')
     except (ValueError, TypeError):
@@ -56,11 +89,17 @@ def calcular_horarios_livres(conn, data, duracao_min):
     if not mes or mes['status'] != 'aberto':
         return [], 'mes_fechado'
 
+    faixas = obter_faixas_do_dia(conn, dia_da_semana(data))
+    if not faixas:
+        return [], 'sem_expediente'
+
     dia_bloqueado = conn.execute(
         "SELECT 1 FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data,)
     ).fetchone()
     if dia_bloqueado:
         return [], 'dia_bloqueado'
+
+    intervalo = obter_intervalo(conn)
 
     # Intervalos já ocupados no dia, em minutos: (início, fim)
     ocupados = []
@@ -68,7 +107,7 @@ def calcular_horarios_livres(conn, data, duracao_min):
         "SELECT hora_bloqueio FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NOT NULL", (data,)
     ):
         inicio = hora_para_minutos(b['hora_bloqueio'])
-        ocupados.append((inicio, inicio + INTERVALO_SLOT_MIN))
+        ocupados.append((inicio, inicio + intervalo))
 
     agendados = conn.execute('''
         SELECT strftime('%H:%M', a.data_hora) AS hora, s.duracao_minutos AS duracao
@@ -84,14 +123,13 @@ def calcular_horarios_livres(conn, data, duracao_min):
     minutos_agora = agora.hour * 60 + agora.minute if dia.date() == agora.date() else -1
 
     livres = []
-    for hora in HORARIOS_EXPEDIENTE:
-        inicio = hora_para_minutos(hora)
-        fim = inicio + duracao_min
-        if inicio <= minutos_agora:
-            continue
-        if any(inicio < o_fim and o_inicio < fim for o_inicio, o_fim in ocupados):
-            continue
-        livres.append(hora)
+    for faixa_inicio, faixa_fim in faixas:
+        t = faixa_inicio
+        while t + duracao_min <= faixa_fim:
+            fim_servico = t + duracao_min
+            if t > minutos_agora and not any(t < o_fim and o_inicio < fim_servico for o_inicio, o_fim in ocupados):
+                livres.append(minutos_para_hora(t))
+            t += intervalo
     return livres, None
 
 
@@ -166,9 +204,20 @@ def login_admin():
 @app.route('/api/servicos', methods=['GET'])
 def listar_servicos():
     conn = get_db_connection()
-    servicos = conn.execute('SELECT id, nome, duracao_minutos, valor FROM servicos WHERE profissional_id = 1').fetchall()
+    servicos = conn.execute(
+        'SELECT id, nome, duracao_minutos, valor FROM servicos WHERE profissional_id = 1 AND ativo = 1 ORDER BY ordem, id'
+    ).fetchall()
     conn.close()
     return jsonify([dict(servico) for servico in servicos])
+
+# --- ROTA 1B: Dias de atendimento (usado pelo calendário do cliente) ---
+@app.route('/api/expediente', methods=['GET'])
+def expediente_publico():
+    conn = get_db_connection()
+    dias = [l['dia_semana'] for l in conn.execute("SELECT DISTINCT dia_semana FROM expediente ORDER BY dia_semana")]
+    intervalo = obter_intervalo(conn)
+    conn.close()
+    return jsonify({"dias": dias, "intervalo": intervalo})
 
 # --- ROTA 2: Receber e gravar o agendamento ---
 @app.route('/api/agendar', methods=['POST'])
@@ -199,7 +248,7 @@ def criar_agendamento():
         conn.execute("BEGIN IMMEDIATE")
 
         servico = conn.execute(
-            "SELECT id, duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+            "SELECT id, duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1 AND ativo = 1", (servico_id,)
         ).fetchone()
         if not servico:
             return jsonify({"erro": "Serviço não encontrado."}), 400
@@ -245,7 +294,7 @@ def horarios_livres():
         servico_id = request.args.get('servico_id', type=int)
         if servico_id:
             servico = conn.execute(
-                "SELECT duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+                "SELECT duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1 AND ativo = 1", (servico_id,)
             ).fetchone()
             if not servico:
                 return jsonify({"erro": "Serviço não encontrado."}), 404
@@ -253,7 +302,7 @@ def horarios_livres():
         else:
             # Sem serviço informado, usa o menor tempo (mostra tudo que poderia caber)
             menor = conn.execute(
-                "SELECT MIN(duracao_minutos) AS d FROM servicos WHERE profissional_id = 1"
+                "SELECT MIN(duracao_minutos) AS d FROM servicos WHERE profissional_id = 1 AND ativo = 1"
             ).fetchone()
             duracao = menor['d'] or 30
 
@@ -330,6 +379,19 @@ def listar_bloqueios(ano_mes):
     ).fetchall()
     conn.close()
     return jsonify([dict(b) for b in bloqueios])
+
+# --- ROTA 6B: Horários do dia que o admin pode bloquear ---
+@app.route('/api/admin/grade/<data>', methods=['GET'])
+@requer_login_admin
+def grade_do_dia(data):
+    try:
+        datetime.strptime(data, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({"erro": "Data inválida."}), 400
+    conn = get_db_connection()
+    grade = gerar_grade(conn, data)
+    conn.close()
+    return jsonify(grade)
 
 # --- ROTA 7: Adicionar ou Remover Bloqueio ---
 @app.route('/api/admin/bloquear', methods=['POST', 'DELETE'])

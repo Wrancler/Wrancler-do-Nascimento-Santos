@@ -225,8 +225,18 @@ async function carregarEstadoBloqueios() {
         }
         
         // Configura os Botões de Horários Específicos
-        const horarios_expediente = ['09:00', '10:30', '14:00', '15:30', '17:00'];
+        // Os horários do dia vêm do servidor (expediente configurado), não mais de uma lista fixa
+        const respGrade = await fetch(`/api/admin/grade/${dataSelecionadaAdmin}`, {
+            headers: getAuthHeaders()
+        });
+        if (!verificarSessao(respGrade)) return;
+        const horarios_expediente = await respGrade.json();
         grid.innerHTML = '';
+
+        if (horarios_expediente.length === 0) {
+            grid.innerHTML = '<p class="text-xs text-gray-500 col-span-2 text-center py-4">Não há expediente neste dia da semana.</p>';
+            return;
+        }
         
         horarios_expediente.forEach(hora => {
             const isBloqueado = diaInteiroBloqueado || bloqueiosHoje.some(b => b.hora_bloqueio === hora);

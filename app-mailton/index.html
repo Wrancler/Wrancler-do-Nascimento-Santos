@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- Trava de zoom automático para iOS -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- Zoom liberado de propósito: muitas clientes precisam ampliar a tela -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mailton Maia - Agendamento Premium</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,67 +57,17 @@
                 <h2 class="text-lg font-semibold text-white">Nossos Serviços</h2>
             </div>
             
-            <div class="space-y-4">
-                <!-- Card 1 -->
-                <div class="group bg-surface/50 backdrop-blur-md rounded-3xl p-5 border border-white/10 hover:border-brand-500/50 hover:bg-surface transition-all duration-300 cursor-pointer shadow-lg" onclick="abrirModal(1, 'Design de Sobrancelha', 'R$ 35,00', '30 min')">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="font-bold text-white text-base group-hover:text-brand-400 transition-colors">Design de Sobrancelha</h3>
-                            <div class="flex items-center gap-3 mt-2">
-                                <span class="bg-white/5 text-gray-300 text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                    <i class="fa-regular fa-clock text-brand-500"></i> 30 min
-                                </span>
-                            </div>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <p class="text-white font-bold text-lg">R$ 35</p>
-                            <button class="mt-2 text-brand-500 text-sm font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                Agendar <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="group bg-surface/50 backdrop-blur-md rounded-3xl p-5 border border-white/10 hover:border-brand-500/50 hover:bg-surface transition-all duration-300 cursor-pointer shadow-lg" onclick="abrirModal(2, 'Micropigmentação', 'R$ 250,00', '1h 30 min')">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="font-bold text-white text-base group-hover:text-brand-400 transition-colors">Micropigmentação</h3>
-                            <div class="flex items-center gap-3 mt-2">
-                                <span class="bg-white/5 text-gray-300 text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                    <i class="fa-regular fa-clock text-brand-500"></i> 1h 30m
-                                </span>
-                            </div>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <p class="text-white font-bold text-lg">R$ 250</p>
-                            <button class="mt-2 text-brand-500 text-sm font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                Agendar <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="group bg-surface/50 backdrop-blur-md rounded-3xl p-5 border border-white/10 hover:border-brand-500/50 hover:bg-surface transition-all duration-300 cursor-pointer shadow-lg" onclick="abrirModal(3, 'Retoque / Manutenção', 'R$ 100,00', '45 min')">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="font-bold text-white text-base group-hover:text-brand-400 transition-colors">Retoque (Manutenção)</h3>
-                            <div class="flex items-center gap-3 mt-2">
-                                <span class="bg-white/5 text-gray-300 text-[11px] px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                                    <i class="fa-regular fa-clock text-brand-500"></i> 45 min
-                                </span>
-                            </div>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <p class="text-white font-bold text-lg">R$ 100</p>
-                            <button class="mt-2 text-brand-500 text-sm font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                Agendar <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div class="space-y-4" id="listaServicos">
+                <p class="text-base text-gray-400 text-center py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando serviços...</p>
             </div>
+
+            <!-- Alternativa para quem prefere conversar -->
+            <a href="https://wa.me/5583988856096?text=Ol%C3%A1%20Mailton%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio."
+               target="_blank" rel="noopener"
+               class="mt-8 flex items-center justify-center gap-3 w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-2xl py-4 px-5 text-base text-gray-200 transition-colors">
+                <i class="fa-brands fa-whatsapp text-2xl text-green-400"></i>
+                <span>Prefere falar direto com o Mailton?<br><strong class="text-white">Chamar no WhatsApp</strong></span>
+            </a>
         </main>
 
         <!-- MODAL DE AGENDAMENTO -->
@@ -145,13 +95,13 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <i class="fa-regular fa-user text-gray-500"></i>
                         </div>
-                        <input type="text" id="clienteNome" placeholder="Seu Nome Completo" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
+                        <input type="text" id="clienteNome" autocomplete="name" placeholder="Seu Nome Completo" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
                     </div>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <i class="fa-brands fa-whatsapp text-gray-500"></i>
                         </div>
-                        <input type="tel" id="clienteTelefone" placeholder="Seu WhatsApp (com DDD)" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
+                        <input type="tel" id="clienteTelefone" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp (com DDD)" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
                     </div>
                 </div>
 
