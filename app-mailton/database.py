@@ -124,6 +124,19 @@ def criar_banco():
     if 'ordem' not in colunas(cursor, 'servicos'):
         cursor.execute("ALTER TABLE servicos ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0")
 
+    # O agendamento guarda a duração e o valor do momento em que foi feito:
+    # se o Mailton mudar o preço ou o tempo de um serviço, o histórico e a agenda não se alteram.
+    if 'duracao_minutos' not in colunas(cursor, 'agendamentos'):
+        cursor.execute("ALTER TABLE agendamentos ADD COLUMN duracao_minutos INTEGER")
+    if 'valor' not in colunas(cursor, 'agendamentos'):
+        cursor.execute("ALTER TABLE agendamentos ADD COLUMN valor REAL")
+    cursor.execute("""UPDATE agendamentos
+        SET duracao_minutos = (SELECT s.duracao_minutos FROM servicos s WHERE s.id = agendamentos.servico_id)
+        WHERE duracao_minutos IS NULL""")
+    cursor.execute("""UPDATE agendamentos
+        SET valor = (SELECT s.valor FROM servicos s WHERE s.id = agendamentos.servico_id)
+        WHERE valor IS NULL""")
+
     # --- VALORES INICIAIS ---
     # Abre por padrão o mês atual e o próximo (o Mailton controla o resto pelo painel)
     hoje = datetime.now(timezone(timedelta(hours=-3)))

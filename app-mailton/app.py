@@ -110,7 +110,8 @@ def calcular_horarios_livres(conn, data, duracao_min):
         ocupados.append((inicio, inicio + intervalo))
 
     agendados = conn.execute('''
-        SELECT strftime('%H:%M', a.data_hora) AS hora, s.duracao_minutos AS duracao
+        SELECT strftime('%H:%M', a.data_hora) AS hora,
+               COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao
         FROM agendamentos a
         JOIN servicos s ON a.servico_id = s.id
         WHERE date(a.data_hora) = ? AND a.status != 'cancelado'
@@ -248,7 +249,7 @@ def criar_agendamento():
         conn.execute("BEGIN IMMEDIATE")
 
         servico = conn.execute(
-            "SELECT id, duracao_minutos FROM servicos WHERE id = ? AND profissional_id = 1 AND ativo = 1", (servico_id,)
+            "SELECT id, duracao_minutos, valor FROM servicos WHERE id = ? AND profissional_id = 1 AND ativo = 1", (servico_id,)
         ).fetchone()
         if not servico:
             return jsonify({"erro": "Serviço não encontrado."}), 400
@@ -270,8 +271,8 @@ def criar_agendamento():
 
         token = str(uuid.uuid4())
         cursor.execute(
-            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento) VALUES (?, ?, ?, ?)",
-            (cliente_id, servico['id'], f"{data} {hora}", token)
+            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor) VALUES (?, ?, ?, ?, ?, ?)",
+            (cliente_id, servico['id'], f"{data} {hora}", token, servico['duracao_minutos'], servico['valor'])
         )
         conn.commit()
     finally:
@@ -325,8 +326,10 @@ def admin_dashboard():
     
     # 1. Puxa os agendamentos e finanças
     query = '''
-        SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico, 
-               s.valor, a.data_hora, a.status 
+        SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico,
+               COALESCE(a.valor, s.valor) AS valor,
+               COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao_minutos,
+               a.data_hora, a.status
         FROM agendamentos a
         JOIN clientes c ON a.cliente_id = c.id
         JOIN servicos s ON a.servico_id = s.id
@@ -433,6 +436,341 @@ def gerenciar_bloqueio():
     conn.commit()
     conn.close()
     return jsonify({"mensagem": mensagem})
+
+
+# ============================================================
+# PAINEL ADMIN: serviços, expediente e ações na agenda
+# ============================================================
+def existe_conflito_agendamento(conn, data, inicio_min, duracao_min, ignorar_id=None):
+    """True se já existe outro agendamento (não cancelado) que se sobrepõe a este intervalo."""
+    linhas = conn.execute('''
+        SELECT a.id, strftime('%H:%M', a.data_hora) AS hora,
+               COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao
+        FROM agendamentos a
+        JOIN servicos s ON a.servico_id = s.id
+        WHERE date(a.data_hora) = ? AND a.status != 'cancelado'
+    ''', (data,)).fetchall()
+    fim = inicio_min + duracao_min
+    for linha in linhas:
+        if ignorar_id is not None and linha['id'] == ignorar_id:
+            continue
+        inicio_outro = hora_para_minutos(linha['hora'])
+        if inicio_min < inicio_outro + linha['duracao'] and inicio_outro < fim:
+            return True
+    return False
+
+
+def ler_dados_servico(dados):
+    """Valida nome, duração e valor de um serviço. Devolve (campos, mensagem_de_erro)."""
+    nome = str(dados.get('nome') or '').strip()
+    if not 2 <= len(nome) <= 80:
+        return None, "O nome do serviço deve ter entre 2 e 80 letras."
+    try:
+        duracao = int(dados.get('duracao_minutos'))
+    except (TypeError, ValueError):
+        return None, "Escolha a duração do serviço."
+    if not 5 <= duracao <= 600:
+        return None, "A duração deve ficar entre 5 minutos e 10 horas."
+    try:
+        valor = round(float(str(dados.get('valor')).replace(',', '.')), 2)
+    except (TypeError, ValueError):
+        return None, "Informe o valor do serviço."
+    if not 0 <= valor <= 100000:
+        return None, "Valor inválido."
+    return {'nome': nome, 'duracao_minutos': duracao, 'valor': valor}, None
+
+
+# --- ADMIN: listar serviços (inclusive os ocultos) ---
+@app.route('/api/admin/servicos', methods=['GET'])
+@requer_login_admin
+def admin_listar_servicos():
+    conn = get_db_connection()
+    linhas = conn.execute('''
+        SELECT s.id, s.nome, s.duracao_minutos, s.valor, s.ativo, s.ordem,
+               (SELECT COUNT(*) FROM agendamentos a WHERE a.servico_id = s.id) AS qtd_agendamentos
+        FROM servicos s
+        WHERE s.profissional_id = 1
+        ORDER BY s.ativo DESC, s.ordem, s.id
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(l) for l in linhas])
+
+
+# --- ADMIN: criar serviço ---
+@app.route('/api/admin/servicos', methods=['POST'])
+@requer_login_admin
+def admin_criar_servico():
+    campos, erro = ler_dados_servico(request.get_json(silent=True) or {})
+    if erro:
+        return jsonify({"erro": erro}), 400
+    conn = get_db_connection()
+    try:
+        proxima = conn.execute(
+            "SELECT COALESCE(MAX(ordem), 0) + 1 FROM servicos WHERE profissional_id = 1"
+        ).fetchone()[0]
+        cursor = conn.execute(
+            "INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor, ordem, ativo) VALUES (1, ?, ?, ?, ?, 1)",
+            (campos['nome'], campos['duracao_minutos'], campos['valor'], proxima)
+        )
+        conn.commit()
+        novo_id = cursor.lastrowid
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Serviço criado!", "id": novo_id}), 201
+
+
+# --- ADMIN: editar serviço, ocultar ou mostrar no site ---
+@app.route('/api/admin/servicos/<int:servico_id>', methods=['PUT'])
+@requer_login_admin
+def admin_editar_servico(servico_id):
+    dados = request.get_json(silent=True) or {}
+    conn = get_db_connection()
+    try:
+        atual = conn.execute(
+            "SELECT nome, duracao_minutos, valor, ativo FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+        ).fetchone()
+        if not atual:
+            return jsonify({"erro": "Serviço não encontrado."}), 404
+
+        mesclado = {
+            'nome': dados.get('nome', atual['nome']),
+            'duracao_minutos': dados.get('duracao_minutos', atual['duracao_minutos']),
+            'valor': dados.get('valor', atual['valor']),
+        }
+        campos, erro = ler_dados_servico(mesclado)
+        if erro:
+            return jsonify({"erro": erro}), 400
+        ativo = atual['ativo'] if 'ativo' not in dados else (1 if dados['ativo'] else 0)
+
+        conn.execute(
+            "UPDATE servicos SET nome = ?, duracao_minutos = ?, valor = ?, ativo = ? WHERE id = ?",
+            (campos['nome'], campos['duracao_minutos'], campos['valor'], ativo, servico_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Serviço atualizado!"})
+
+
+# --- ADMIN: excluir serviço (se já teve agendamentos, só é ocultado para não perder o histórico) ---
+@app.route('/api/admin/servicos/<int:servico_id>', methods=['DELETE'])
+@requer_login_admin
+def admin_excluir_servico(servico_id):
+    conn = get_db_connection()
+    try:
+        existe = conn.execute(
+            "SELECT 1 FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+        ).fetchone()
+        if not existe:
+            return jsonify({"erro": "Serviço não encontrado."}), 404
+        usos = conn.execute("SELECT COUNT(*) FROM agendamentos WHERE servico_id = ?", (servico_id,)).fetchone()[0]
+        if usos:
+            conn.execute("UPDATE servicos SET ativo = 0 WHERE id = ?", (servico_id,))
+            mensagem = "Esse serviço já tem agendamentos, então foi apenas ocultado do site (o histórico é mantido)."
+            ocultado = True
+        else:
+            conn.execute("DELETE FROM servicos WHERE id = ?", (servico_id,))
+            mensagem = "Serviço excluído."
+            ocultado = False
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"mensagem": mensagem, "ocultado": ocultado})
+
+
+# --- ADMIN: ver o expediente (dias, faixas e intervalo) ---
+@app.route('/api/admin/expediente', methods=['GET'])
+@requer_login_admin
+def admin_ver_expediente():
+    conn = get_db_connection()
+    dias = {str(n): [] for n in range(7)}
+    for l in conn.execute("SELECT dia_semana, inicio, fim FROM expediente ORDER BY dia_semana, inicio"):
+        dias[str(l['dia_semana'])].append({"inicio": l['inicio'], "fim": l['fim']})
+    intervalo = obter_intervalo(conn)
+    conn.close()
+    return jsonify({"intervalo": intervalo, "dias": dias})
+
+
+# --- ADMIN: salvar o expediente ---
+@app.route('/api/admin/expediente', methods=['PUT'])
+@requer_login_admin
+def admin_salvar_expediente():
+    dados = request.get_json(silent=True) or {}
+
+    try:
+        intervalo = int(dados.get('intervalo'))
+    except (TypeError, ValueError):
+        return jsonify({"erro": "Escolha o intervalo entre os horários."}), 400
+    if intervalo not in (15, 20, 30, 45, 60):
+        return jsonify({"erro": "Intervalo inválido."}), 400
+
+    dias = dados.get('dias')
+    if not isinstance(dias, dict):
+        return jsonify({"erro": "Dados do expediente inválidos."}), 400
+
+    nomes = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+    novas_faixas = []
+    for numero in range(7):
+        faixas = dias.get(str(numero)) or []
+        if not isinstance(faixas, list) or len(faixas) > 4:
+            return jsonify({"erro": f"Muitos períodos na {nomes[numero]}."}), 400
+        validadas = []
+        for faixa in faixas:
+            inicio = str((faixa or {}).get('inicio') or '')
+            fim = str((faixa or {}).get('fim') or '')
+            if not (re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', inicio) and re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', fim)):
+                return jsonify({"erro": f"Horário inválido na {nomes[numero]}."}), 400
+            ini_min, fim_min = hora_para_minutos(inicio), hora_para_minutos(fim)
+            if fim_min <= ini_min:
+                return jsonify({"erro": f"Na {nomes[numero]}, o fim precisa ser depois do início."}), 400
+            if fim_min - ini_min < intervalo:
+                return jsonify({"erro": f"Na {nomes[numero]}, um período ({inicio} às {fim}) é menor que o intervalo de {intervalo} min."}), 400
+            validadas.append((ini_min, fim_min, inicio, fim))
+        validadas.sort()
+        for anterior, seguinte in zip(validadas, validadas[1:]):
+            if seguinte[0] < anterior[1]:
+                return jsonify({"erro": f"Na {nomes[numero]}, os períodos estão se sobrepondo."}), 400
+        for _, _, inicio, fim in validadas:
+            novas_faixas.append((numero, inicio, fim))
+
+    if not novas_faixas:
+        return jsonify({"erro": "Marque pelo menos um dia de atendimento."}), 400
+
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM expediente")
+        conn.executemany("INSERT INTO expediente (dia_semana, inicio, fim) VALUES (?, ?, ?)", novas_faixas)
+        conn.execute(
+            "INSERT INTO configuracoes (chave, valor) VALUES ('intervalo_min', ?) "
+            "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", (str(intervalo),)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Horários de atendimento salvos!"})
+
+
+# --- ADMIN: concluir, cancelar ou reativar um agendamento ---
+@app.route('/api/admin/agendamentos/<int:agendamento_id>/status', methods=['POST'])
+@requer_login_admin
+def admin_mudar_status(agendamento_id):
+    dados = request.get_json(silent=True) or {}
+    novo = dados.get('status')
+    if novo not in ('agendado', 'concluido', 'cancelado'):
+        return jsonify({"erro": "Status inválido."}), 400
+
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        ag = conn.execute('''
+            SELECT a.status, a.data_hora, COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao
+            FROM agendamentos a JOIN servicos s ON a.servico_id = s.id
+            WHERE a.id = ?
+        ''', (agendamento_id,)).fetchone()
+        if not ag:
+            return jsonify({"erro": "Agendamento não encontrado."}), 404
+        if ag['status'] == novo:
+            return jsonify({"mensagem": "Nada a alterar."})
+
+        # Reativar um cancelado só é possível se o horário ainda estiver livre
+        if ag['status'] == 'cancelado' and novo != 'cancelado':
+            data, hora = ag['data_hora'].split(' ')
+            if existe_conflito_agendamento(conn, data, hora_para_minutos(hora), ag['duracao'], ignorar_id=agendamento_id):
+                return jsonify({"erro": "Esse horário já foi ocupado por outro cliente, não dá para reativar."}), 409
+
+        conn.execute("UPDATE agendamentos SET status = ? WHERE id = ?", (novo, agendamento_id))
+        conn.commit()
+    finally:
+        conn.close()
+    textos = {'agendado': 'Agendamento reativado.', 'concluido': 'Atendimento concluído!', 'cancelado': 'Agendamento cancelado.'}
+    return jsonify({"mensagem": textos[novo]})
+
+
+# --- ADMIN: novo agendamento / encaixe feito pelo próprio Mailton ---
+@app.route('/api/admin/agendar', methods=['POST'])
+@requer_login_admin
+def admin_agendar():
+    dados = request.get_json(silent=True) or {}
+    nome_cliente = (dados.get('nome_cliente') or '').strip()[:80]
+    telefone = re.sub(r'\D', '', str(dados.get('telefone_cliente') or ''))
+    servico_id = dados.get('servico_id')
+    data_hora = (dados.get('data_hora') or '').strip()
+    forcar = bool(dados.get('forcar'))
+
+    if len(nome_cliente) < 2:
+        return jsonify({"erro": "Informe o nome do cliente."}), 400
+    if not 10 <= len(telefone) <= 13:
+        return jsonify({"erro": "Informe um WhatsApp válido, com DDD."}), 400
+    try:
+        momento = datetime.strptime(data_hora, '%Y-%m-%d %H:%M')
+    except ValueError:
+        return jsonify({"erro": "Data ou horário inválido."}), 400
+    data, hora = data_hora.split(' ')
+    inicio = hora_para_minutos(hora)
+
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        servico = conn.execute(
+            "SELECT id, duracao_minutos, valor FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)
+        ).fetchone()
+        if not servico:
+            return jsonify({"erro": "Escolha o serviço."}), 400
+        duracao = servico['duracao_minutos']
+
+        # Dois clientes ao mesmo tempo nunca: isso o Mailton não pode forçar
+        if existe_conflito_agendamento(conn, data, inicio, duracao):
+            return jsonify({"erro": "Já existe outro agendamento nesse horário."}), 409
+
+        # Avisos: o Mailton pode confirmar e seguir mesmo assim
+        avisos = []
+        if momento < agora_brasil():
+            avisos.append("Esse horário já passou.")
+        faixas = obter_faixas_do_dia(conn, dia_da_semana(data))
+        if not any(f_ini <= inicio and inicio + duracao <= f_fim for f_ini, f_fim in faixas):
+            avisos.append("Esse horário está fora do seu horário de atendimento.")
+        intervalo = obter_intervalo(conn)
+        bloqueado = conn.execute(
+            "SELECT 1 FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NULL", (data,)
+        ).fetchone()
+        if not bloqueado:
+            for b in conn.execute(
+                "SELECT hora_bloqueio FROM bloqueios WHERE data_bloqueio = ? AND hora_bloqueio IS NOT NULL", (data,)
+            ):
+                b_ini = hora_para_minutos(b['hora_bloqueio'])
+                if inicio < b_ini + intervalo and b_ini < inicio + duracao:
+                    bloqueado = True
+                    break
+        if bloqueado:
+            avisos.append("Esse horário está bloqueado na sua agenda.")
+        if avisos and not forcar:
+            return jsonify({"erro": " ".join(avisos), "avisos": avisos, "pode_forcar": True}), 409
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM clientes WHERE telefone = ?", (telefone,))
+        cliente = cursor.fetchone()
+        if cliente:
+            cliente_id = cliente['id']
+        else:
+            cursor.execute("INSERT INTO clientes (nome, telefone) VALUES (?, ?)", (nome_cliente, telefone))
+            cliente_id = cursor.lastrowid
+
+        token = str(uuid.uuid4())
+        cursor.execute(
+            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor) VALUES (?, ?, ?, ?, ?, ?)",
+            (cliente_id, servico['id'], f"{data} {hora}", token, duracao, servico['valor'])
+        )
+        novo_id = cursor.lastrowid
+        conn.commit()
+    finally:
+        conn.close()
+
+    return jsonify({
+        "mensagem": "Agendamento criado!",
+        "id": novo_id,
+        "token_cancelamento": token,
+        "telefone": telefone
+    }), 201
 
 
 # --- ROTA 8: Página de Cancelamento (aberta pelo cliente via link do WhatsApp) ---
