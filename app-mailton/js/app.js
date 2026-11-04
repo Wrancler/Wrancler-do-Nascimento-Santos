@@ -5,6 +5,8 @@ let dataSelecionada = null;
 let horarioSelecionado = null;
 let servicosCache = [];
 let diasAtendimento = [1, 2, 3, 4, 5, 6]; // 0 = domingo ... 6 = sábado (atualizado pelo servidor)
+let mesesAbertos = null;   // ['2026-11', '2026-12', ...] liberados pelo Mailton; null = ainda não sabemos
+let mesSelecionado = null; // mês que está aberto no calendário agora
 
 // --- FORMATAÇÃO ---
 function formatarDuracao(minutos) {
@@ -70,6 +72,7 @@ async function carregarServicos() {
         if (respExpediente.ok) {
             const expediente = await respExpediente.json();
             diasAtendimento = expediente.dias;
+            mesesAbertos = expediente.meses;
         }
 
         if (servicosCache.length === 0) {
@@ -98,6 +101,7 @@ function abrirModal(id) {
     document.getElementById('modalServicoNome').textContent = servico.nome;
     document.getElementById('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
     
+    mesSelecionado = null;
     resetarSelecoes();
     gerarDatasCarrossel();
     
@@ -114,45 +118,93 @@ function resetarSelecoes() {
     document.getElementById('gridHorarios').innerHTML = '<p class="text-xs text-gray-500 col-span-3 text-center py-4 bg-dark-800 rounded-xl border border-gray-700 border-dashed">Selecione uma data acima.</p>';
 }
 
-function gerarDatasCarrossel() {
-    const container = document.getElementById('carrosselDatas');
-    container.innerHTML = '';
-    
-    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-    
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const SIGLAS_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+// Datas que a cliente pode escolher em um mês: do dia 1 (ou de hoje) até o fim, só dias de atendimento
+function diasDoMes(anoMes) {
+    const [ano, mes] = anoMes.split('-').map(Number);
     const hoje = new Date();
-    const mesesMostrados = [];
+    hoje.setHours(0, 0, 0, 0);
 
-    for(let i = 0; i < 28; i++) {
-        let data = new Date();
-        data.setDate(hoje.getDate() + i);
-
-        // Só aparecem os dias em que o Mailton atende (definido no painel)
+    const dias = [];
+    const totalDias = new Date(ano, mes, 0).getDate();
+    for (let dia = 1; dia <= totalDias; dia++) {
+        const data = new Date(ano, mes - 1, dia);
+        if (data < hoje) continue;
         if (!diasAtendimento.includes(data.getDay())) continue;
+        dias.push(data);
+    }
+    return dias;
+}
 
-        const nomeMes = meses[data.getMonth()];
-        if (!mesesMostrados.includes(nomeMes)) mesesMostrados.push(nomeMes);
+function gerarDatasCarrossel() {
+    const abas = document.getElementById('abasMeses');
+    const container = document.getElementById('carrosselDatas');
+    const rotulo = document.getElementById('mesAtualLabel');
 
-        const diaStr = String(data.getDate()).padStart(2, '0');
-        const mesStr = String(data.getMonth() + 1).padStart(2, '0');
-        const anoStr = data.getFullYear();
-        const dataFormatada = `${anoStr}-${mesStr}-${diaStr}`;
-        
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn-data flex-none snap-start flex flex-col items-center justify-center p-3 rounded-xl min-w-[70px] border border-gray-700 bg-dark-800 text-gray-300 transition hover:border-brand-500';
-        
-        btn.innerHTML = `
-            <span class="text-[10px] font-medium mb-1 tracking-wider">${diasSemana[data.getDay()]}</span>
-            <span class="text-xl font-bold">${diaStr}</span>
-        `;
-
-        btn.onclick = () => selecionarData(btn, dataFormatada);
-        container.appendChild(btn);
+    // Se o servidor não informou os meses, usa o mês atual e o próximo
+    let meses = mesesAbertos;
+    if (!meses) {
+        const agora = new Date();
+        const proximo = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+        const formatar = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        meses = [formatar(agora), formatar(proximo)];
     }
 
-    document.getElementById('mesAtualLabel').textContent = mesesMostrados.join(' / ');
+    // Só entram meses que ainda têm algum dia para escolher
+    const mesesComDias = meses.filter(m => diasDoMes(m).length > 0);
+
+    abas.innerHTML = '';
+    container.innerHTML = '';
+
+    if (mesesComDias.length === 0) {
+        rotulo.textContent = '';
+        container.innerHTML = '<p class="text-base text-gray-400 py-4 pr-2">A agenda ainda não está aberta. Fale com o Mailton pelo WhatsApp, no final da página.</p>';
+        return;
+    }
+
+    if (!mesesComDias.includes(mesSelecionado)) mesSelecionado = mesesComDias[0];
+
+    // Abas de mês (só aparecem quando há mais de um mês aberto)
+    if (mesesComDias.length > 1) {
+        mesesComDias.forEach(anoMes => {
+            const [, mes] = anoMes.split('-').map(Number);
+            const ativa = anoMes === mesSelecionado;
+            const aba = document.createElement('button');
+            aba.type = 'button';
+            aba.className = 'aba-mes shrink-0 px-5 py-2.5 rounded-full text-base font-semibold border transition ' +
+                (ativa ? 'bg-brand-500 text-black border-brand-500' : 'bg-white/5 text-gray-200 border-white/10 hover:border-brand-500');
+            aba.textContent = NOMES_MESES[mes - 1];
+            aba.onclick = () => {
+                mesSelecionado = anoMes;
+                resetarSelecoes();
+                gerarDatasCarrossel();
+            };
+            abas.appendChild(aba);
+        });
+    }
+
+    const [anoSel, mesSel] = mesSelecionado.split('-').map(Number);
+    rotulo.textContent = `${NOMES_MESES[mesSel - 1]} ${anoSel}`;
+
+    diasDoMes(mesSelecionado).forEach(data => {
+        const diaStr = String(data.getDate()).padStart(2, '0');
+        const mesStr = String(data.getMonth() + 1).padStart(2, '0');
+        const dataFormatada = `${data.getFullYear()}-${mesStr}-${diaStr}`;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-data flex-none snap-start flex flex-col items-center justify-center p-3 rounded-xl min-w-[76px] border border-gray-700 bg-dark-800 text-gray-300 transition hover:border-brand-500';
+        btn.innerHTML = `
+            <span class="text-xs font-medium mb-1 tracking-wider">${DIAS_SEMANA[data.getDay()]}</span>
+            <span class="text-2xl font-bold leading-none">${diaStr}</span>
+            <span class="text-xs font-bold mt-1 tracking-wider text-brand-400">${SIGLAS_MESES[data.getMonth()]}</span>
+        `;
+        btn.onclick = () => selecionarData(btn, dataFormatada);
+        container.appendChild(btn);
+    });
 }
 
 async function selecionarData(botao, dataFormatoSQL) {

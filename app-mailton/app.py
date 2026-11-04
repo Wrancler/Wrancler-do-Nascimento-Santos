@@ -217,8 +217,13 @@ def expediente_publico():
     conn = get_db_connection()
     dias = [l['dia_semana'] for l in conn.execute("SELECT DISTINCT dia_semana FROM expediente ORDER BY dia_semana")]
     intervalo = obter_intervalo(conn)
+    # Meses que o Mailton liberou (do mês atual em diante): o calendário do cliente só mostra esses
+    mes_atual = agora_brasil().strftime('%Y-%m')
+    meses = [l['ano_mes'] for l in conn.execute(
+        "SELECT ano_mes FROM meses_abertos WHERE status = 'aberto' AND ano_mes >= ? ORDER BY ano_mes", (mes_atual,)
+    )]
     conn.close()
-    return jsonify({"dias": dias, "intervalo": intervalo})
+    return jsonify({"dias": dias, "intervalo": intervalo, "meses": meses})
 
 # --- ROTA 2: Receber e gravar o agendamento ---
 @app.route('/api/agendar', methods=['POST'])

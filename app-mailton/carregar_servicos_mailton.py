@@ -4,18 +4,31 @@ Uso (no terminal, dentro da pasta app-mailton, com o servidor parado):
     python database.py
     python carregar_servicos_mailton.py
 
-- Serviços com o mesmo nome são atualizados (duração e valor).
-- Serviços novos são criados.
-- Serviços antigos que não estão na lista: apagados se nunca foram agendados;
-  se já têm agendamentos, são apenas desativados (o histórico não se perde).
-Antes de mexer, faz um backup automático.
+O que ele faz (de forma segura, pode rodar mais de uma vez):
+- Cria os serviços da lista que ainda NÃO existem (confere pelo nome).
+- NÃO mexe em serviços que já existem: o tempo e o valor que o Mailton ajustou no painel ficam como estão.
+- NÃO apaga serviços que o Mailton criou pelo painel.
+- Remove os 3 serviços de exemplo do começo do projeto (se nunca foram agendados;
+  se já têm agendamentos, só são ocultados para não perder o histórico).
+
+Opção extra, para quem quer voltar tudo ao padrão da lista:
+    python carregar_servicos_mailton.py --atualizar
+(sobrescreve tempo, valor e ordem dos serviços da lista que já existem)
+
+Antes de mexer em qualquer coisa, faz um backup automático.
 """
 import sqlite3
+import sys
 
 from backup import fazer_backup
 from database import ARQUIVO_BANCO, SERVICOS_MAILTON, criar_banco
 
+# Serviços de exemplo que vinham no início do projeto, antes dos serviços reais
+SERVICOS_DE_EXEMPLO = ['Design de Sobrancelha', 'Micropigmentação', 'Retoque / Manutenção']
+
 if __name__ == '__main__':
+    atualizar = '--atualizar' in sys.argv
+
     criar_banco()  # garante que as colunas novas existem
     caminho = fazer_backup()
     print(f"Backup de segurança criado: {caminho}\n")
@@ -28,36 +41,44 @@ if __name__ == '__main__':
         raise SystemExit("Nenhum profissional encontrado. Rode primeiro: python database.py")
     prof_id = profissional['id']
 
-    nomes_novos = set()
+    nomes_da_lista = {nome for nome, _, _ in SERVICOS_MAILTON}
+
     with conn:
         for ordem, (nome, duracao, valor) in enumerate(SERVICOS_MAILTON, start=1):
-            nomes_novos.add(nome)
             existente = conn.execute(
                 "SELECT id FROM servicos WHERE profissional_id = ? AND nome = ?", (prof_id, nome)
             ).fetchone()
-            if existente:
+            if existente and atualizar:
                 conn.execute(
                     "UPDATE servicos SET duracao_minutos = ?, valor = ?, ordem = ?, ativo = 1 WHERE id = ?",
                     (duracao, valor, ordem, existente['id'])
                 )
-                print(f"Atualizado: {nome}")
+                print(f"Atualizado:  {nome}")
+            elif existente:
+                print(f"Já existe:   {nome} (mantido como está)")
             else:
                 conn.execute(
                     "INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor, ordem) VALUES (?, ?, ?, ?, ?)",
                     (prof_id, nome, duracao, valor, ordem)
                 )
-                print(f"Criado:     {nome}")
+                print(f"Criado:      {nome}")
 
-        for antigo in conn.execute("SELECT id, nome FROM servicos WHERE profissional_id = ?", (prof_id,)).fetchall():
-            if antigo['nome'] in nomes_novos:
+        # Só os serviços de exemplo saem; qualquer outro serviço (criado pelo Mailton) é preservado
+        for exemplo in SERVICOS_DE_EXEMPLO:
+            if exemplo in nomes_da_lista:
                 continue
-            usos = conn.execute("SELECT COUNT(*) FROM agendamentos WHERE servico_id = ?", (antigo['id'],)).fetchone()[0]
+            linha = conn.execute(
+                "SELECT id FROM servicos WHERE profissional_id = ? AND nome = ?", (prof_id, exemplo)
+            ).fetchone()
+            if not linha:
+                continue
+            usos = conn.execute("SELECT COUNT(*) FROM agendamentos WHERE servico_id = ?", (linha['id'],)).fetchone()[0]
             if usos:
-                conn.execute("UPDATE servicos SET ativo = 0 WHERE id = ?", (antigo['id'],))
-                print(f"Desativado (tem {usos} agendamento(s)): {antigo['nome']}")
+                conn.execute("UPDATE servicos SET ativo = 0 WHERE id = ?", (linha['id'],))
+                print(f"Ocultado (tem {usos} agendamento(s)): {exemplo}")
             else:
-                conn.execute("DELETE FROM servicos WHERE id = ?", (antigo['id'],))
-                print(f"Removido:   {antigo['nome']}")
+                conn.execute("DELETE FROM servicos WHERE id = ?", (linha['id'],))
+                print(f"Removido:    {exemplo}")
 
     conn.close()
     print("\nPronto! Serviços do Mailton carregados.")
