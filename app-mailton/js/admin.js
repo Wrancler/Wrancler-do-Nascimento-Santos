@@ -5,6 +5,7 @@ let dataSelecionadaAdmin = null;
 let agendamentosCache = [];
 let servicosAdmin = [];
 let expedienteEstado = null; // { intervalo: 30, dias: { '0': [], '1': [{inicio, fim}], ... } }
+let periodoFinanceiro = 'hoje'; // hoje | semana | mes | mes_passado
 
 const NOMES_DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 const ORDEM_DIAS = [1, 2, 3, 4, 5, 6, 0]; // a semana começa na segunda
@@ -118,10 +119,10 @@ async function carregarDashboard() {
     if (!resposta.ok) throw new Error('Falha ao carregar o painel');
 
     const dados = resposta.dados;
-    document.getElementById('faturamentoAdmin').textContent = formatarMoeda(dados.receita_total);
     renderizarMesesAdmin(dados.meses);
     agendamentosCache = dados.agendamentos;
     inicializarAgenda();
+    await carregarFinanceiro();
 }
 
 // Carrega tudo: agenda, serviços e horários de atendimento (roda depois do login)
@@ -656,6 +657,201 @@ async function salvarExpediente() {
         mostrarAviso(resposta.dados.mensagem);
     } catch (e) {
         mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+// ------------------------------------------------------------
+//  FINANÇAS
+// ------------------------------------------------------------
+const ROTULOS_PERIODO = {
+    hoje: 'Recebido hoje',
+    semana: 'Recebido na semana',
+    mes: 'Recebido no mês',
+    mes_passado: 'Recebido no mês passado'
+};
+
+const ESTILO_SITUACAO = {
+    concluido: { classe: 'bg-sky-500/20 text-sky-400', texto: 'Concluído' },
+    sem_concluir: { classe: 'bg-brand-500/20 text-brand-400', texto: 'Falta concluir' },
+    a_receber: { classe: 'bg-green-500/20 text-green-400', texto: 'Agendado' }
+};
+
+function dataCurta(dataIso) {
+    const [, mes, dia] = dataIso.split('-');
+    return `${dia}/${mes}`;
+}
+
+function pluralizar(qtd, singular, plural) {
+    return `${qtd} ${qtd === 1 ? singular : plural}`;
+}
+
+function mudarPeriodoFinanceiro(periodo) {
+    periodoFinanceiro = periodo;
+    marcarPeriodoAtivo();
+    carregarFinanceiro();
+}
+
+function marcarPeriodoAtivo() {
+    document.querySelectorAll('#filtrosFinanceiro button').forEach(b => {
+        const ativo = b.dataset.periodo === periodoFinanceiro;
+        b.classList.toggle('bg-white/10', ativo);
+        b.classList.toggle('text-white', ativo);
+        b.classList.toggle('shadow-sm', ativo);
+        b.classList.toggle('font-bold', ativo);
+        b.classList.toggle('text-gray-400', !ativo);
+        b.classList.toggle('font-semibold', !ativo);
+    });
+}
+
+async function carregarFinanceiro() {
+    marcarPeriodoAtivo();
+    try {
+        const resposta = await api(`/api/admin/financeiro?periodo=${periodoFinanceiro}`);
+        if (!resposta) return;
+        if (!resposta.ok) throw new Error('Falha ao carregar as finanças');
+        renderizarFinanceiro(resposta.dados);
+    } catch (erro) {
+        console.error('Erro nas finanças:', erro);
+        mostrarAviso('Não foi possível carregar as finanças.', 'erro');
+    }
+}
+
+function renderizarFinanceiro(d) {
+    document.getElementById('rotuloFinanceiro').textContent = ROTULOS_PERIODO[d.periodo];
+    document.getElementById('faturamentoAdmin').textContent = formatarMoeda(d.recebido);
+    document.getElementById('detalheFinanceiro').textContent = d.qtd_concluidos
+        ? `${pluralizar(d.qtd_concluidos, 'atendimento concluído', 'atendimentos concluídos')} • ticket médio ${formatarMoeda(d.ticket_medio)}`
+        : 'Nenhum atendimento concluído neste período';
+    document.getElementById('datasFinanceiro').textContent = d.inicio === d.fim
+        ? `Dia ${dataCurta(d.inicio)}/${d.inicio.slice(0, 4)}`
+        : `De ${dataCurta(d.inicio)} a ${dataCurta(d.fim)}/${d.fim.slice(0, 4)}`;
+
+    document.getElementById('finAReceber').textContent = formatarMoeda(d.a_receber);
+    document.getElementById('finAReceberQtd').textContent = pluralizar(d.qtd_a_receber, 'agendado', 'agendados');
+    document.getElementById('finSemConcluir').textContent = formatarMoeda(d.sem_concluir);
+    document.getElementById('finSemConcluirQtd').textContent = pluralizar(d.qtd_sem_concluir, 'atendimento', 'atendimentos');
+
+    const pendente = d.qtd_sem_concluir > 0;
+    const cartao = document.getElementById('cartaoSemConcluir');
+    cartao.classList.toggle('border-brand-500/60', pendente);
+    cartao.classList.toggle('border-white/10', !pendente);
+    document.getElementById('avisoSemConcluir').classList.toggle('hidden', !pendente);
+    document.getElementById('espacoSemAviso').classList.toggle('hidden', pendente);
+
+    // O que mais rendeu
+    const bloco = document.getElementById('blocoPorServico');
+    const maior = d.por_servico.length ? d.por_servico[0].total : 0;
+    bloco.classList.toggle('hidden', d.por_servico.length === 0);
+    document.getElementById('finPorServico').innerHTML = d.por_servico.map(s => `
+        <div>
+            <div class="flex justify-between items-baseline gap-3">
+                <p class="text-sm font-semibold text-white truncate">${escaparHtml(s.servico)}</p>
+                <p class="text-sm font-bold text-brand-400 shrink-0">${formatarMoeda(s.total)}</p>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-0.5">${pluralizar(s.qtd, 'atendimento', 'atendimentos')}</p>
+            <div class="h-1.5 bg-white/10 rounded-full mt-2"><div class="h-1.5 bg-brand-500 rounded-full" style="width: ${maior ? Math.max(4, Math.round(s.total / maior * 100)) : 0}%"></div></div>
+        </div>
+    `).join('');
+
+    // Lista de atendimentos
+    const lista = document.getElementById('listaFinancas');
+    lista.innerHTML = '';
+    if (d.atendimentos.length === 0) {
+        lista.innerHTML = '<p class="text-xs text-gray-500 text-center py-8 bg-surface rounded-2xl border border-white/5 border-dashed">Nenhum atendimento neste período.</p>';
+    }
+    d.atendimentos.forEach(a => lista.appendChild(criarItemFinanceiro(a)));
+    document.getElementById('avisoLimiteFinanceiro').classList.toggle('hidden', !d.limitado);
+}
+
+function criarItemFinanceiro(a) {
+    const estilo = ESTILO_SITUACAO[a.situacao];
+    const [data, hora] = a.data_hora.split(' ');
+
+    let acoes = '';
+    if (a.situacao === 'sem_concluir') {
+        acoes = `
+            <button onclick="acaoNoFinanceiro(${a.id}, 'concluido')" class="flex-1 bg-green-500/15 text-green-400 border border-green-500/20 rounded-lg py-2 text-xs font-bold hover:bg-green-500/25 transition-colors"><i class="fa-solid fa-check mr-1"></i>Concluir</button>
+            <button onclick="acaoNoFinanceiro(${a.id}, 'cancelado')" class="flex-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg py-2 text-xs font-bold hover:bg-red-500/20 transition-colors">Não aconteceu</button>`;
+    } else if (a.situacao === 'concluido') {
+        acoes = `<button onclick="acaoNoFinanceiro(${a.id}, 'agendado')" class="text-[11px] text-gray-500 hover:text-gray-300 underline">Desfazer conclusão</button>`;
+    }
+
+    const item = document.createElement('div');
+    item.className = 'bg-surface rounded-2xl p-4 border border-white/10';
+    item.innerHTML = `
+        <div class="flex justify-between items-start gap-3">
+            <div class="min-w-0">
+                <p class="text-white font-bold text-sm truncate">${escaparHtml(a.cliente)}</p>
+                <p class="text-gray-400 text-[11px] mt-0.5 truncate">${escaparHtml(a.servico)}</p>
+                <p class="text-gray-500 text-[11px] mt-0.5">${dataCurta(data)} às ${hora}</p>
+            </div>
+            <div class="text-right shrink-0">
+                <p class="text-white font-bold text-sm">${formatarMoeda(a.valor)}</p>
+                <span class="inline-block mt-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase ${estilo.classe}">${estilo.texto}</span>
+            </div>
+        </div>
+        ${acoes ? `<div class="flex gap-2 mt-3 pt-3 border-t border-white/5 ${a.situacao === 'concluido' ? 'justify-end' : ''}">${acoes}</div>` : ''}
+    `;
+    return item;
+}
+
+// Concluir (ou desfazer) direto pela lista de finanças, inclusive de dias que já passaram
+async function acaoNoFinanceiro(id, novoStatus) {
+    if (novoStatus === 'cancelado' && !confirm('Marcar este atendimento como "não aconteceu"? Ele sai do valor a receber.')) return;
+    if (novoStatus === 'agendado' && !confirm('Desfazer a conclusão? O valor sai de "recebido" e volta para "falta concluir".')) return;
+    try {
+        const resposta = await api(`/api/admin/agendamentos/${id}/status`, 'POST', { status: novoStatus });
+        if (!resposta) return;
+        if (!resposta.ok) {
+            mostrarAviso(resposta.dados.erro || 'Não foi possível alterar o atendimento.', 'erro');
+            return;
+        }
+        mostrarAviso(resposta.dados.mensagem);
+        await carregarDashboard();
+    } catch (erro) {
+        mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    }
+}
+
+// ------------------------------------------------------------
+//  SEGURANÇA: TROCAR A SENHA
+// ------------------------------------------------------------
+function alternarVisibilidadeSenhas(mostrar) {
+    ['senhaAtual', 'senhaNova', 'senhaNova2'].forEach(id => {
+        document.getElementById(id).type = mostrar ? 'text' : 'password';
+    });
+}
+
+async function trocarSenhaAdmin() {
+    const erro = document.getElementById('erroSenha');
+    erro.classList.add('hidden');
+    const mostrarErro = (texto) => { erro.textContent = texto; erro.classList.remove('hidden'); };
+
+    const atual = document.getElementById('senhaAtual').value;
+    const nova = document.getElementById('senhaNova').value;
+    const repetida = document.getElementById('senhaNova2').value;
+
+    if (!atual || !nova || !repetida) return mostrarErro('Preencha os três campos.');
+    if (nova.length < 6) return mostrarErro('A nova senha precisa ter pelo menos 6 caracteres.');
+    if (nova !== repetida) return mostrarErro('A nova senha e a repetição não são iguais.');
+
+    const botao = document.getElementById('btnTrocarSenha');
+    botao.disabled = true;
+    try {
+        const resposta = await api('/api/admin/senha', 'POST', { senha_atual: atual, senha_nova: nova });
+        if (!resposta) return;
+        if (!resposta.ok) return mostrarErro(resposta.dados.erro || 'Não foi possível trocar a senha.');
+
+        // O login anterior deixou de valer: guarda o novo para esta tela continuar conectada
+        localStorage.setItem('wn_admin_token', resposta.dados.token);
+        ['senhaAtual', 'senhaNova', 'senhaNova2'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('mostrarSenhas').checked = false;
+        alternarVisibilidadeSenhas(false);
+        mostrarAviso('Senha alterada! Use a nova senha no próximo acesso.');
+    } catch (e) {
+        mostrarErro('Erro de conexão com o servidor.');
     } finally {
         botao.disabled = false;
     }

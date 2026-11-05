@@ -7,6 +7,9 @@ import sqlite3
 import uuid
 import os
 import re
+import time
+import hmac
+import hashlib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -158,26 +161,59 @@ def arquivos_img(nome_arquivo):
 
 # --- CONFIGURAÇÃO DE SEGURANÇA DO PAINEL ADMIN ---
 # IMPORTANTE: em produção, defina estas variáveis de ambiente ANTES de rodar o servidor
-# (nunca deixe a senha real em texto puro no código). Veja o final deste arquivo
-# para o comando que gera o hash de uma senha nova.
+# (nunca deixe a senha real em texto puro no código).
 SECRET_KEY = os.environ.get('WN_SECRET_KEY', 'troque-esta-chave-antes-de-ir-para-producao')
+# Senha INICIAL do painel. Vale só até o Mailton trocar a senha pelo próprio painel:
+# a partir daí a senha dele fica guardada (criptografada) no banco e esta é ignorada.
 ADMIN_PASSWORD_HASH = os.environ.get(
     'WN_ADMIN_PASSWORD_HASH',
     generate_password_hash('2020')  # senha padrão só para testar localmente
 )
-TOKEN_MAX_AGE_SEGUNDOS = 60 * 60 * 8  # o token expira depois de 8 horas
+TOKEN_MAX_AGE_SEGUNDOS = 60 * 60 * 8  # o login expira depois de 8 horas
+
+MAX_FALHAS_LOGIN = 8          # tentativas erradas permitidas...
+JANELA_LOGIN_SEG = 15 * 60    # ...a cada 15 minutos, por aparelho/IP
+SENHAS_FRACAS = {
+    '123456', '1234567', '12345678', '123456789', '000000', '111111', '123123',
+    'senha', 'senha123', 'mailton', 'mailton123', 'abc123', 'admin', 'admin123',
+    'qwerty', '2020', '7195',
+}
 
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
-def gerar_token_admin():
-    return serializer.dumps({'admin': True})
+
+def obter_hash_admin(conn):
+    """Senha em uso: a que o Mailton definiu no painel (guardada no banco) ou, se ele nunca trocou, a inicial."""
+    try:
+        linha = conn.execute("SELECT valor FROM configuracoes WHERE chave = 'admin_senha_hash'").fetchone()
+    except sqlite3.OperationalError:
+        return ADMIN_PASSWORD_HASH
+    return linha['valor'] if linha else ADMIN_PASSWORD_HASH
+
+
+def impressao_senha(hash_senha):
+    """Identificador da senha atual. Entra dentro do login: trocar a senha derruba todos os logins antigos."""
+    return hashlib.sha256(hash_senha.encode('utf-8')).hexdigest()[:16]
+
+
+def gerar_token_admin(hash_senha):
+    return serializer.dumps({'admin': True, 'v': impressao_senha(hash_senha)})
+
 
 def token_valido(token):
     try:
         dados = serializer.loads(token, max_age=TOKEN_MAX_AGE_SEGUNDOS)
-        return dados.get('admin') is True
     except (BadSignature, SignatureExpired):
         return False
+    if dados.get('admin') is not True:
+        return False
+    conn = get_db_connection()
+    try:
+        hash_atual = obter_hash_admin(conn)
+    finally:
+        conn.close()
+    return hmac.compare_digest(str(dados.get('v', '')), impressao_senha(hash_atual))
+
 
 def requer_login_admin(funcao):
     """Decorador: bloqueia a rota se não vier um token válido no header Authorization."""
@@ -192,14 +228,108 @@ def requer_login_admin(funcao):
         return funcao(*args, **kwargs)
     return wrapper
 
+
+# --- PROTEÇÃO CONTRA ADIVINHAÇÃO DE SENHA ---
+def ip_do_cliente():
+    return (request.headers.get('X-Real-IP') or request.remote_addr or 'desconhecido')[:64]
+
+
+def login_bloqueado(conn, ip):
+    """True se este IP errou a senha vezes demais nos últimos minutos."""
+    conn.execute('''CREATE TABLE IF NOT EXISTS tentativas_login (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, momento INTEGER NOT NULL)''')
+    conn.execute("DELETE FROM tentativas_login WHERE momento < ?", (int(time.time()) - JANELA_LOGIN_SEG,))
+    falhas = conn.execute("SELECT COUNT(*) FROM tentativas_login WHERE ip = ?", (ip,)).fetchone()[0]
+    return falhas >= MAX_FALHAS_LOGIN
+
+
+def registrar_falha_login(conn, ip):
+    conn.execute("INSERT INTO tentativas_login (ip, momento) VALUES (?, ?)", (ip, int(time.time())))
+
+
+def limpar_falhas_login(conn, ip):
+    conn.execute("DELETE FROM tentativas_login WHERE ip = ?", (ip,))
+
+
+MENSAGEM_MUITAS_TENTATIVAS = "Muitas tentativas erradas. Aguarde 15 minutos e tente de novo."
+
+
 # --- ROTA DE LOGIN DO ADMIN ---
 @app.route('/api/admin/login', methods=['POST'])
 def login_admin():
-    dados = request.json or {}
-    senha = dados.get('senha', '')
-    if check_password_hash(ADMIN_PASSWORD_HASH, senha):
-        return jsonify({"token": gerar_token_admin()})
-    return jsonify({"erro": "Senha incorreta"}), 401
+    dados = request.get_json(silent=True) or {}
+    senha = str(dados.get('senha', ''))
+    ip = ip_do_cliente()
+
+    conn = get_db_connection()
+    try:
+        if login_bloqueado(conn, ip):
+            conn.commit()
+            return jsonify({"erro": MENSAGEM_MUITAS_TENTATIVAS}), 429
+
+        hash_atual = obter_hash_admin(conn)
+        if check_password_hash(hash_atual, senha):
+            limpar_falhas_login(conn, ip)
+            conn.commit()
+            return jsonify({"token": gerar_token_admin(hash_atual)})
+
+        registrar_falha_login(conn, ip)
+        conn.commit()
+        return jsonify({"erro": "Senha incorreta"}), 401
+    finally:
+        conn.close()
+
+
+def validar_senha_nova(nova, atual):
+    """Devolve a mensagem de erro, ou None se a senha nova é aceitável."""
+    if not 6 <= len(nova) <= 64:
+        return "A nova senha deve ter de 6 a 64 caracteres."
+    if nova == atual:
+        return "A nova senha precisa ser diferente da atual."
+    if nova.lower() in SENHAS_FRACAS or len(set(nova)) == 1:
+        return "Essa senha é muito fácil de adivinhar. Escolha outra."
+    return None
+
+
+# --- ADMIN: trocar a senha do painel ---
+@app.route('/api/admin/senha', methods=['POST'])
+@requer_login_admin
+def admin_trocar_senha():
+    dados = request.get_json(silent=True) or {}
+    atual = str(dados.get('senha_atual') or '')
+    nova = str(dados.get('senha_nova') or '')
+    ip = ip_do_cliente()
+
+    conn = get_db_connection()
+    try:
+        if login_bloqueado(conn, ip):
+            conn.commit()
+            return jsonify({"erro": MENSAGEM_MUITAS_TENTATIVAS}), 429
+
+        hash_atual = obter_hash_admin(conn)
+        if not check_password_hash(hash_atual, atual):
+            registrar_falha_login(conn, ip)
+            conn.commit()
+            # 400 (e não 401) de propósito: 401 faz o painel achar que o login expirou
+            return jsonify({"erro": "A senha atual está incorreta."}), 400
+
+        erro = validar_senha_nova(nova, atual)
+        if erro:
+            return jsonify({"erro": erro}), 400
+
+        novo_hash = generate_password_hash(nova)
+        conn.execute(
+            "INSERT INTO configuracoes (chave, valor) VALUES ('admin_senha_hash', ?) "
+            "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", (novo_hash,)
+        )
+        limpar_falhas_login(conn, ip)
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Devolve um login novo para quem trocou a senha não ser desconectado
+    return jsonify({"mensagem": "Senha alterada com sucesso!", "token": gerar_token_admin(novo_hash)})
+
 
 # --- ROTA 1: Enviar os serviços para o HTML ---
 @app.route('/api/servicos', methods=['GET'])
@@ -328,9 +458,10 @@ def horarios_livres():
 @requer_login_admin
 def admin_dashboard():
     conn = get_db_connection()
-    
-    # 1. Puxa os agendamentos e finanças
-    query = '''
+
+    # A agenda mostra de hoje em diante; o que já passou aparece na aba Finanças
+    inicio_hoje = agora_brasil().strftime('%Y-%m-%d') + ' 00:00'
+    agendamentos = conn.execute('''
         SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico,
                COALESCE(a.valor, s.valor) AS valor,
                COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao_minutos,
@@ -338,19 +469,112 @@ def admin_dashboard():
         FROM agendamentos a
         JOIN clientes c ON a.cliente_id = c.id
         JOIN servicos s ON a.servico_id = s.id
+        WHERE a.data_hora >= ?
         ORDER BY a.data_hora DESC
-    '''
-    agendamentos = conn.execute(query).fetchall()
-    receita_total = sum([ag['valor'] for ag in agendamentos if ag['status'] != 'cancelado'])
-    
-    # 2. Puxa os meses que já foram configurados no banco
+    ''', (inicio_hoje,)).fetchall()
+
+    # Meses que já foram configurados no banco
     meses = conn.execute('SELECT ano_mes, status FROM meses_abertos').fetchall()
-    
+
     conn.close()
     return jsonify({
-        "receita_total": receita_total,
         "agendamentos": [dict(ag) for ag in agendamentos],
         "meses": [dict(m) for m in meses]
+    })
+
+
+# --- ADMIN: finanças por período ---
+PERIODOS_FINANCEIROS = ('hoje', 'semana', 'mes', 'mes_passado')
+
+def intervalo_do_periodo(periodo, hoje):
+    """Devolve (primeiro_dia, ultimo_dia) do período. A semana vai de segunda a domingo."""
+    if periodo == 'hoje':
+        return hoje, hoje
+    if periodo == 'semana':
+        inicio = hoje - timedelta(days=hoje.weekday())
+        return inicio, inicio + timedelta(days=6)
+    if periodo == 'mes':
+        inicio = hoje.replace(day=1)
+    else:  # mes_passado
+        inicio = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1)
+    fim = (inicio.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    return inicio, fim
+
+
+@app.route('/api/admin/financeiro', methods=['GET'])
+@requer_login_admin
+def admin_financeiro():
+    periodo = request.args.get('periodo', 'hoje')
+    if periodo not in PERIODOS_FINANCEIROS:
+        return jsonify({"erro": "Período inválido."}), 400
+
+    agora = agora_brasil()
+    primeiro, ultimo = intervalo_do_periodo(periodo, agora.date())
+    limite_inferior = f"{primeiro.isoformat()} 00:00"
+    limite_superior = f"{(ultimo + timedelta(days=1)).isoformat()} 00:00"
+    agora_texto = agora.strftime('%Y-%m-%d %H:%M')
+
+    conn = get_db_connection()
+    linhas = conn.execute('''
+        SELECT a.id, c.nome AS cliente, s.nome AS servico, a.data_hora, a.status,
+               COALESCE(a.valor, s.valor) AS valor
+        FROM agendamentos a
+        JOIN clientes c ON a.cliente_id = c.id
+        JOIN servicos s ON a.servico_id = s.id
+        WHERE a.data_hora >= ? AND a.data_hora < ?
+        ORDER BY a.data_hora DESC
+    ''', (limite_inferior, limite_superior)).fetchall()
+    conn.close()
+
+    recebido = a_receber = sem_concluir = 0.0
+    qtd_concluidos = qtd_a_receber = qtd_sem_concluir = qtd_cancelados = 0
+    por_servico = {}
+    atendimentos = []
+
+    for l in linhas:
+        valor = l['valor'] or 0
+        if l['status'] == 'cancelado':
+            qtd_cancelados += 1
+            continue
+        if l['status'] == 'concluido':
+            situacao = 'concluido'
+            recebido += valor
+            qtd_concluidos += 1
+            item = por_servico.setdefault(l['servico'], {'servico': l['servico'], 'qtd': 0, 'total': 0.0})
+            item['qtd'] += 1
+            item['total'] += valor
+        elif l['data_hora'] <= agora_texto:
+            situacao = 'sem_concluir'   # já passou, mas ainda não foi marcado como concluído
+            sem_concluir += valor
+            qtd_sem_concluir += 1
+        else:
+            situacao = 'a_receber'      # ainda vai acontecer
+            a_receber += valor
+            qtd_a_receber += 1
+        atendimentos.append({
+            "id": l['id'], "cliente": l['cliente'], "servico": l['servico'],
+            "data_hora": l['data_hora'], "valor": valor, "situacao": situacao
+        })
+
+    ranking = sorted(por_servico.values(), key=lambda i: i['total'], reverse=True)[:5]
+    for item in ranking:
+        item['total'] = round(item['total'], 2)
+
+    return jsonify({
+        "periodo": periodo,
+        "inicio": primeiro.isoformat(),
+        "fim": ultimo.isoformat(),
+        "recebido": round(recebido, 2),
+        "qtd_concluidos": qtd_concluidos,
+        "ticket_medio": round(recebido / qtd_concluidos, 2) if qtd_concluidos else 0,
+        "a_receber": round(a_receber, 2),
+        "qtd_a_receber": qtd_a_receber,
+        "sem_concluir": round(sem_concluir, 2),
+        "qtd_sem_concluir": qtd_sem_concluir,
+        "qtd_cancelados": qtd_cancelados,
+        "por_servico": ranking,
+        "atendimentos": atendimentos[:300],
+        "limitado": len(atendimentos) > 300
     })
 
 # --- ROTA 5: Abrir ou Fechar um Mês ---

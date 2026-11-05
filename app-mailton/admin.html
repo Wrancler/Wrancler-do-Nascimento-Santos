@@ -40,7 +40,7 @@
             <button onclick="fazerLogin()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-lg py-4 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.98] transition-transform">
                 Entrar
             </button>
-            <p id="erroLogin" class="text-red-400 text-xs text-center hidden mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Senha incorreta.</p>
+            <p id="erroLogin" class="text-red-400 text-xs text-center hidden mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span id="textoErroLogin">Senha incorreta.</span></p>
         </div>
     </div>
 
@@ -93,24 +93,52 @@
 
         <!-- SEPARADOR 2: FINANÇAS -->
         <main id="tabFinancas" class="tab-content hidden px-5 py-6">
-            <!-- Filtros de Tempo -->
-            <div class="flex p-1 bg-surface rounded-xl mb-6 border border-white/5">
-                <button class="flex-1 py-2 text-xs font-bold rounded-lg bg-white/10 text-white shadow-sm">Hoje</button>
-                <button class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white">Semana</button>
-                <button class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white">Mês</button>
+            <!-- Filtros de período -->
+            <div id="filtrosFinanceiro" class="grid grid-cols-4 gap-1 p-1 bg-surface rounded-xl mb-6 border border-white/5">
+                <button data-periodo="hoje" onclick="mudarPeriodoFinanceiro('hoje')" class="py-2 text-xs rounded-lg">Hoje</button>
+                <button data-periodo="semana" onclick="mudarPeriodoFinanceiro('semana')" class="py-2 text-xs rounded-lg">Semana</button>
+                <button data-periodo="mes" onclick="mudarPeriodoFinanceiro('mes')" class="py-2 text-xs rounded-lg">Mês</button>
+                <button data-periodo="mes_passado" onclick="mudarPeriodoFinanceiro('mes_passado')" class="py-2 text-xs rounded-lg">Mês passado</button>
             </div>
 
             <!-- Cartão de Receita -->
-            <div class="bg-gradient-to-br from-brand-600 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(245,158,11,0.2)] text-black relative overflow-hidden mb-6">
+            <div class="bg-gradient-to-br from-brand-600 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(245,158,11,0.2)] text-black relative overflow-hidden mb-2">
                 <i class="fa-solid fa-wallet absolute -right-4 -bottom-4 text-7xl text-black/10"></i>
-                <p class="text-sm font-bold uppercase tracking-wider opacity-80 mb-1">Faturamento (Hoje)</p>
+                <p id="rotuloFinanceiro" class="text-sm font-bold uppercase tracking-wider opacity-80 mb-1">Recebido hoje</p>
                 <h2 class="text-4xl font-black tracking-tight" id="faturamentoAdmin">R$ 0,00</h2>
+                <p id="detalheFinanceiro" class="text-xs font-semibold opacity-80 mt-2">0 atendimentos concluídos</p>
             </div>
+            <p id="datasFinanceiro" class="text-xs text-gray-500 mb-5 px-1"></p>
 
-            <h3 class="text-lg font-semibold text-white mb-3">Histórico Recebido</h3>
+            <!-- A receber / Falta concluir -->
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="bg-surface rounded-2xl p-4 border border-white/10">
+                    <p class="text-[10px] uppercase tracking-wider text-gray-500 font-bold">A receber</p>
+                    <p id="finAReceber" class="text-lg font-bold text-white mt-1">R$ 0,00</p>
+                    <p id="finAReceberQtd" class="text-[11px] text-gray-500 mt-0.5">0 agendados</p>
+                </div>
+                <div id="cartaoSemConcluir" class="bg-surface rounded-2xl p-4 border border-white/10">
+                    <p class="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Falta concluir</p>
+                    <p id="finSemConcluir" class="text-lg font-bold text-white mt-1">R$ 0,00</p>
+                    <p id="finSemConcluirQtd" class="text-[11px] text-gray-500 mt-0.5">0 atendimentos</p>
+                </div>
+            </div>
+            <p id="avisoSemConcluir" class="hidden text-xs text-brand-400 bg-brand-500/10 border border-brand-500/20 rounded-xl p-3 mb-6">
+                Estes atendimentos já passaram, mas ainda não foram marcados como concluídos. Toque em <strong>Concluir</strong> na lista abaixo para eles entrarem no valor recebido.
+            </p>
+            <div id="espacoSemAviso" class="mb-3"></div>
+
+            <!-- Por serviço -->
+            <section id="blocoPorServico" class="hidden mb-6">
+                <h3 class="text-lg font-semibold text-white mb-3">O que mais rendeu</h3>
+                <div id="finPorServico" class="bg-surface rounded-3xl p-4 border border-white/10 space-y-4"></div>
+            </section>
+
+            <h3 class="text-lg font-semibold text-white mb-3">Atendimentos do período</h3>
             <div class="space-y-3" id="listaFinancas">
                 <!-- Histórico injetado via JS -->
             </div>
+            <p id="avisoLimiteFinanceiro" class="hidden text-xs text-gray-500 text-center mt-4">Mostrando os 300 atendimentos mais recentes do período.</p>
         </main>
 
         <!-- SEPARADOR 3: CONFIGURAÇÕES -->
@@ -156,6 +184,34 @@
                 </div>
                 <div class="bg-surface rounded-3xl p-2 border border-white/10 space-y-1" id="containerServicosAdmin">
                     <p class="text-xs text-gray-500 text-center py-4">A carregar...</p>
+                </div>
+            </section>
+
+            <!-- Segurança -->
+            <section>
+                <h3 class="text-lg font-semibold text-white mb-1">Segurança</h3>
+                <p class="text-xs text-gray-500 mb-3">Troque a senha de acesso ao painel por uma que só você saiba. Ao trocar, os outros aparelhos conectados saem da conta.</p>
+                <div class="bg-surface rounded-3xl p-4 border border-white/10 space-y-3">
+                    <div>
+                        <label for="senhaAtual" class="block text-xs font-semibold text-gray-400 mb-1.5">Senha atual</label>
+                        <input type="password" id="senhaAtual" autocomplete="current-password" class="w-full bg-[#09090b] border border-white/10 rounded-2xl px-4 py-3 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="senhaNova" class="block text-xs font-semibold text-gray-400 mb-1.5">Nova senha (mínimo 6 caracteres)</label>
+                        <input type="password" id="senhaNova" autocomplete="new-password" class="w-full bg-[#09090b] border border-white/10 rounded-2xl px-4 py-3 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="senhaNova2" class="block text-xs font-semibold text-gray-400 mb-1.5">Repita a nova senha</label>
+                        <input type="password" id="senhaNova2" autocomplete="new-password" class="w-full bg-[#09090b] border border-white/10 rounded-2xl px-4 py-3 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-gray-400">
+                        <input type="checkbox" id="mostrarSenhas" onchange="alternarVisibilidadeSenhas(this.checked)" class="accent-amber-500">
+                        Mostrar senhas
+                    </label>
+                    <p id="erroSenha" class="text-red-400 text-xs hidden"></p>
+                    <button id="btnTrocarSenha" onclick="trocarSenhaAdmin()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-sm py-3 rounded-xl active:scale-[0.98] transition-transform">
+                        Trocar senha
+                    </button>
                 </div>
             </section>
         </main>
@@ -296,6 +352,15 @@
             const erroLogin = document.getElementById('erroLogin');
             erroLogin.classList.add('hidden');
 
+            // Senha errada e servidor fora do ar são problemas diferentes: cada um tem sua mensagem
+            const mostrarErroLogin = (mensagem) => {
+                document.getElementById('textoErroLogin').textContent = mensagem;
+                erroLogin.classList.remove('hidden');
+            };
+            const mensagemSemServidor = ['5500', '5501'].includes(window.location.port)
+                ? 'Esta página foi aberta pelo Live Server e não conversa com o sistema. Abra http://localhost:5000/admin.'
+                : 'Não foi possível conectar ao servidor. Tente novamente em instantes.';
+
             try {
                 // A senha agora é validada no servidor, nunca no JavaScript do navegador
                 const response = await fetch(`/api/admin/login`, {
@@ -304,8 +369,17 @@
                     body: JSON.stringify({ senha })
                 });
 
+                if (response.status === 401) {
+                    mostrarErroLogin('Senha incorreta.');
+                    return;
+                }
+                if (response.status === 429) {
+                    const aviso = await response.json().catch(() => ({}));
+                    mostrarErroLogin(aviso.erro || 'Muitas tentativas. Aguarde alguns minutos.');
+                    return;
+                }
                 if (!response.ok) {
-                    erroLogin.classList.remove('hidden');
+                    mostrarErroLogin(mensagemSemServidor);
                     return;
                 }
 
@@ -323,7 +397,7 @@
                     carregarDadosAdmin(); 
                 }, 500);
             } catch (erro) {
-                erroLogin.classList.remove('hidden');
+                mostrarErroLogin(mensagemSemServidor);
             }
         }
 

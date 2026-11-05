@@ -118,6 +118,15 @@ def criar_banco():
     )
     ''')
 
+    # 9. Tentativas de login erradas (proteção contra adivinhação de senha)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS tentativas_login (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        momento INTEGER NOT NULL
+    )
+    ''')
+
     # --- MIGRAÇÕES: bancos criados antes desta versão ganham as colunas novas ---
     if 'ativo' not in colunas(cursor, 'servicos'):
         cursor.execute("ALTER TABLE servicos ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1")
