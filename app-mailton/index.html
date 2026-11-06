@@ -37,7 +37,8 @@
             <h1 class="titulo-serifa texto-ouro">Mailton Maia</h1>
             <p class="subtitulo">Sobrancelhas &amp; Micropigmentação</p>
             <div class="local-pilula"><i class="fa-solid fa-location-dot"></i> Várzea Nova · Santa Rita - PB</div>
-            <a href="#servicos" class="btn-ouro topo-cta"><i class="fa-regular fa-calendar-check"></i> Agendar agora</a>
+            <p id="statusAgenda" class="status-agenda oculto"><span class="ponto-online"></span> Agenda aberta · agende em 1 minuto</p>
+            <a href="#servicos" class="btn-ouro btn-brilho topo-cta"><i class="fa-regular fa-calendar-check"></i> Agendar agora</a>
         </header>
 
         <!-- COMO FUNCIONA (escondido: abre só se a cliente tocar) -->
@@ -105,7 +106,8 @@
     <div class="folha hide-scroll">
         <div class="folha-alca"></div>
         <div class="folha-topo">
-            <div>
+            <img id="modalServicoFoto" class="modal-foto oculto" alt="">
+            <div style="flex:1;min-width:0">
                 <h3 id="modalServicoNome" class="titulo-serifa">Serviço</h3>
                 <p id="modalServicoInfo"></p>
             </div>

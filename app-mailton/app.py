@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory, Response
 from urllib.parse import quote
+from PIL import Image, ImageOps
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from functools import wraps
@@ -17,11 +18,30 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # static_folder=None porque vamos servir os arquivos (css/js/img) manualmente abaixo,
 # mantendo os mesmos caminhos relativos que o index.html e o admin.html já usam.
 app = Flask(__name__, static_folder=None)
+app.config['MAX_CONTENT_LENGTH'] = 40 * 1024 * 1024  # fotos de celular são grandes; o servidor reduz
+Image.MAX_IMAGE_PIXELS = 80_000_000
+
+def garantir_estrutura():
+    """Bancos antigos ganham a coluna da foto do serviço sozinhos (sem precisar rodar nada)."""
+    conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
+    try:
+        colunas = {l[1] for l in conn.execute("PRAGMA table_info(servicos)")}
+        if colunas and 'imagem' not in colunas:
+            conn.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
+            conn.commit()
+    finally:
+        conn.close()
+
 
 def get_db_connection():
     conn = sqlite3.connect(os.path.join(BASE_DIR, 'wn_beauty_system.db'))
     conn.row_factory = sqlite3.Row
     return conn
+
+try:
+    garantir_estrutura()
+except sqlite3.Error:
+    pass
 
 # --- REGRAS DA AGENDA ---
 FUSO_BRASIL = timezone(timedelta(hours=-3))  # o servidor do PythonAnywhere roda em UTC
@@ -151,14 +171,36 @@ def pagina_cliente():
     resposta.headers['Cache-Control'] = 'no-cache'
     return resposta
 
+PASTA_GALERIA = os.path.join(BASE_DIR, 'img', 'galeria')
+PASTA_SERVICOS = os.path.join(BASE_DIR, 'img', 'servicos')
+EXTENSOES_FOTO = ('.jpg', '.jpeg', '.png', '.webp')
+TEXTO_SOBRE_PADRAO = ('Especialista em sobrancelhas e micropigmentação, com atendimento cuidadoso e '
+                      'personalizado para realçar a sua beleza de forma natural.')
+
+
+def fotos_da_galeria():
+    """Nomes das fotos em img/galeria, da mais nova para a mais antiga."""
+    if not os.path.isdir(PASTA_GALERIA):
+        return []
+    nomes = [n for n in os.listdir(PASTA_GALERIA) if n.lower().endswith(EXTENSOES_FOTO)]
+    nomes.sort(key=lambda n: (os.path.getmtime(os.path.join(PASTA_GALERIA, n)), n), reverse=True)
+    return nomes[:60]
+
+
 @app.route('/api/galeria')
 def listar_galeria():
-    """Fotos que o Mailton colocar na pasta img/galeria aparecem sozinhas na página."""
-    pasta = os.path.join(BASE_DIR, 'img', 'galeria')
-    if not os.path.isdir(pasta):
-        return jsonify([])
-    nomes = sorted(n for n in os.listdir(pasta) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')))
-    return jsonify(['/img/galeria/' + quote(n) for n in nomes[:40]])
+    """Fotos que o Mailton enviar pelo painel (ou colocar na pasta img/galeria) aparecem na página."""
+    return jsonify(['/img/galeria/' + quote(n) for n in fotos_da_galeria()])
+
+
+@app.route('/api/sobre')
+def texto_sobre_publico():
+    conn = get_db_connection()
+    try:
+        linha = conn.execute("SELECT valor FROM configuracoes WHERE chave = 'sobre_texto'").fetchone()
+    finally:
+        conn.close()
+    return jsonify({'texto': linha['valor'] if linha else TEXTO_SOBRE_PADRAO})
 
 @app.route('/admin')
 @app.route('/admin.html')
@@ -354,10 +396,15 @@ def admin_trocar_senha():
 def listar_servicos():
     conn = get_db_connection()
     servicos = conn.execute(
-        'SELECT id, nome, duracao_minutos, valor FROM servicos WHERE profissional_id = 1 AND ativo = 1 ORDER BY ordem, id'
+        'SELECT id, nome, duracao_minutos, valor, imagem FROM servicos WHERE profissional_id = 1 AND ativo = 1 ORDER BY ordem, id'
     ).fetchall()
     conn.close()
-    return jsonify([dict(servico) for servico in servicos])
+    resultado = []
+    for servico in servicos:
+        item = dict(servico)
+        item['imagem'] = ('/img/servicos/' + quote(item['imagem'])) if item['imagem'] else None
+        resultado.append(item)
+    return jsonify(resultado)
 
 # --- ROTA 1B: Dias de atendimento (usado pelo calendário do cliente) ---
 @app.route('/api/expediente', methods=['GET'])
@@ -733,14 +780,19 @@ def ler_dados_servico(dados):
 def admin_listar_servicos():
     conn = get_db_connection()
     linhas = conn.execute('''
-        SELECT s.id, s.nome, s.duracao_minutos, s.valor, s.ativo, s.ordem,
+        SELECT s.id, s.nome, s.duracao_minutos, s.valor, s.ativo, s.ordem, s.imagem,
                (SELECT COUNT(*) FROM agendamentos a WHERE a.servico_id = s.id) AS qtd_agendamentos
         FROM servicos s
         WHERE s.profissional_id = 1
         ORDER BY s.ativo DESC, s.ordem, s.id
     ''').fetchall()
     conn.close()
-    return jsonify([dict(l) for l in linhas])
+    resultado = []
+    for l in linhas:
+        item = dict(l)
+        item['imagem_url'] = ('/img/servicos/' + quote(item['imagem'])) if item['imagem'] else None
+        resultado.append(item)
+    return jsonify(resultado)
 
 
 # --- ADMIN: criar serviço ---
@@ -816,6 +868,8 @@ def admin_excluir_servico(servico_id):
             mensagem = "Esse serviço já tem agendamentos, então foi apenas ocultado do site (o histórico é mantido)."
             ocultado = True
         else:
+            foto = conn.execute("SELECT imagem FROM servicos WHERE id = ?", (servico_id,)).fetchone()['imagem']
+            apagar_arquivo(PASTA_SERVICOS, foto)
             conn.execute("DELETE FROM servicos WHERE id = ?", (servico_id,))
             mensagem = "Serviço excluído."
             ocultado = False
@@ -823,6 +877,174 @@ def admin_excluir_servico(servico_id):
     finally:
         conn.close()
     return jsonify({"mensagem": mensagem, "ocultado": ocultado})
+
+
+# ============================================================
+#  FOTOS E TEXTOS EDITÁVEIS PELO MAILTON
+# ============================================================
+def apagar_arquivo(pasta, nome):
+    if not nome or nome != os.path.basename(nome):
+        return
+    caminho = os.path.join(pasta, nome)
+    if os.path.isfile(caminho):
+        try:
+            os.remove(caminho)
+        except OSError:
+            pass
+
+
+def salvar_foto_enviada(arquivo, pasta, lado_maximo):
+    """Confere que é uma foto de verdade, corrige a rotação do celular, reduz e salva em JPEG.
+    Devolve (nome_do_arquivo, mensagem_de_erro)."""
+    try:
+        imagem = Image.open(arquivo.stream)
+        imagem.load()
+    except Exception:
+        return None, "Esse arquivo não parece ser uma foto. Use uma imagem JPG, PNG ou WEBP."
+    imagem = ImageOps.exif_transpose(imagem)
+    if imagem.mode in ('RGBA', 'LA', 'P'):
+        fundo = Image.new('RGB', imagem.size, (0, 0, 0))
+        imagem = imagem.convert('RGBA')
+        fundo.paste(imagem, mask=imagem.split()[-1])
+        imagem = fundo
+    else:
+        imagem = imagem.convert('RGB')
+    imagem.thumbnail((lado_maximo, lado_maximo))
+    os.makedirs(pasta, exist_ok=True)
+    nome = f"{int(time.time() * 1000)}-{uuid.uuid4().hex[:6]}.jpg"
+    imagem.save(os.path.join(pasta, nome), 'JPEG', quality=85, optimize=True)
+    return nome, None
+
+
+# --- ADMIN: fotos dos trabalhos ---
+@app.route('/api/admin/galeria', methods=['GET'])
+@requer_login_admin
+def admin_listar_galeria():
+    return jsonify([{'nome': n, 'url': '/img/galeria/' + quote(n)} for n in fotos_da_galeria()])
+
+
+@app.route('/api/admin/galeria', methods=['POST'])
+@requer_login_admin
+def admin_enviar_galeria():
+    arquivos = [a for a in request.files.getlist('fotos') if a and a.filename]
+    if not arquivos:
+        return jsonify({"erro": "Escolha pelo menos uma foto."}), 400
+    if len(fotos_da_galeria()) + len(arquivos) > 60:
+        return jsonify({"erro": "A galeria comporta até 60 fotos. Apague algumas antes de enviar mais."}), 400
+    enviadas, erros = 0, []
+    for arquivo in arquivos:
+        nome, erro = salvar_foto_enviada(arquivo, PASTA_GALERIA, 1600)
+        if erro:
+            erros.append(erro)
+        else:
+            enviadas += 1
+    if not enviadas:
+        return jsonify({"erro": erros[0]}), 400
+    mensagem = f"{enviadas} foto enviada!" if enviadas == 1 else f"{enviadas} fotos enviadas!"
+    if erros:
+        mensagem += f" ({len(erros)} não pôde ser usada.)"
+    return jsonify({"mensagem": mensagem, "enviadas": enviadas}), 201
+
+
+@app.route('/api/admin/galeria/<nome>', methods=['DELETE'])
+@requer_login_admin
+def admin_apagar_foto_galeria(nome):
+    if nome != os.path.basename(nome) or nome not in fotos_da_galeria():
+        return jsonify({"erro": "Foto não encontrada."}), 404
+    apagar_arquivo(PASTA_GALERIA, nome)
+    return jsonify({"mensagem": "Foto apagada."})
+
+
+# --- ADMIN: foto de cada serviço ---
+@app.route('/api/admin/servicos/<int:servico_id>/imagem', methods=['POST'])
+@requer_login_admin
+def admin_enviar_foto_servico(servico_id):
+    arquivo = request.files.get('foto')
+    if not arquivo or not arquivo.filename:
+        return jsonify({"erro": "Escolha uma foto."}), 400
+    conn = get_db_connection()
+    try:
+        atual = conn.execute("SELECT imagem FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)).fetchone()
+        if not atual:
+            return jsonify({"erro": "Serviço não encontrado."}), 404
+        nome, erro = salvar_foto_enviada(arquivo, PASTA_SERVICOS, 900)
+        if erro:
+            return jsonify({"erro": erro}), 400
+        conn.execute("UPDATE servicos SET imagem = ? WHERE id = ?", (nome, servico_id))
+        conn.commit()
+        apagar_arquivo(PASTA_SERVICOS, atual['imagem'])
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Foto do serviço salva!", "imagem_url": '/img/servicos/' + quote(nome)})
+
+
+@app.route('/api/admin/servicos/<int:servico_id>/imagem', methods=['DELETE'])
+@requer_login_admin
+def admin_remover_foto_servico(servico_id):
+    conn = get_db_connection()
+    try:
+        atual = conn.execute("SELECT imagem FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)).fetchone()
+        if not atual:
+            return jsonify({"erro": "Serviço não encontrado."}), 404
+        conn.execute("UPDATE servicos SET imagem = NULL WHERE id = ?", (servico_id,))
+        conn.commit()
+        apagar_arquivo(PASTA_SERVICOS, atual['imagem'])
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Foto removida."})
+
+
+# --- ADMIN: subir ou descer um serviço na lista ---
+@app.route('/api/admin/servicos/<int:servico_id>/mover', methods=['POST'])
+@requer_login_admin
+def admin_mover_servico(servico_id):
+    direcao = (request.get_json(silent=True) or {}).get('direcao')
+    if direcao not in ('cima', 'baixo'):
+        return jsonify({"erro": "Direção inválida."}), 400
+    conn = get_db_connection()
+    try:
+        linhas = conn.execute(
+            "SELECT id, ativo FROM servicos WHERE profissional_id = 1 ORDER BY ordem, id"
+        ).fetchall()
+        ids = [l['id'] for l in linhas]
+        if servico_id not in ids:
+            return jsonify({"erro": "Serviço não encontrado."}), 404
+        ativo = {l['id']: l['ativo'] for l in linhas}[servico_id]
+        grupo = [l['id'] for l in linhas if l['ativo'] == ativo]  # só troca com vizinhos visíveis/ocultos do mesmo tipo
+        pos = grupo.index(servico_id)
+        alvo = pos - 1 if direcao == 'cima' else pos + 1
+        if 0 <= alvo < len(grupo):
+            a, b = ids.index(grupo[pos]), ids.index(grupo[alvo])
+            ids[a], ids[b] = ids[b], ids[a]
+        for nova_ordem, sid in enumerate(ids, start=1):
+            conn.execute("UPDATE servicos SET ordem = ? WHERE id = ?", (nova_ordem, sid))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Ordem atualizada."})
+
+
+# --- ADMIN: texto "Sobre" da página do cliente ---
+@app.route('/api/admin/sobre', methods=['GET'])
+@requer_login_admin
+def admin_ler_sobre():
+    return texto_sobre_publico()
+
+
+@app.route('/api/admin/sobre', methods=['PUT'])
+@requer_login_admin
+def admin_salvar_sobre():
+    texto = str((request.get_json(silent=True) or {}).get('texto') or '').strip()
+    if not 10 <= len(texto) <= 700:
+        return jsonify({"erro": "O texto deve ter entre 10 e 700 letras."}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO configuracoes (chave, valor) VALUES ('sobre_texto', ?) "
+                     "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", (texto,))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"mensagem": "Texto salvo! Já está no site."})
 
 
 # --- ADMIN: ver o expediente (dias, faixas e intervalo) ---
@@ -1077,7 +1299,7 @@ def cancelar_agendamento(token):
 
 
 if __name__ == '__main__':
-    print("Servidor do WN Beauty System a iniciar...")
+    print("Agenda do Mailton Maia a iniciar...")
     # Em produção, defina WN_DEBUG=false no ambiente antes de iniciar o servidor.
     modo_debug = os.environ.get('WN_DEBUG', 'true').lower() == 'true'
     app.run(host='0.0.0.0', debug=modo_debug, port=5000)

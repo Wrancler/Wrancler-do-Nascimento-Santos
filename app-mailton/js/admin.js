@@ -465,8 +465,8 @@ function renderizarServicosAdmin() {
         const primeiro = posicao === 0;
         const ultimo = posicao === grupo.length - 1;
         const foto = s.imagem_url
-            ? `<img src="${escaparHtml(s.imagem_url)}" alt="" class="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0">`
-            : '';
+            ? `<img src="${escaparHtml(s.imagem_url)}" alt="" class="mini-foto" onclick="abrirModalServico(${s.id})">`
+            : `<button type="button" class="mini-foto-vazia" onclick="abrirModalServico(${s.id})" title="Adicionar foto" aria-label="Adicionar foto ao serviço"><i class="fa-solid fa-camera text-sm"></i></button>`;
         return `
         <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-black/20 border border-white/5 ${s.ativo ? '' : 'opacity-60'}">
             <div class="flex flex-col shrink-0">
@@ -475,7 +475,7 @@ function renderizarServicosAdmin() {
             </div>
             ${foto}
             <div class="min-w-0 flex-1">
-                <p class="text-white font-bold text-sm truncate">${escaparHtml(s.nome)}</p>
+                <p class="text-white font-bold text-sm leading-snug">${escaparHtml(s.nome)}</p>
                 <p class="text-[11px] text-gray-400 mt-0.5">${formatarDuracao(s.duracao_minutos)} • ${formatarMoeda(s.valor)}${s.ativo ? '' : ' • <span class="text-brand-500 font-bold">Oculto no site</span>'}</p>
             </div>
             <div class="flex gap-2 shrink-0">
@@ -528,9 +528,7 @@ function abrirModalServico(id = null) {
     preencherOpcoesDuracao(servico ? servico.duracao_minutos : 60);
     document.getElementById('btnExcluirServico').classList.toggle('hidden', !servico);
     document.getElementById('servFoto').value = '';
-    const previa = document.getElementById('servFotoPrevia');
-    previa.classList.toggle('hidden', !(servico && servico.imagem_url));
-    if (servico && servico.imagem_url) previa.src = servico.imagem_url;
+    mostrarPreviaServico(servico && servico.imagem_url ? servico.imagem_url : null);
     document.getElementById('btnRemoverFotoServ').classList.toggle('hidden', !(servico && servico.imagem_url));
     document.getElementById('erroServico').classList.add('hidden');
     abrirModal('modalServico');
@@ -1017,6 +1015,21 @@ async function alternarBloqueioServidor(hora_bloqueio, isJaBloqueado) {
 }
 
 
+// Mostra a foto no campo (ou o convite para escolher uma)
+function mostrarPreviaServico(url) {
+    const previa = document.getElementById('servFotoPrevia');
+    if (url) previa.src = url;
+    previa.classList.toggle('hidden', !url);
+    document.getElementById('servFotoDica').classList.toggle('hidden', !!url);
+    document.getElementById('servFotoTroca').classList.toggle('hidden', !url);
+}
+
+// Ao escolher a foto, já mostra como vai ficar (antes de salvar)
+function previaFotoServico(input) {
+    if (!input.files.length) return;
+    mostrarPreviaServico(URL.createObjectURL(input.files[0]));
+}
+
 async function removerFotoServico() {
     const id = document.getElementById('servId').value;
     if (!id) return;
@@ -1024,7 +1037,8 @@ async function removerFotoServico() {
         const resposta = await api(`/api/admin/servicos/${id}/imagem`, 'DELETE');
         if (!resposta) return;
         if (!resposta.ok) { mostrarAviso(resposta.dados.erro || 'Não foi possível remover.', 'erro'); return; }
-        document.getElementById('servFotoPrevia').classList.add('hidden');
+        document.getElementById('servFoto').value = '';
+        mostrarPreviaServico(null);
         document.getElementById('btnRemoverFotoServ').classList.add('hidden');
         mostrarAviso('Foto removida.');
         await recarregarServicos();

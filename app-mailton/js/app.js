@@ -56,17 +56,34 @@ function nomeComHifen(nome) {
     return escaparHtml(nome).replace(/micropigmenta/gi, m => m.slice(0, 5) + '&shy;' + m.slice(5));
 }
 
-function criarCardServico(s) {
+function criarCardServico(s, comFotos) {
+    if (comFotos) {
+        // Estilo vitrine: foto grande, preço em selo, nome e tempo embaixo
+        const midia = s.imagem
+            ? `<img src="${escaparHtml(s.imagem)}" alt="" loading="lazy">`
+            : '<div class="cartao-vazio"><span class="titulo-serifa texto-ouro">MM</span></div>';
+        return `
+        <button type="button" class="cartao" onclick="abrirModal(${Number(s.id)})">
+            <div class="cartao-midia">${midia}<span class="preco-selo">${formatarValorCurto(s.valor)}</span></div>
+            <div class="cartao-corpo">
+                <h3>${nomeComHifen(s.nome)}</h3>
+                <div class="linha-info">
+                    <span class="duracao"><i class="fa-regular fa-clock"></i> ${formatarDuracao(s.duracao_minutos)}</span>
+                    <span class="agendar-chip"><i class="fa-solid fa-chevron-right"></i></span>
+                </div>
+            </div>
+        </button>`;
+    }
+    // Sem nenhuma foto cadastrada ainda: cartão compacto
     return `
         <button type="button" class="cartao" onclick="abrirModal(${Number(s.id)})">
-            ${s.imagem ? `<img class="cartao-foto" src="${escaparHtml(s.imagem)}" alt="" loading="lazy">` : ''}
             <div class="cartao-col">
                 <h3>${nomeComHifen(s.nome)}</h3>
                 <span class="duracao"><i class="fa-regular fa-clock"></i> ${formatarDuracao(s.duracao_minutos)}</span>
             </div>
             <div class="cartao-rodape">
                 <span class="preco texto-ouro">${formatarValorCurto(s.valor)}</span>
-                <span class="agendar-chip">Agendar <i class="fa-solid fa-chevron-right"></i></span>
+                <span class="agendar-chip"><i class="fa-solid fa-chevron-right"></i></span>
             </div>
         </button>`;
 }
@@ -93,7 +110,10 @@ async function carregarServicos() {
             lista.innerHTML = '<p class="msg-vazia">Nenhum serviço disponível no momento. Fale com o Mailton pelo WhatsApp, logo abaixo.</p>';
             return;
         }
-        lista.innerHTML = servicosCache.map(criarCardServico).join('');
+        const comFotos = servicosCache.some(s => s.imagem);
+        lista.className = 'grade-servicos' + (comFotos ? ' com-fotos' : '');
+        lista.innerHTML = servicosCache.map(s => criarCardServico(s, comFotos)).join('');
+        $('statusAgenda').classList.toggle('oculto', !(mesesAbertos && mesesAbertos.length));
     } catch (err) {
         console.error(err);
         lista.innerHTML = `
@@ -136,6 +156,9 @@ function abrirModal(id) {
     servicoValorAtual = formatarValor(servico.valor);
 
     $('modalServicoNome').textContent = servico.nome;
+    const fotoModal = $('modalServicoFoto');
+    if (servico.imagem) { fotoModal.src = servico.imagem; fotoModal.classList.remove('oculto'); }
+    else { fotoModal.classList.add('oculto'); }
     $('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
 
     mesSelecionado = null;

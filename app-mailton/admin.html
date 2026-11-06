@@ -5,39 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Mailton Maia</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: { brand: { 400: '#FCD34D', 500: '#F59E0B', 600: '#D97706' }, surface: '#18181b', surfaceHover: '#27272a' }
+                    colors: { brand: { 400: '#F3DC8A', 500: '#D4AF37', 600: '#9C7A1E' }, surface: '#141416', surfaceHover: '#202023' }
                 }
             }
         }
     </script>
-    <style>
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Transições suaves para os separadores */
-        .tab-content { transition: opacity 0.3s ease; }
-    </style>
 </head>
-<body class="bg-[#09090b] text-gray-200 font-sans antialiased">
+<body class="bg-[#050505] text-gray-200 font-sans antialiased">
 
     <!-- 1. TELA DE LOGIN (Barreira de Segurança) -->
-    <div id="loginScreen" class="fixed inset-0 bg-[#09090b] z-[100] flex flex-col justify-center items-center px-6 transition-opacity duration-500">
-        <div class="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mb-6 border border-brand-500/20 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
-            <i class="fa-solid fa-lock text-3xl text-brand-500"></i>
+    <div id="loginScreen" class="fixed inset-0 bg-[#050505] z-[100] flex flex-col justify-center items-center px-6 transition-opacity duration-500">
+        <div class="fundo-tech-admin"></div>
+        <div class="selo-avatar w-28 h-28 mb-6">
+            <img src="img/perfil.jpg" alt="Mailton Maia" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%2317171a%27/%3E%3Ctext x=%2750%27 y=%2766%27 font-size=%2744%27 text-anchor=%27middle%27 fill=%27%23D4AF37%27 font-family=%27Georgia,serif%27%3EMM%3C/text%3E%3C/svg%3E'">
         </div>
-        <h1 class="text-2xl font-bold text-white mb-2">Acesso Restrito</h1>
-        <p class="text-gray-400 text-sm text-center mb-8">Digite sua senha administrativa para gerenciar a sua agenda.</p>
-        
+        <p class="text-brand-500 text-[11px] font-bold uppercase tracking-[0.25em] mb-2">Painel do profissional</p>
+        <h1 class="titulo-serifa texto-ouro text-4xl mb-2">Mailton Maia</h1>
+        <p class="text-gray-400 text-sm text-center mb-8">Digite sua senha para gerenciar a sua agenda.</p>
+
         <div class="w-full max-w-sm space-y-4">
             <input type="password" id="senhaAdmin" placeholder="Sua Senha" onkeydown="if (event.key === 'Enter') fazerLogin()" class="w-full bg-surface border border-white/10 rounded-2xl px-5 py-4 text-center text-xl text-white tracking-widest focus:outline-none focus:border-brand-500 transition-all">
-            <button onclick="fazerLogin()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-lg py-4 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.98] transition-transform">
+            <button onclick="fazerLogin()" class="btn-brilho w-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-black font-extrabold text-lg py-4 rounded-2xl shadow-[0_0_24px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-transform">
                 Entrar
             </button>
             <p id="erroLogin" class="text-red-400 text-xs text-center hidden mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span id="textoErroLogin">Senha incorreta.</span></p>
@@ -45,14 +41,20 @@
     </div>
 
     <!-- 2. APLICAÇÃO PRINCIPAL (Escondida até o login) -->
+    <div class="fundo-tech-admin"></div>
     <div id="mainApp" class="max-w-md mx-auto min-h-screen relative shadow-2xl border-x border-white/5 pb-20 hidden opacity-0 transition-opacity duration-500">
         
         <!-- HEADER DINÂMICO -->
         <header class="pt-10 pb-4 px-6 bg-surface/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-40">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold text-white" id="headerTitulo">Minha Agenda</h1>
-                    <p class="text-brand-500 text-[10px] font-bold uppercase tracking-widest mt-1">Mailton Maia</p>
+            <div class="flex justify-between items-center gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="selo-avatar w-12 h-12">
+                        <img src="img/perfil.jpg" alt="" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%2317171a%27/%3E%3Ctext x=%2750%27 y=%2766%27 font-size=%2744%27 text-anchor=%27middle%27 fill=%27%23D4AF37%27 font-family=%27Georgia,serif%27%3EMM%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="titulo-serifa text-xl font-bold text-white truncate" id="headerTitulo">Minha Agenda</h1>
+                        <p class="text-brand-500 text-[10px] font-bold uppercase tracking-widest mt-0.5 flex items-center gap-2"><span class="ponto-online"></span>Mailton Maia · online</p>
+                    </div>
                 </div>
                 <button onclick="sair()" class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -102,7 +104,7 @@
             </div>
 
             <!-- Cartão de Receita -->
-            <div class="bg-gradient-to-br from-brand-600 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(245,158,11,0.2)] text-black relative overflow-hidden mb-2">
+            <div class="btn-brilho bg-gradient-to-br from-brand-600 via-brand-500 to-brand-400 rounded-3xl p-6 shadow-[0_10px_30px_rgba(212,175,55,0.2)] text-black relative overflow-hidden mb-2">
                 <i class="fa-solid fa-wallet absolute -right-4 -bottom-4 text-7xl text-black/10"></i>
                 <p id="rotuloFinanceiro" class="text-sm font-bold uppercase tracking-wider opacity-80 mb-1">Recebido hoje</p>
                 <h2 class="text-4xl font-black tracking-tight" id="faturamentoAdmin">R$ 0,00</h2>
@@ -230,7 +232,7 @@
                         <input type="password" id="senhaNova2" autocomplete="new-password" class="w-full bg-[#09090b] border border-white/10 rounded-2xl px-4 py-3 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
                     </div>
                     <label class="flex items-center gap-2 text-xs text-gray-400">
-                        <input type="checkbox" id="mostrarSenhas" onchange="alternarVisibilidadeSenhas(this.checked)" class="accent-amber-500">
+                        <input type="checkbox" id="mostrarSenhas" onchange="alternarVisibilidadeSenhas(this.checked)" class="accent-[#D4AF37]">
                         Mostrar senhas
                     </label>
                     <p id="erroSenha" class="text-red-400 text-xs hidden"></p>
@@ -296,13 +298,13 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-400 mb-1.5">Foto do serviço (opcional)</label>
-                        <div class="flex items-center gap-3">
-                            <img id="servFotoPrevia" alt="" class="hidden w-16 h-16 rounded-xl object-cover border border-white/10">
-                            <div class="flex-1 min-w-0">
-                                <input type="file" id="servFoto" accept="image/*" class="block w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:font-semibold">
-                                <button type="button" id="btnRemoverFotoServ" onclick="removerFotoServico()" class="hidden mt-2 text-xs text-red-400 font-bold">Remover foto atual</button>
-                            </div>
-                        </div>
+                        <label for="servFoto" class="area-foto" id="areaFotoServ">
+                            <img id="servFotoPrevia" alt="" class="hidden">
+                            <span id="servFotoDica"><i class="fa-solid fa-camera text-xl text-brand-500 block mb-1"></i>Toque para escolher uma foto</span>
+                            <span id="servFotoTroca" class="troca hidden"><i class="fa-solid fa-camera mr-1"></i>Trocar</span>
+                        </label>
+                        <input type="file" id="servFoto" accept="image/*" class="hidden" onchange="previaFotoServico(this)">
+                        <button type="button" id="btnRemoverFotoServ" onclick="removerFotoServico()" class="hidden mt-2 text-xs text-red-400 font-bold">Remover foto atual</button>
                     </div>
                 </div>
                 <p id="erroServico" class="text-red-400 text-xs mt-3 hidden"></p>
