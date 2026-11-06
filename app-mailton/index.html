@@ -4,137 +4,184 @@
     <meta charset="UTF-8">
     <!-- Zoom liberado de propósito: muitas clientes precisam ampliar a tela -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mailton Maia - Agendamento Premium</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Importação do CSS externo -->
-    <link rel="stylesheet" href="css/style.css">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: {
-                        brand: { 400: '#FCD34D', 500: '#F59E0B', 600: '#D97706' },
-                        surface: '#18181b', // Zinco escuro premium
-                        surfaceHover: '#27272a'
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="text-gray-200 font-sans antialiased relative selection:bg-brand-500 selection:text-black">
+    <meta name="theme-color" content="#050505">
+    <title>Mailton Maia | Sobrancelhas & Micropigmentação</title>
+    <meta name="description" content="Agende seu horário com Mailton Maia: design de sobrancelhas, henna, brow lamination e micropigmentação. Rápido e fácil.">
 
-    <div class="max-w-md mx-auto min-h-screen relative shadow-2xl border-x border-white/5 pb-12 overflow-hidden">
-        
-        <!-- Efeito de Luz Dourada de Fundo -->
-        <div class="glow-bg"></div>
-        
-        <!-- HEADER PREMIUM -->
-        <header class="pt-12 pb-8 px-6 text-center relative z-10">
-            <div class="relative inline-block">
-                <!-- Anel de gradiente ao redor da foto -->
-                <div class="absolute inset-0 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-full blur p-1"></div>
-                <img src="img/perfil.jpg" alt="Mailton Maia" class="relative w-28 h-28 mx-auto rounded-full border-4 border-[#09090b] object-cover" onerror="this.src='https://ui-avatars.com/api/?name=Mailton+Maia&background=F59E0B&color=09090b'">
+    <!-- Prévia ao compartilhar o link no WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Mailton Maia | Agende seu horário">
+    <meta property="og:description" content="Sobrancelhas & Micropigmentação. Escolha o serviço, o dia e o horário em poucos toques.">
+    <meta property="og:image" content="__BASE_URL__/img/perfil.jpg">
+    <meta property="og:url" content="__BASE_URL__/">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="pagina">
+    <div class="fundo-tech"></div>
+    <canvas id="particulas" aria-hidden="true"></canvas>
+
+    <div class="conteudo">
+        <!-- CABEÇALHO -->
+        <header class="topo">
+            <div class="avatar-ouro">
+                <img src="img/perfil.jpg" alt="Foto de Mailton Maia"
+                     onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%2317171a%27/%3E%3Ctext x=%2750%27 y=%2766%27 font-size=%2744%27 text-anchor=%27middle%27 fill=%27%23D4AF37%27 font-family=%27Georgia,serif%27%3EMM%3C/text%3E%3C/svg%3E'">
             </div>
-            
-            <h1 class="text-3xl font-bold text-white mt-4 tracking-tight">Mailton Maia</h1>
-            <p class="text-brand-400 text-xs font-bold uppercase tracking-[0.2em] mt-2 opacity-90">Sobrancelhas & Micropigmentação</p>
-            <div class="inline-flex items-center gap-2 mt-3 bg-white/5 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/5">
-                <i class="fa-solid fa-location-dot text-brand-500 text-xs"></i>
-                <span class="text-gray-400 text-xs font-medium">Várzea Nova / Santa Rita</span>
-            </div>
+            <span class="selo">Studio de sobrancelhas</span>
+            <h1 class="titulo-serifa texto-ouro">Mailton Maia</h1>
+            <p class="subtitulo">Sobrancelhas &amp; Micropigmentação</p>
+            <div class="local-pilula"><i class="fa-solid fa-location-dot"></i> Várzea Nova · Santa Rita - PB</div>
+            <a href="#servicos" class="btn-ouro topo-cta"><i class="fa-regular fa-calendar-check"></i> Agendar agora</a>
         </header>
 
+        <!-- COMO FUNCIONA (escondido: abre só se a cliente tocar) -->
+        <section class="secao ajuda-secao">
+            <details class="ajuda">
+                <summary><i class="fa-regular fa-circle-question"></i> Como agendar? <i class="fa-solid fa-chevron-down seta-ajuda"></i></summary>
+                <div class="passos-explica">
+                    <div class="passo-linha"><div class="passo-num">1</div><div><strong>Escolha o serviço</strong><span>Toque no que você deseja</span></div></div>
+                    <div class="passo-linha"><div class="passo-num">2</div><div><strong>Escolha o dia e a hora</strong><span>Só aparecem horários livres</span></div></div>
+                    <div class="passo-linha"><div class="passo-num">3</div><div><strong>Coloque seu nome e WhatsApp</strong><span>Pronto! Você recebe a confirmação</span></div></div>
+                </div>
+            </details>
+        </section>
+
         <!-- SERVIÇOS -->
-        <main class="px-5 py-2 relative z-10">
-            <div class="flex items-center justify-between mb-5 px-1">
-                <h2 class="text-lg font-semibold text-white">Nossos Serviços</h2>
-            </div>
-            
-            <div class="space-y-4" id="listaServicos">
-                <p class="text-base text-gray-400 text-center py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando serviços...</p>
+        <main class="secao revela" id="servicos" aria-labelledby="tServ">
+            <h2 id="tServ" class="secao-titulo titulo-serifa">Escolha o serviço</h2>
+            <div class="regua"></div>
+            <div id="listaServicos" class="grade-servicos">
+                <p class="msg-vazia" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin"></i> Carregando serviços...</p>
             </div>
 
-            <!-- Alternativa para quem prefere conversar -->
-            <a href="https://wa.me/5583988856096?text=Ol%C3%A1%20Mailton%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio."
-               target="_blank" rel="noopener"
-               class="mt-8 flex items-center justify-center gap-3 w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-2xl py-4 px-5 text-base text-gray-200 transition-colors">
-                <i class="fa-brands fa-whatsapp text-2xl text-green-400"></i>
-                <span>Prefere falar direto com o Mailton?<br><strong class="text-white">Chamar no WhatsApp</strong></span>
+            <a class="btn-contorno" style="margin-top:18px;"
+               href="https://wa.me/5583988856096?text=Ol%C3%A1%20Mailton%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio."
+               target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp" style="color:#7BD88F;font-size:26px;"></i>
+                <span>Prefere conversar? Chame no WhatsApp</span>
             </a>
         </main>
 
-        <!-- MODAL DE AGENDAMENTO -->
-        <div id="modalHorario" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex flex-col justify-end transition-opacity">
-            <!-- Área de clique para fechar -->
-            <div class="flex-1 w-full" onclick="fecharModal()"></div>
-            
-            <div class="bg-surface w-full max-w-md mx-auto rounded-t-[32px] p-6 modal-enter border-t border-white/10 max-h-[92vh] overflow-y-auto hide-scroll shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                <!-- Pill indicator -->
-                <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6"></div>
-                
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-white tracking-tight" id="modalServicoNome">Serviço</h3>
-                        <p class="text-brand-500 text-sm font-semibold mt-1" id="modalServicoInfo">Valor e Duração</p>
-                    </div>
-                    <button onclick="fecharModal()" class="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
+        <!-- TRABALHOS (aparece sozinha quando houver fotos em img/galeria) -->
+        <section class="secao revela oculto" id="secaoGaleria" aria-labelledby="tGal">
+            <h2 id="tGal" class="secao-titulo titulo-serifa">Trabalhos</h2>
+            <div class="regua"></div>
+            <div class="galeria-grade" id="galeriaGrade"></div>
+        </section>
 
-                <!-- Inputs do Cliente (Corrigidos para text-base) -->
-                <div class="space-y-4 mb-8">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-regular fa-user text-gray-500"></i>
-                        </div>
-                        <input type="text" id="clienteNome" autocomplete="name" placeholder="Seu Nome Completo" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
-                    </div>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-brands fa-whatsapp text-gray-500"></i>
-                        </div>
-                        <input type="tel" id="clienteTelefone" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp (com DDD)" class="w-full bg-[#09090b] border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-base text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-gray-600">
-                    </div>
-                </div>
+        <!-- SOBRE + ONDE -->
+        <section class="secao revela" aria-labelledby="tSobre">
+            <h2 id="tSobre" class="secao-titulo titulo-serifa">Sobre o Mailton</h2>
+            <div class="regua"></div>
+            <div class="painel">
+                <p id="textoSobreCliente">Especialista em sobrancelhas e micropigmentação, com atendimento cuidadoso e personalizado para realçar a sua beleza de forma natural.</p>
+                <p style="margin-top:14px"><i class="fa-solid fa-location-dot" style="color:var(--ouro)"></i> Várzea Nova · Santa Rita - PB</p>
+                <a class="btn-contorno" style="margin-top:14px;"
+                   href="https://www.google.com/maps/search/?api=1&query=V%C3%A1rzea+Nova+Santa+Rita+PB"
+                   target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Ver no mapa</a>
+            </div>
+        </section>
 
-                <!-- Carrossel de Datas -->
-                <div class="mb-8">
-                    <div class="flex justify-between items-end mb-3 px-1">
-                        <label class="block text-sm font-semibold text-white">Escolha a Data</label>
-                        <span id="mesAtualLabel" class="text-xs text-brand-500 font-bold uppercase tracking-wider"></span>
-                    </div>
-                    <div id="abasMeses" class="flex gap-2 mb-4 overflow-x-auto hide-scroll"></div>
-                    <div id="carrosselDatas" class="flex space-x-3 overflow-x-auto pb-2 hide-scroll snap-x">
-                        <!-- Gerado via JS -->
-                    </div>
-                </div>
+        <footer class="rodape">
+            <div class="rodape-links">
+                <a href="https://www.instagram.com/mailton.sobrancelhas" target="_blank" rel="noopener" aria-label="Instagram do Mailton"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://wa.me/5583988856096" target="_blank" rel="noopener" aria-label="WhatsApp do Mailton"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+            <p>© Mailton Maia · Todos os direitos reservados</p>
+            <p class="assinatura">Sistema por WN Systems Lab</p>
+        </footer>
+    </div>
+</div>
 
-                <!-- Horários -->
-                <div class="mb-8">
-                    <label class="block text-sm font-semibold text-white mb-3 px-1">Horários Disponíveis</label>
-                    <div class="grid grid-cols-3 gap-3" id="gridHorarios">
-                        <p class="text-sm text-gray-500 col-span-3 text-center py-6 bg-[#09090b] rounded-2xl border border-white/5 border-dashed">
-                            Selecione uma data acima para ver os horários.
-                        </p>
-                    </div>
-                </div>
+<!-- JANELA DE AGENDAMENTO (3 passos) -->
+<div id="modalHorario" class="fundo-modal oculto" role="dialog" aria-modal="true" aria-labelledby="modalServicoNome">
+    <div class="fechar-area" onclick="fecharModal()"></div>
+    <div class="folha hide-scroll">
+        <div class="folha-alca"></div>
+        <div class="folha-topo">
+            <div>
+                <h3 id="modalServicoNome" class="titulo-serifa">Serviço</h3>
+                <p id="modalServicoInfo"></p>
+            </div>
+            <button type="button" class="btn-x" onclick="fecharModal()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="trilha" aria-hidden="true"><span id="trilha1" class="feito"></span><span id="trilha2"></span><span id="trilha3"></span></div>
+        <div id="avisoModal" class="aviso oculto" role="alert"></div>
 
-                <button id="btnConfirmar" onclick="enviarAgendamento()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-base py-4 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                    Confirmar Agendamento
-                </button>
+        <!-- PASSO 2: dia e hora -->
+        <div id="passoDataHora">
+            <p class="rotulo-passo">Passo 2 de 3</p>
+            <h4 class="pergunta titulo-serifa">Qual dia e horário?</h4>
+            <div id="abasMeses" class="abas-meses hide-scroll"></div>
+            <p id="mesAtualLabel" class="rotulo-passo" style="margin-bottom:0"></p>
+            <div id="carrosselDatas" class="carrossel-datas hide-scroll"></div>
+
+            <div id="blocoHorarios" class="bloco-horarios">
+                <div id="gridHorarios">
+                    <p class="msg-vazia">Toque em um dia acima para ver os horários.</p>
+                </div>
+            </div>
+            <button type="button" id="btnContinuar" class="btn-ouro" style="margin-top:20px;" onclick="continuarParaDados()" disabled>
+                Continuar <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- PASSO 3: dados -->
+        <div id="passoDados" class="oculto">
+            <p class="rotulo-passo">Passo 3 de 3</p>
+            <h4 class="pergunta titulo-serifa">Quase lá! Seus dados</h4>
+            <div class="resumo-escolha"><strong id="resumoQuando"></strong><span id="resumoServico"></span></div>
+            <div class="campo">
+                <label for="clienteNome">Seu nome</label>
+                <input type="text" id="clienteNome" autocomplete="name" placeholder="Ex.: Maria da Silva" maxlength="80">
+            </div>
+            <div class="campo">
+                <label for="clienteTelefone">Seu WhatsApp (com DDD)</label>
+                <input type="tel" id="clienteTelefone" inputmode="tel" autocomplete="tel" placeholder="(83) 99999-9999" maxlength="16">
+                <p class="dica">É por ele que o Mailton fala com você.</p>
+            </div>
+            <button type="button" id="btnConfirmar" class="btn-ouro" onclick="enviarAgendamento()">
+                <i class="fa-solid fa-check"></i> Confirmar agendamento
+            </button>
+            <button type="button" class="btn-voltar" onclick="voltarPasso()"><i class="fa-solid fa-arrow-left"></i> Voltar e mudar o horário</button>
+        </div>
+
+        <!-- CONFIRMAÇÃO -->
+        <div id="passoOk" class="oculto">
+            <div class="ok-centro">
+                <div class="ok-selo"><i class="fa-solid fa-check"></i></div>
+                <h3 class="titulo-serifa texto-ouro">Agendado!</h3>
+                <p id="okNome" style="color:var(--texto-suave)"></p>
+            </div>
+            <div class="ok-detalhe">
+                <p><span>Serviço</span><span id="okServico"></span></p>
+                <p><span>Dia</span><span id="okData"></span></p>
+                <p><span>Horário</span><span id="okHora"></span></p>
+            </div>
+            <p class="explica-whats">Toque no botão abaixo para avisar o Mailton pelo WhatsApp. Assim ele já fica sabendo do seu horário.</p>
+            <div class="pilha">
+                <a id="btnWhats" class="btn-ouro" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Avisar o Mailton</a>
+                <button type="button" class="btn-contorno" onclick="copiarLinkCancelamento()"><i class="fa-regular fa-copy"></i> <span id="textoCopiar">Copiar link para cancelar</span></button>
+                <button type="button" class="btn-voltar" style="justify-content:center" onclick="fecharModal()">Fechar</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Script Importado -->
-    <script src="js/app.js"></script>
+<!-- FOTO AMPLIADA -->
+<div id="visorFoto" class="visor oculto" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+    <button type="button" class="btn-x" onclick="fecharFoto()" aria-label="Fechar foto"><i class="fa-solid fa-xmark"></i></button>
+    <button type="button" class="seta esq" onclick="mudarFoto(-1)" aria-label="Foto anterior"><i class="fa-solid fa-chevron-left"></i></button>
+    <img id="visorImg" alt="Trabalho do Mailton">
+    <button type="button" class="seta dir" onclick="mudarFoto(1)" aria-label="Próxima foto"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<script src="js/app.js"></script>
 </body>
 </html>

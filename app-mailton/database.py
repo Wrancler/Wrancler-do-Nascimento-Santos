@@ -146,6 +146,9 @@ def criar_banco():
         SET valor = (SELECT s.valor FROM servicos s WHERE s.id = agendamentos.servico_id)
         WHERE valor IS NULL""")
 
+    if 'imagem' not in colunas(cursor, 'servicos'):
+        cursor.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
+
     # --- VALORES INICIAIS ---
     # Abre por padrão o mês atual e o próximo (o Mailton controla o resto pelo painel)
     hoje = datetime.now(timezone(timedelta(hours=-3)))

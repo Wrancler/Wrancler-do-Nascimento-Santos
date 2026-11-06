@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, Response
+from urllib.parse import quote
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from functools import wraps
@@ -138,9 +139,26 @@ def calcular_horarios_livres(conn, data, duracao_min):
 
 
 # --- ROTAS DE PÁGINAS E ARQUIVOS ESTÁTICOS ---
+def url_base_publica():
+    """Endereço público do site (para a prévia do link no WhatsApp)."""
+    return request.host_url.rstrip('/')
+
 @app.route('/')
 def pagina_cliente():
-    return send_from_directory(BASE_DIR, 'index.html')
+    with open(os.path.join(BASE_DIR, 'index.html'), encoding='utf-8') as f:
+        html = f.read().replace('__BASE_URL__', url_base_publica())
+    resposta = Response(html, mimetype='text/html')
+    resposta.headers['Cache-Control'] = 'no-cache'
+    return resposta
+
+@app.route('/api/galeria')
+def listar_galeria():
+    """Fotos que o Mailton colocar na pasta img/galeria aparecem sozinhas na página."""
+    pasta = os.path.join(BASE_DIR, 'img', 'galeria')
+    if not os.path.isdir(pasta):
+        return jsonify([])
+    nomes = sorted(n for n in os.listdir(pasta) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')))
+    return jsonify(['/img/galeria/' + quote(n) for n in nomes[:40]])
 
 @app.route('/admin')
 @app.route('/admin.html')

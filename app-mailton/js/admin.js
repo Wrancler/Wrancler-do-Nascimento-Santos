@@ -45,6 +45,18 @@ async function api(url, metodo = 'GET', corpo = null) {
     return { ok: response.ok, status: response.status, dados };
 }
 
+// Envio de arquivos (fotos): igual ao api(), mas com FormData (o navegador define o Content-Type sozinho)
+async function enviarArquivos(url, campo, arquivos) {
+    const formulario = new FormData();
+    Array.from(arquivos).forEach(a => formulario.append(campo, a));
+    const response = await fetch(url, { method: 'POST', headers: getAuthHeaders(false), body: formulario });
+    if (!verificarSessao(response)) return null;
+    let dados = {};
+    try { dados = await response.json(); } catch (e) { /* resposta sem corpo */ }
+    if (response.status === 413) dados = { erro: 'A foto é grande demais. Tente uma menor.' };
+    return { ok: response.ok, status: response.status, dados };
+}
+
 // ------------------------------------------------------------
 //  UTILITÁRIOS
 // ------------------------------------------------------------
@@ -142,6 +154,8 @@ async function carregarDadosAdmin() {
             expedienteEstado = expediente.dados;
             renderizarExpedienteAdmin();
         }
+        carregarGaleriaAdmin();
+        carregarSobreAdmin();
     } catch (erro) {
         console.error("Erro interno:", erro);
         alert("Erro ao sincronizar dados com o servidor.");
@@ -445,9 +459,22 @@ function renderizarServicosAdmin() {
         return;
     }
 
-    container.innerHTML = servicosAdmin.map(s => `
-        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/20 border border-white/5 ${s.ativo ? '' : 'opacity-60'}">
-            <div class="min-w-0">
+    container.innerHTML = servicosAdmin.map((s, i) => {
+        const grupo = servicosAdmin.filter(x => x.ativo === s.ativo);
+        const posicao = grupo.findIndex(x => x.id === s.id);
+        const primeiro = posicao === 0;
+        const ultimo = posicao === grupo.length - 1;
+        const foto = s.imagem_url
+            ? `<img src="${escaparHtml(s.imagem_url)}" alt="" class="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0">`
+            : '';
+        return `
+        <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-black/20 border border-white/5 ${s.ativo ? '' : 'opacity-60'}">
+            <div class="flex flex-col shrink-0">
+                <button onclick="moverServico(${s.id}, 'cima')" ${primeiro ? 'disabled style="opacity:.25"' : ''} class="w-8 h-6 text-gray-300 hover:text-white" title="Subir na lista" aria-label="Subir na lista"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                <button onclick="moverServico(${s.id}, 'baixo')" ${ultimo ? 'disabled style="opacity:.25"' : ''} class="w-8 h-6 text-gray-300 hover:text-white" title="Descer na lista" aria-label="Descer na lista"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+            </div>
+            ${foto}
+            <div class="min-w-0 flex-1">
                 <p class="text-white font-bold text-sm truncate">${escaparHtml(s.nome)}</p>
                 <p class="text-[11px] text-gray-400 mt-0.5">${formatarDuracao(s.duracao_minutos)} • ${formatarMoeda(s.valor)}${s.ativo ? '' : ' • <span class="text-brand-500 font-bold">Oculto no site</span>'}</p>
             </div>
@@ -459,8 +486,19 @@ function renderizarServicosAdmin() {
                     <i class="fa-solid fa-pen"></i>
                 </button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
+}
+
+async function moverServico(id, direcao) {
+    try {
+        const resposta = await api(`/api/admin/servicos/${id}/mover`, 'POST', { direcao });
+        if (!resposta) return;
+        if (!resposta.ok) { mostrarAviso(resposta.dados.erro || 'Não foi possível mover.', 'erro'); return; }
+        await recarregarServicos();
+    } catch (e) {
+        mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    }
 }
 
 async function recarregarServicos() {
@@ -489,6 +527,11 @@ function abrirModalServico(id = null) {
     document.getElementById('servValor').value = servico ? String(servico.valor).replace('.', ',') : '';
     preencherOpcoesDuracao(servico ? servico.duracao_minutos : 60);
     document.getElementById('btnExcluirServico').classList.toggle('hidden', !servico);
+    document.getElementById('servFoto').value = '';
+    const previa = document.getElementById('servFotoPrevia');
+    previa.classList.toggle('hidden', !(servico && servico.imagem_url));
+    if (servico && servico.imagem_url) previa.src = servico.imagem_url;
+    document.getElementById('btnRemoverFotoServ').classList.toggle('hidden', !(servico && servico.imagem_url));
     document.getElementById('erroServico').classList.add('hidden');
     abrirModal('modalServico');
 }
@@ -523,8 +566,16 @@ async function salvarServico() {
             erro.classList.remove('hidden');
             return;
         }
+        const idSalvo = id || resposta.dados.id;
+        const fotoEscolhida = document.getElementById('servFoto').files;
+        let avisoFoto = '';
+        if (fotoEscolhida.length && idSalvo) {
+            const envio = await enviarArquivos(`/api/admin/servicos/${idSalvo}/imagem`, 'foto', [fotoEscolhida[0]]);
+            if (envio && !envio.ok) avisoFoto = envio.dados.erro || 'A foto não pôde ser enviada.';
+        }
         fecharModalServico();
         mostrarAviso(resposta.dados.mensagem);
+        if (avisoFoto) mostrarAviso('O serviço foi salvo, mas: ' + avisoFoto, 'erro');
         await recarregarServicos();
     } catch (e) {
         erro.textContent = 'Erro de conexão com o servidor.';
@@ -962,5 +1013,93 @@ async function alternarBloqueioServidor(hora_bloqueio, isJaBloqueado) {
         carregarEstadoBloqueios();
     } catch (erro) {
         mostrarAviso("Erro ao aplicar bloqueio.", 'erro');
+    }
+}
+
+
+async function removerFotoServico() {
+    const id = document.getElementById('servId').value;
+    if (!id) return;
+    try {
+        const resposta = await api(`/api/admin/servicos/${id}/imagem`, 'DELETE');
+        if (!resposta) return;
+        if (!resposta.ok) { mostrarAviso(resposta.dados.erro || 'Não foi possível remover.', 'erro'); return; }
+        document.getElementById('servFotoPrevia').classList.add('hidden');
+        document.getElementById('btnRemoverFotoServ').classList.add('hidden');
+        mostrarAviso('Foto removida.');
+        await recarregarServicos();
+    } catch (e) {
+        mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    }
+}
+
+// ------------------------------------------------------------
+//  CONFIGURAÇÕES: FOTOS DOS TRABALHOS E TEXTO "SOBRE"
+// ------------------------------------------------------------
+async function carregarGaleriaAdmin() {
+    const grade = document.getElementById('gradeGaleriaAdmin');
+    const resposta = await api('/api/admin/galeria');
+    if (!resposta || !resposta.ok) return;
+    if (resposta.dados.length === 0) {
+        grade.innerHTML = '<p class="col-span-3 text-xs text-gray-500 text-center py-3">Nenhuma foto ainda. Toque em "Adicionar fotos".</p>';
+        return;
+    }
+    grade.innerHTML = resposta.dados.map(f => `
+        <div class="relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-black/30">
+            <img src="${escaparHtml(f.url)}" alt="Foto de trabalho" loading="lazy" class="w-full h-full object-cover">
+            <button onclick="apagarFotoGaleria('${escaparHtml(f.nome)}')" class="absolute top-1 right-1 w-8 h-8 rounded-full bg-black/70 text-red-400 hover:bg-black" title="Apagar foto" aria-label="Apagar foto">
+                <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+        </div>`).join('');
+}
+
+async function enviarFotosGaleria(input) {
+    if (!input.files.length) return;
+    const botao = document.getElementById('btnAddGaleria');
+    const textoOriginal = botao.innerHTML;
+    botao.disabled = true;
+    botao.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando... aguarde';
+    try {
+        const resposta = await enviarArquivos('/api/admin/galeria', 'fotos', input.files);
+        if (!resposta) return;
+        mostrarAviso(resposta.ok ? resposta.dados.mensagem : (resposta.dados.erro || 'Não foi possível enviar.'), resposta.ok ? 'ok' : 'erro');
+        await carregarGaleriaAdmin();
+    } catch (e) {
+        mostrarAviso('Erro de conexão ao enviar as fotos.', 'erro');
+    } finally {
+        botao.disabled = false;
+        botao.innerHTML = textoOriginal;
+        input.value = '';
+    }
+}
+
+async function apagarFotoGaleria(nome) {
+    if (!confirm('Apagar esta foto do site?')) return;
+    try {
+        const resposta = await api(`/api/admin/galeria/${encodeURIComponent(nome)}`, 'DELETE');
+        if (!resposta) return;
+        mostrarAviso(resposta.ok ? 'Foto apagada.' : (resposta.dados.erro || 'Não foi possível apagar.'), resposta.ok ? 'ok' : 'erro');
+        await carregarGaleriaAdmin();
+    } catch (e) {
+        mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    }
+}
+
+async function carregarSobreAdmin() {
+    const resposta = await api('/api/admin/sobre');
+    if (resposta && resposta.ok) document.getElementById('textoSobre').value = resposta.dados.texto || '';
+}
+
+async function salvarSobre() {
+    const botao = document.getElementById('btnSalvarSobre');
+    botao.disabled = true;
+    try {
+        const resposta = await api('/api/admin/sobre', 'PUT', { texto: document.getElementById('textoSobre').value });
+        if (!resposta) return;
+        mostrarAviso(resposta.ok ? resposta.dados.mensagem : (resposta.dados.erro || 'Não foi possível salvar.'), resposta.ok ? 'ok' : 'erro');
+    } catch (e) {
+        mostrarAviso('Erro de conexão com o servidor.', 'erro');
+    } finally {
+        botao.disabled = false;
     }
 }

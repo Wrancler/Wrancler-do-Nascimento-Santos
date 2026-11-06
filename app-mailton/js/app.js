@@ -1,3 +1,6 @@
+// Página do cliente — Mailton Maia
+const NUMERO_MAILTON = '5583988856096';
+
 let servicoSelecionadoId = null;
 let servicoNomeAtual = '';
 let servicoValorAtual = '';
@@ -6,7 +9,16 @@ let horarioSelecionado = null;
 let servicosCache = [];
 let diasAtendimento = [1, 2, 3, 4, 5, 6]; // 0 = domingo ... 6 = sábado (atualizado pelo servidor)
 let mesesAbertos = null;   // ['2026-11', '2026-12', ...] liberados pelo Mailton; null = ainda não sabemos
-let mesSelecionado = null; // mês que está aberto no calendário agora
+let mesSelecionado = null;
+let linkCancelamentoAtual = '';
+let enviando = false;
+
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const SIGLAS_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+const DIAS_SEMANA_LONGO = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+const $ = id => document.getElementById(id);
 
 // --- FORMATAÇÃO ---
 function formatarDuracao(minutos) {
@@ -32,34 +44,36 @@ function escaparHtml(texto) {
     return div.innerHTML;
 }
 
-// --- LISTA DE SERVIÇOS (vem do banco, o Mailton edita pelo painel) ---
+function textoDia(dataSQL) {
+    const [a, m, d] = dataSQL.split('-').map(Number);
+    const dt = new Date(a, m - 1, d);
+    return `${DIAS_SEMANA_LONGO[dt.getDay()]}, ${d} de ${NOMES_MESES[m - 1].toLowerCase()}`;
+}
+
+// --- LISTA DE SERVIÇOS (vem do banco; o Mailton edita pelo painel) ---
+// Permite quebrar "Micropigmentação" com hífen (Micro-pigmentação) em vez de cortar no meio da sílaba
+function nomeComHifen(nome) {
+    return escaparHtml(nome).replace(/micropigmenta/gi, m => m.slice(0, 5) + '&shy;' + m.slice(5));
+}
+
 function criarCardServico(s) {
     return `
-        <div class="group bg-surface/50 backdrop-blur-md rounded-3xl p-5 border border-white/10 hover:border-brand-500/50 hover:bg-surface transition-all duration-300 cursor-pointer shadow-lg"
-             role="button" tabindex="0" onclick="abrirModal(${s.id})"
-             onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirModal(${s.id}); }">
-            <div class="flex justify-between items-center gap-4">
-                <div class="min-w-0">
-                    <h3 class="font-bold text-white text-lg leading-snug group-hover:text-brand-400 transition-colors">${escaparHtml(s.nome)}</h3>
-                    <div class="flex items-center gap-3 mt-2">
-                        <span class="bg-white/5 text-gray-300 text-sm px-3 py-1 rounded-md font-medium flex items-center gap-2">
-                            <i class="fa-regular fa-clock text-brand-500"></i> ${formatarDuracao(s.duracao_minutos)}
-                        </span>
-                    </div>
-                </div>
-                <div class="text-right flex flex-col items-end shrink-0">
-                    <p class="text-white font-bold text-xl">${formatarValorCurto(s.valor)}</p>
-                    <span class="mt-2 text-brand-500 text-base font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        Agendar <i class="fa-solid fa-chevron-right text-xs"></i>
-                    </span>
-                </div>
+        <button type="button" class="cartao" onclick="abrirModal(${Number(s.id)})">
+            ${s.imagem ? `<img class="cartao-foto" src="${escaparHtml(s.imagem)}" alt="" loading="lazy">` : ''}
+            <div class="cartao-col">
+                <h3>${nomeComHifen(s.nome)}</h3>
+                <span class="duracao"><i class="fa-regular fa-clock"></i> ${formatarDuracao(s.duracao_minutos)}</span>
             </div>
-        </div>`;
+            <div class="cartao-rodape">
+                <span class="preco texto-ouro">${formatarValorCurto(s.valor)}</span>
+                <span class="agendar-chip">Agendar <i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+        </button>`;
 }
 
 async function carregarServicos() {
-    const lista = document.getElementById('listaServicos');
-    lista.innerHTML = '<p class="text-base text-gray-400 text-center py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando serviços...</p>';
+    const lista = $('listaServicos');
+    lista.innerHTML = '<p class="msg-vazia"><i class="fa-solid fa-spinner fa-spin"></i> Carregando serviços...</p>';
 
     try {
         const [respServicos, respExpediente] = await Promise.all([
@@ -76,18 +90,41 @@ async function carregarServicos() {
         }
 
         if (servicosCache.length === 0) {
-            lista.innerHTML = '<p class="text-base text-gray-400 text-center py-10">Nenhum serviço disponível no momento. Fale com o Mailton pelo WhatsApp, logo abaixo.</p>';
+            lista.innerHTML = '<p class="msg-vazia">Nenhum serviço disponível no momento. Fale com o Mailton pelo WhatsApp, logo abaixo.</p>';
             return;
         }
         lista.innerHTML = servicosCache.map(criarCardServico).join('');
     } catch (err) {
         console.error(err);
         lista.innerHTML = `
-            <div class="text-center py-10">
-                <p class="text-base text-red-400 mb-4">Não foi possível carregar os serviços.</p>
-                <button type="button" onclick="carregarServicos()" class="px-6 py-3 rounded-2xl bg-white/10 text-white font-semibold text-base">Tentar de novo</button>
+            <div class="msg-vazia erro">
+                <p style="margin-bottom:12px">Não foi possível carregar os serviços.</p>
+                <button type="button" class="btn-contorno" onclick="carregarServicos()">Tentar de novo</button>
             </div>`;
     }
+}
+
+// --- JANELA DE AGENDAMENTO ---
+function mostrarAviso(texto) {
+    const el = $('avisoModal');
+    if (!texto) { el.classList.add('oculto'); el.textContent = ''; return; }
+    el.textContent = texto;
+    el.classList.remove('oculto');
+}
+
+function irParaPasso(passo) {
+    $('passoDataHora').classList.toggle('oculto', passo !== 'datahora');
+    $('passoDados').classList.toggle('oculto', passo !== 'dados');
+    $('passoOk').classList.toggle('oculto', passo !== 'ok');
+    $('trilha2').classList.toggle('feito', passo === 'datahora' || passo === 'dados' || passo === 'ok');
+    $('trilha3').classList.toggle('feito', passo === 'dados' || passo === 'ok');
+    const folha = document.querySelector('.folha');
+    if (folha) folha.scrollTop = 0;
+}
+
+function voltarPasso() {
+    mostrarAviso('');
+    irParaPasso('datahora');
 }
 
 function abrirModal(id) {
@@ -97,32 +134,33 @@ function abrirModal(id) {
     servicoSelecionadoId = servico.id;
     servicoNomeAtual = servico.nome;
     servicoValorAtual = formatarValor(servico.valor);
-    
-    document.getElementById('modalServicoNome').textContent = servico.nome;
-    document.getElementById('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
-    
+
+    $('modalServicoNome').textContent = servico.nome;
+    $('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
+
     mesSelecionado = null;
+    mostrarAviso('');
     resetarSelecoes();
     gerarDatasCarrossel();
-    
-    document.getElementById('modalHorario').classList.remove('hidden');
+    irParaPasso('datahora');
+
+    $('modalHorario').classList.remove('oculto');
+    document.body.style.overflow = 'hidden';
 }
 
 function fecharModal() {
-    document.getElementById('modalHorario').classList.add('hidden');
+    $('modalHorario').classList.add('oculto');
+    document.body.style.overflow = '';
 }
 
 function resetarSelecoes() {
     dataSelecionada = null;
     horarioSelecionado = null;
-    document.getElementById('gridHorarios').innerHTML = '<p class="text-xs text-gray-500 col-span-3 text-center py-4 bg-dark-800 rounded-xl border border-gray-700 border-dashed">Selecione uma data acima.</p>';
+    $('btnContinuar').disabled = true;
+    $('gridHorarios').innerHTML = '<p class="msg-vazia">Toque em um dia acima para ver os horários.</p>';
 }
 
-const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const SIGLAS_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-
-// Datas que a cliente pode escolher em um mês: do dia 1 (ou de hoje) até o fim, só dias de atendimento
+// Datas que a cliente pode escolher em um mês: de hoje até o fim, só dias de atendimento
 function diasDoMes(anoMes) {
     const [ano, mes] = anoMes.split('-').map(Number);
     const hoje = new Date();
@@ -140,9 +178,9 @@ function diasDoMes(anoMes) {
 }
 
 function gerarDatasCarrossel() {
-    const abas = document.getElementById('abasMeses');
-    const container = document.getElementById('carrosselDatas');
-    const rotulo = document.getElementById('mesAtualLabel');
+    const abas = $('abasMeses');
+    const container = $('carrosselDatas');
+    const rotulo = $('mesAtualLabel');
 
     // Se o servidor não informou os meses, usa o mês atual e o próximo
     let meses = mesesAbertos;
@@ -161,7 +199,7 @@ function gerarDatasCarrossel() {
 
     if (mesesComDias.length === 0) {
         rotulo.textContent = '';
-        container.innerHTML = '<p class="text-base text-gray-400 py-4 pr-2">A agenda ainda não está aberta. Fale com o Mailton pelo WhatsApp, no final da página.</p>';
+        container.innerHTML = '<p class="msg-vazia" style="width:100%">A agenda ainda não está aberta. Fale com o Mailton pelo WhatsApp, no final da página.</p>';
         return;
     }
 
@@ -171,11 +209,9 @@ function gerarDatasCarrossel() {
     if (mesesComDias.length > 1) {
         mesesComDias.forEach(anoMes => {
             const [, mes] = anoMes.split('-').map(Number);
-            const ativa = anoMes === mesSelecionado;
             const aba = document.createElement('button');
             aba.type = 'button';
-            aba.className = 'aba-mes shrink-0 px-5 py-2.5 rounded-full text-base font-semibold border transition ' +
-                (ativa ? 'bg-brand-500 text-black border-brand-500' : 'bg-white/5 text-gray-200 border-white/10 hover:border-brand-500');
+            aba.className = 'aba-mes' + (anoMes === mesSelecionado ? ' ativa' : '');
             aba.textContent = NOMES_MESES[mes - 1];
             aba.onclick = () => {
                 mesSelecionado = anoMes;
@@ -196,83 +232,132 @@ function gerarDatasCarrossel() {
 
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'btn-data flex-none snap-start flex flex-col items-center justify-center p-3 rounded-xl min-w-[76px] border border-gray-700 bg-dark-800 text-gray-300 transition hover:border-brand-500';
+        btn.className = 'btn-data';
+        btn.dataset.data = dataFormatada;
         btn.innerHTML = `
-            <span class="text-xs font-medium mb-1 tracking-wider">${DIAS_SEMANA[data.getDay()]}</span>
-            <span class="text-2xl font-bold leading-none">${diaStr}</span>
-            <span class="text-xs font-bold mt-1 tracking-wider text-brand-400">${SIGLAS_MESES[data.getMonth()]}</span>
-        `;
+            <span class="ds">${DIAS_SEMANA[data.getDay()]}</span>
+            <span class="dn">${diaStr}</span>
+            <span class="dm">${SIGLAS_MESES[data.getMonth()]}</span>`;
         btn.onclick = () => selecionarData(btn, dataFormatada);
         container.appendChild(btn);
     });
 }
 
+function periodoDaHora(hhmm) {
+    const h = parseInt(hhmm.split(':')[0], 10);
+    if (h < 12) return { chave: 'manha', nome: 'Manhã', icone: 'fa-sun' };
+    if (h < 18) return { chave: 'tarde', nome: 'Tarde', icone: 'fa-cloud-sun' };
+    return { chave: 'noite', nome: 'Noite', icone: 'fa-moon' };
+}
+
 async function selecionarData(botao, dataFormatoSQL) {
     dataSelecionada = dataFormatoSQL;
-    
-    document.querySelectorAll('.btn-data').forEach(b => {
-        b.classList.remove('bg-brand-500', 'text-dark-900', 'border-brand-500');
-        b.classList.add('bg-dark-800', 'text-gray-300', 'border-gray-700');
-    });
-    botao.classList.remove('bg-dark-800', 'text-gray-300', 'border-gray-700');
-    botao.classList.add('bg-brand-500', 'text-dark-900', 'border-brand-500');
-
-    const grid = document.getElementById('gridHorarios');
-    grid.innerHTML = '<p class="text-xs text-brand-400 col-span-3 text-center py-4 bg-brand-500/10 rounded-xl border border-brand-500/20"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Buscando horários...</p>';
     horarioSelecionado = null;
+    $('btnContinuar').disabled = true;
+    mostrarAviso('');
+
+    document.querySelectorAll('.btn-data').forEach(b => b.classList.remove('selecionado'));
+    botao.classList.add('selecionado');
+
+    const grid = $('gridHorarios');
+    grid.innerHTML = '<p class="msg-vazia"><i class="fa-solid fa-spinner fa-spin"></i> Buscando horários...</p>';
 
     try {
         const response = await fetch(`/api/horarios?data=${dataSelecionada}&servico_id=${servicoSelecionadoId}`);
         if (!response.ok) throw new Error('Erro na comunicação');
-        
+
         const resultado = await response.json();
+        if (dataSelecionada !== dataFormatoSQL) return; // a cliente já tocou em outro dia
         const horarios = resultado.horarios;
-        grid.innerHTML = ''; 
+        grid.innerHTML = '';
 
         if (horarios.length === 0) {
             // O servidor diz o motivo (mês fechado, dia bloqueado...). Sem motivo = dia lotado.
-            const mensagem = resultado.mensagem || 'Agenda lotada neste dia.';
-            grid.innerHTML = `<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20"><i class="fa-solid fa-calendar-xmark mr-2"></i>${mensagem}</p>`;
+            const mensagem = resultado.mensagem || 'Agenda lotada neste dia. Tente outro dia.';
+            grid.innerHTML = `<p class="msg-vazia erro"><i class="fa-regular fa-calendar-xmark"></i> ${escaparHtml(mensagem)}</p>`;
             return;
         }
 
-        horarios.forEach(hora => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn-horario bg-dark-800 border border-gray-700 py-3 rounded-xl text-sm font-semibold hover:border-brand-500 transition text-gray-200';
-            btn.textContent = hora;
-            btn.onclick = function() { selecionarHorario(this, hora); };
-            grid.appendChild(btn);
+        // Agrupa em Manhã / Tarde / Noite
+        const grupos = {};
+        horarios.forEach(h => {
+            const p = periodoDaHora(h);
+            (grupos[p.chave] = grupos[p.chave] || { info: p, horas: [] }).horas.push(h);
         });
 
+        ['manha', 'tarde', 'noite'].forEach(chave => {
+            const g = grupos[chave];
+            if (!g) return;
+            const titulo = document.createElement('p');
+            titulo.className = 'periodo';
+            titulo.innerHTML = `<i class="fa-solid ${g.info.icone}"></i> ${g.info.nome}`;
+            grid.appendChild(titulo);
+
+            const grade = document.createElement('div');
+            grade.className = 'grade-horas';
+            g.horas.forEach(hora => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'opcao btn-horario';
+                btn.textContent = hora;
+                btn.onclick = () => selecionarHorario(btn, hora);
+                grade.appendChild(btn);
+            });
+            grid.appendChild(grade);
+        });
+
+        $('blocoHorarios').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (err) {
         console.error(err);
-        grid.innerHTML = '<p class="text-xs text-red-400 col-span-3 text-center py-4 bg-red-500/10 rounded-xl border border-red-500/20">Erro ao carregar. Verifique o terminal Python.</p>';
+        grid.innerHTML = '<p class="msg-vazia erro">Não foi possível buscar os horários. Verifique sua internet e toque no dia de novo.</p>';
     }
 }
 
 function selecionarHorario(botao, horario) {
     horarioSelecionado = horario;
-    document.querySelectorAll('.btn-horario').forEach(b => {
-        b.classList.remove('bg-brand-500', 'text-dark-900', 'border-brand-500');
-        b.classList.add('bg-dark-800', 'text-gray-200');
-    });
-    botao.classList.remove('bg-dark-800', 'text-gray-200');
-    botao.classList.add('bg-brand-500', 'text-dark-900', 'border-brand-500');
+    document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selecionado'));
+    botao.classList.add('selecionado');
+    $('btnContinuar').disabled = false;
+}
+
+function continuarParaDados() {
+    if (!dataSelecionada || !horarioSelecionado) return;
+    $('resumoQuando').textContent = `${textoDia(dataSelecionada)}, às ${horarioSelecionado}`;
+    $('resumoServico').textContent = `${servicoNomeAtual} · ${servicoValorAtual}`;
+    mostrarAviso('');
+    irParaPasso('dados');
+}
+
+// Máscara (83) 99999-9999
+function mascararTelefone(el) {
+    let n = el.value.replace(/\D/g, '').slice(0, 11);
+    if (n.length > 6) {
+        const fim = n.length > 10 ? 7 : 6;
+        el.value = `(${n.slice(0, 2)}) ${n.slice(2, fim)}-${n.slice(fim)}`;
+    } else if (n.length > 2) {
+        el.value = `(${n.slice(0, 2)}) ${n.slice(2)}`;
+    } else if (n.length > 0) {
+        el.value = `(${n}`;
+    } else {
+        el.value = '';
+    }
 }
 
 async function enviarAgendamento() {
-    const nome = document.getElementById('clienteNome').value.trim();
-    const telefone = document.getElementById('clienteTelefone').value.trim();
+    if (enviando) return;
+    const nome = $('clienteNome').value.trim();
+    const telefone = $('clienteTelefone').value.trim();
+    const digitos = telefone.replace(/\D/g, '');
 
-    if (!nome || !telefone || !dataSelecionada || !horarioSelecionado) {
-        alert('Por favor, preencha todos os campos e escolha uma data e horário.');
-        return;
-    }
+    if (nome.length < 2) { mostrarAviso('Por favor, digite o seu nome.'); $('clienteNome').focus(); return; }
+    if (digitos.length < 10) { mostrarAviso('Digite o seu WhatsApp com DDD. Exemplo: (83) 99999-9999.'); $('clienteTelefone').focus(); return; }
+    if (!dataSelecionada || !horarioSelecionado) { mostrarAviso('Escolha o dia e o horário.'); irParaPasso('datahora'); return; }
 
-    const btn = document.getElementById('btnConfirmar');
+    mostrarAviso('');
+    enviando = true;
+    const btn = $('btnConfirmar');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>A processar...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...';
 
     const payload = {
         nome_cliente: nome,
@@ -287,54 +372,143 @@ async function enviarAgendamento() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        const resultado = await response.json();
+        const resultado = await response.json().catch(() => ({}));
 
         if (response.ok) {
-            // Feedback de sucesso Premium
-            btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Agendado com Sucesso!';
-            btn.classList.remove('from-brand-500', 'to-brand-400', 'text-black', 'shadow-[0_0_20px_rgba(245,158,11,0.3)]');
-            btn.classList.add('bg-green-500', 'text-white', 'shadow-[0_0_20px_rgba(34,197,94,0.3)]');
-
-            const numeroMailton = "5583988856096"; 
-            const dataBR = dataSelecionada.split('-').reverse().join('/'); 
-            
-            // Usa o domínio atual (funciona local ou em produção, sem IP fixo)
-            const linkCancelamento = `${window.location.origin}/cancelar/${resultado.token_cancelamento}`;
-
-            const textoWhatsApp = `✅ *NOVO AGENDAMENTO SITE!*\n\nOlá Mailton! Acabei de me agendar pelo seu sistema:\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefone}\n✨ *Serviço:* ${servicoNomeAtual} (${servicoValorAtual})\n📅 *Data:* ${dataBR} às ${horarioSelecionado}\n\n🔗 *Meu link para cancelar (caso precise):*\n${linkCancelamento}`;
-            
-            const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroMailton}&text=${encodeURIComponent(textoWhatsApp)}`;
-
-            // Aguarda 1.5s para o cliente ver o sucesso, depois abre o WhatsApp
-            setTimeout(() => {
-                window.location.href = urlWhatsApp;
-                
-                // Restaura o botão caso o utilizador volte à página
-                btn.innerHTML = 'Confirmar Agendamento';
-                btn.classList.add('from-brand-500', 'to-brand-400', 'text-black', 'shadow-[0_0_20px_rgba(245,158,11,0.3)]');
-                btn.classList.remove('bg-green-500', 'text-white', 'shadow-[0_0_20px_rgba(34,197,94,0.3)]');
-                btn.disabled = false;
-                fecharModal();
-            }, 1500);
-
+            mostrarConfirmacao(nome, telefone, resultado.token_cancelamento);
+        } else if (response.status === 409) {
+            // Outra pessoa pegou o horário enquanto esta cliente escolhia
+            irParaPasso('datahora');
+            mostrarAviso(resultado.erro || 'Esse horário acabou de ser ocupado. Escolha outro, por favor.');
+            const btnData = document.querySelector(`.btn-data[data-data="${dataSelecionada}"]`);
+            if (btnData) selecionarData(btnData, dataSelecionada);
         } else {
-            alert(resultado.erro || 'Falha ao agendar');
-            btn.disabled = false;
-            btn.textContent = 'Confirmar Agendamento';
-
-            // Horário foi ocupado por outra pessoa enquanto este cliente escolhia: atualiza a lista
-            if (response.status === 409) {
-                const btnData = document.querySelector('.btn-data.bg-brand-500');
-                if (btnData) selecionarData(btnData, dataSelecionada);
-            }
+            mostrarAviso(resultado.erro || 'Não foi possível agendar agora. Tente de novo em instantes.');
         }
     } catch (err) {
-        alert('Não foi possível conectar ao servidor Python.');
+        console.error(err);
+        mostrarAviso('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+    } finally {
+        enviando = false;
         btn.disabled = false;
-        btn.textContent = 'Confirmar Agendamento';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar agendamento';
     }
 }
 
-// Ao abrir a página, busca os serviços no servidor
+function mostrarConfirmacao(nome, telefone, token) {
+    const dataBR = dataSelecionada.split('-').reverse().join('/');
+    linkCancelamentoAtual = `${window.location.origin}/cancelar/${token}`;
+
+    $('okNome').textContent = nome.split(' ')[0] + ', seu horário está reservado.';
+    $('okServico').textContent = servicoNomeAtual;
+    $('okData').textContent = textoDia(dataSelecionada);
+    $('okHora').textContent = horarioSelecionado;
+    $('textoCopiar').textContent = 'Copiar link para cancelar';
+
+    const texto = `✅ *NOVO AGENDAMENTO SITE!*\n\nOlá Mailton! Acabei de me agendar pelo seu sistema:\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefone}\n✨ *Serviço:* ${servicoNomeAtual} (${servicoValorAtual})\n📅 *Data:* ${dataBR} às ${horarioSelecionado}\n\n🔗 *Meu link para cancelar (caso precise):*\n${linkCancelamentoAtual}`;
+    $('btnWhats').href = `https://api.whatsapp.com/send?phone=${NUMERO_MAILTON}&text=${encodeURIComponent(texto)}`;
+
+    mostrarAviso('');
+    irParaPasso('ok');
+}
+
+async function copiarLinkCancelamento() {
+    const rotulo = $('textoCopiar');
+    try {
+        await navigator.clipboard.writeText(linkCancelamentoAtual);
+        rotulo.textContent = 'Link copiado!';
+    } catch (e) {
+        window.prompt('Copie o link abaixo:', linkCancelamentoAtual);
+    }
+}
+
+// --- GALERIA (aparece só quando existem fotos em img/galeria) ---
+let fotosGaleria = [];
+let fotoAtual = 0;
+
+async function carregarGaleria() {
+    try {
+        const resp = await fetch('/api/galeria');
+        if (!resp.ok) return;
+        fotosGaleria = await resp.json();
+        if (!fotosGaleria.length) return;
+        $('galeriaGrade').innerHTML = fotosGaleria.map((url, i) =>
+            `<button type="button" onclick="abrirFoto(${i})" aria-label="Ver foto ${i + 1}"><img src="${escaparHtml(url)}" alt="Trabalho do Mailton ${i + 1}" loading="lazy"></button>`
+        ).join('');
+        $('secaoGaleria').classList.remove('oculto');
+    } catch (e) { /* sem galeria: tudo bem */ }
+}
+
+function abrirFoto(i) {
+    fotoAtual = i;
+    $('visorImg').src = fotosGaleria[fotoAtual];
+    $('visorFoto').classList.remove('oculto');
+}
+function mudarFoto(delta) {
+    if (!fotosGaleria.length) return;
+    fotoAtual = (fotoAtual + delta + fotosGaleria.length) % fotosGaleria.length;
+    $('visorImg').src = fotosGaleria[fotoAtual];
+}
+function fecharFoto() { $('visorFoto').classList.add('oculto'); }
+
+// --- EFEITOS (respeitam "reduzir movimento") ---
+function iniciarParticulas() {
+    const canvas = $('particulas');
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return;
+    let w, h, pts = [];
+    function ajustar() {
+        w = canvas.width = canvas.offsetWidth;
+        h = canvas.height = Math.min(canvas.offsetHeight, 900);
+        pts = Array.from({ length: 34 }, () => ({
+            x: Math.random() * w, y: Math.random() * h,
+            r: Math.random() * 1.6 + 0.4, v: Math.random() * 0.25 + 0.05, a: Math.random() * 0.5 + 0.15
+        }));
+    }
+    function quadro() {
+        ctx.clearRect(0, 0, w, h);
+        pts.forEach(p => {
+            p.y -= p.v; if (p.y < -4) { p.y = h + 4; p.x = Math.random() * w; }
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283);
+            ctx.fillStyle = `rgba(212,175,55,${p.a})`; ctx.fill();
+        });
+        requestAnimationFrame(quadro);
+    }
+    ajustar(); quadro();
+    window.addEventListener('resize', ajustar);
+}
+
+function iniciarRevelacao() {
+    const itens = document.querySelectorAll('.revela');
+    if (!('IntersectionObserver' in window)) { itens.forEach(i => i.classList.add('visivel')); return; }
+    const obs = new IntersectionObserver(entradas => {
+        entradas.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visivel'); obs.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    itens.forEach(i => obs.observe(i));
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('visorFoto').classList.contains('oculto')) fecharFoto();
+    else if (!$('modalHorario').classList.contains('oculto')) fecharModal();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    $('clienteTelefone').addEventListener('input', e => mascararTelefone(e.target));
+});
+
+async function carregarSobre() {
+    try {
+        const resp = await fetch('/api/sobre');
+        if (!resp.ok) return;
+        const dados = await resp.json();
+        if (dados.texto) $('textoSobreCliente').textContent = dados.texto;  // textContent: texto nunca vira HTML
+    } catch (e) { /* mantém o texto que já está na página */ }
+}
+
 carregarServicos();
+carregarGaleria();
+carregarSobre();
+iniciarParticulas();
+iniciarRevelacao();
