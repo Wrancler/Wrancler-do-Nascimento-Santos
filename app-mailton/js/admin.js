@@ -4,6 +4,7 @@
 let dataSelecionadaAdmin = null;
 let agendamentosCache = [];
 let servicosAdmin = [];
+let diaLembrete = null; // dia mostrado no cartão de lembretes (YYYY-MM-DD)
 let expedienteEstado = null; // { intervalo: 30, dias: { '0': [], '1': [{inicio, fim}], ... } }
 let periodoFinanceiro = 'hoje'; // hoje | ontem | semana | mes | mes_passado | personalizado
 let intervaloFinanceiro = { inicio: '', fim: '' }; // usado só em 'personalizado'
@@ -136,6 +137,7 @@ async function carregarDashboard() {
     renderizarSemanasAdmin(dados.semanal, dados.semanas, dados.meses);
     agendamentosCache = dados.agendamentos;
     inicializarAgenda();
+    renderizarLembretes();
     await carregarFinanceiro();
 }
 
@@ -253,7 +255,10 @@ function criarCardAgendamento(ag) {
                 </div>
                 <div class="min-w-0">
                     <h4 class="text-white font-bold text-sm truncate">${escaparHtml(ag.cliente)}</h4>
-                    <p class="text-gray-400 text-[10px] mt-1 uppercase tracking-wider truncate">${escaparHtml(ag.servico)}</p>
+                    <div class="flex items-center gap-1.5 mt-1 min-w-0">
+                        ${chipVisita(ag)}
+                        <p class="text-gray-400 text-[10px] uppercase tracking-wider truncate">${escaparHtml(ag.servico)}</p>
+                    </div>
                     <p class="text-gray-500 text-[10px] mt-0.5">${formatarDuracao(ag.duracao_minutos || 0)} • até ${fimHora}</p>
                 </div>
             </div>
@@ -311,6 +316,136 @@ async function mudarStatusAgendamento(id, novoStatus) {
     } catch (erro) {
         mostrarAviso('Erro de conexão com o servidor.', 'erro');
     }
+}
+
+// Etiqueta "Primeira vez" / "3ª visita": o Mailton reconhece quem já é cliente
+function chipVisita(ag) {
+    const antes = Number(ag.visitas_antes || 0);
+    if (antes === 0) {
+        return '<span class="shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase bg-sky-500/15 text-sky-300">1ª vez</span>';
+    }
+    return `<span class="shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase bg-brand-500/15 text-brand-400">${antes + 1}ª visita</span>`;
+}
+
+// ------------------------------------------------------------
+//  LEMBRETES (um toque abre o WhatsApp da cliente com a mensagem pronta)
+// ------------------------------------------------------------
+const MAX_DIAS_LEMBRETE = 14;
+
+function somarDias(dataIso, dias) {
+    const [a, m, d] = dataIso.split('-').map(Number);
+    return dataParaIso(new Date(a, m - 1, d + dias));
+}
+
+function agendadosDoDia(dataIso) {
+    const agora = new Date();
+    const hojeIso = dataParaIso(agora);
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    return agendamentosCache
+        .filter(ag => ag.status === 'agendado' && ag.data_hora.startsWith(dataIso))
+        // hoje: só quem ainda vai chegar
+        .filter(ag => dataIso !== hojeIso || horaParaMinutos(ag.data_hora.split(' ')[1]) > minutosAgora)
+        .sort((a, b) => a.data_hora.localeCompare(b.data_hora));
+}
+
+function rotuloDiaLembrete(dataIso) {
+    const [a, m, d] = dataIso.split('-').map(Number);
+    const dt = new Date(a, m - 1, d);
+    const hojeIso = dataParaIso(new Date());
+    const dataCurta = `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+    const nome = NOMES_DIAS[dt.getDay()].toLowerCase();
+    if (dataIso === hojeIso) return { prefixo: 'Hoje', completo: `Hoje · ${nome}, ${dataCurta}`, fala: 'hoje' };
+    if (dataIso === somarDias(hojeIso, 1)) return { prefixo: 'Amanhã', completo: `Amanhã · ${nome}, ${dataCurta}`, fala: 'amanhã' };
+    return { prefixo: nome, completo: `${nome.charAt(0).toUpperCase() + nome.slice(1)}, ${dataCurta}`, fala: `${nome} (${dataCurta})` };
+}
+
+function mensagemLembrete(ag, dataIso) {
+    const primeiroNome = String(ag.cliente || '').trim().split(/\s+/)[0] || '';
+    const hora = ag.data_hora.split(' ')[1];
+    const quando = rotuloDiaLembrete(dataIso).fala;
+    return `Olá, ${primeiroNome}! Aqui é o Mailton 😊\n\n` +
+        `Passando para lembrar do seu horário ${quando}, às ${hora}: ${ag.servico}.\n\n` +
+        `Posso confirmar a sua presença? Se precisar remarcar ou cancelar, é só me avisar por aqui.\n\n` +
+        `Te espero! ✨`;
+}
+
+function renderizarLembretes() {
+    const hojeIso = dataParaIso(new Date());
+    const amanha = somarDias(hojeIso, 1);
+
+    // Primeira vez: amanhã. Se amanhã não tem ninguém (ex.: domingo), mostra o próximo dia com atendimento.
+    if (!diaLembrete || diaLembrete < hojeIso) {
+        diaLembrete = amanha;
+        if (agendadosDoDia(amanha).length === 0) {
+            for (let i = 2; i <= 7; i++) {
+                const candidato = somarDias(hojeIso, i);
+                if (agendadosDoDia(candidato).length > 0) { diaLembrete = candidato; break; }
+            }
+        }
+    }
+
+    const lista = agendadosDoDia(diaLembrete);
+    const rotulo = rotuloDiaLembrete(diaLembrete);
+    const lembrados = lista.filter(ag => ag.lembrete_em).length;
+
+    document.getElementById('lembTitulo').textContent = rotulo.completo;
+    document.getElementById('lembResumo').textContent = lista.length === 0
+        ? 'Ninguém agendado'
+        : `${pluralizar(lista.length, 'cliente', 'clientes')} · ${lembrados} já lembrad${lembrados === 1 ? 'o' : 'os'}`;
+    document.getElementById('lembAnterior').disabled = diaLembrete <= hojeIso;
+    document.getElementById('lembProximo').disabled = diaLembrete >= somarDias(hojeIso, MAX_DIAS_LEMBRETE);
+    document.getElementById('dicaLembretes').classList.toggle('hidden', lista.length === 0);
+
+    const container = document.getElementById('listaLembretes');
+    container.innerHTML = '';
+    if (lista.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-500 text-center py-4 bg-black/20 rounded-2xl border border-white/5 border-dashed">Nenhum atendimento neste dia. Use as setas para ver outro dia.</p>';
+        return;
+    }
+
+    lista.forEach(ag => {
+        const hora = ag.data_hora.split(' ')[1];
+        const jaLembrou = !!ag.lembrete_em;
+        const link = `https://wa.me/${telefoneWhats(ag.telefone)}?text=${encodeURIComponent(mensagemLembrete(ag, diaLembrete))}`;
+        const linha = document.createElement('div');
+        linha.className = 'flex items-center gap-3 p-3 bg-black/20 rounded-2xl border ' + (jaLembrou ? 'border-green-500/20' : 'border-white/5');
+        linha.innerHTML = `
+            <div class="bg-black/30 w-12 h-12 rounded-xl flex items-center justify-center border border-white/5 text-brand-500 shrink-0">
+                <span class="text-xs font-bold">${hora}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="text-white font-bold text-sm truncate">${escaparHtml(ag.cliente)}</p>
+                <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                    ${chipVisita(ag)}
+                    <p class="text-gray-500 text-[11px] truncate">${escaparHtml(ag.servico)}</p>
+                </div>
+                ${jaLembrou ? `<p class="text-green-400 text-[11px] font-semibold mt-0.5"><i class="fa-solid fa-check mr-1"></i>Lembrete enviado às ${ag.lembrete_em.split(' ')[1]}</p>` : ''}
+            </div>
+            <a href="${link}" target="_blank" rel="noopener" onclick="lembreteEnviado(${ag.id})"
+               class="shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${jaLembrou ? 'bg-white/10 text-gray-300' : 'bg-green-500 text-black'}">
+                <i class="fa-brands fa-whatsapp text-base"></i>${jaLembrou ? 'Reenviar' : 'Lembrar'}
+            </a>`;
+        container.appendChild(linha);
+    });
+}
+
+function mudarDiaLembrete(delta) {
+    diaLembrete = somarDias(diaLembrete, delta);
+    renderizarLembretes();
+}
+
+// Chamado no toque em "Lembrar": o link do WhatsApp abre normalmente e aqui só anotamos que foi enviado
+function lembreteEnviado(id) {
+    const ag = agendamentosCache.find(a => a.id === id);
+    if (!ag) return;
+    const agora = new Date();
+    ag.lembrete_em = `${dataParaIso(agora)} ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+    // keepalive: o aviso ao servidor segue mesmo se o celular trocar para o app do WhatsApp na hora
+    fetch(`/api/admin/agendamentos/${id}/lembrete`, {
+        method: 'POST', headers: getAuthHeaders(true), body: JSON.stringify({ enviado: true }), keepalive: true
+    }).catch(() => { /* sem internet: fica só marcado na tela */ });
+    // redesenha depois do toque, para não atrapalhar a abertura do WhatsApp
+    setTimeout(renderizarLembretes, 400);
 }
 
 // ------------------------------------------------------------

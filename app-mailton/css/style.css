@@ -467,3 +467,20 @@ a { color: inherit; }
 .meu-horario-botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 14px; }
 .meu-horario-botoes .btn-contorno { width: auto; min-height: 48px; padding: 10px 18px; font-size: 16px; }
 .meu-horario-botoes .btn-voltar { width: auto; padding: 10px 4px; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+
+
+/* ---------- boas-vindas para quem já agendou neste aparelho ---------- */
+.voltou {
+    padding: 16px; border-radius: 22px; border: 1px solid var(--linha);
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.03));
+}
+.voltou-titulo { font-size: 17px; font-weight: 500; line-height: 1.35; }
+.voltou-titulo strong { color: var(--ouro-claro); font-weight: 700; }
+.voltou-texto { margin-top: 4px; font-size: 16px; color: var(--texto-suave); }
+.boas-vindas {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;
+    padding: 12px 14px; border-radius: 16px; font-size: 15px; line-height: 1.4;
+    background: rgba(212, 175, 55, 0.07); border: 1px solid var(--linha); color: var(--texto-suave);
+}
+.boas-vindas strong { color: var(--ouro-claro); font-weight: 700; }
+.boas-vindas button { flex: none; background: none; border: 0; color: var(--texto-suave); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; }

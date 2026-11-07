@@ -29,6 +29,11 @@ def garantir_estrutura():
         if colunas and 'imagem' not in colunas:
             conn.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
             conn.commit()
+        # Quando o lembrete do agendamento foi enviado (vazio = ainda não lembrou)
+        colunas_ag = {l[1] for l in conn.execute("PRAGMA table_info(agendamentos)")}
+        if colunas_ag and 'lembrete_em' not in colunas_ag:
+            conn.execute("ALTER TABLE agendamentos ADD COLUMN lembrete_em TEXT")
+            conn.commit()
         # Semanas que o Mailton liberou (cada linha = a segunda-feira da semana aberta)
         conn.execute("CREATE TABLE IF NOT EXISTS semanas_abertas (inicio_semana TEXT PRIMARY KEY)")
         conn.commit()
@@ -561,7 +566,10 @@ def admin_dashboard():
         SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico,
                COALESCE(a.valor, s.valor) AS valor,
                COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao_minutos,
-               a.data_hora, a.status
+               a.data_hora, a.status, a.lembrete_em,
+               (SELECT COUNT(*) FROM agendamentos x
+                 WHERE x.cliente_id = a.cliente_id AND x.status != 'cancelado'
+                   AND x.data_hora < a.data_hora) AS visitas_antes
         FROM agendamentos a
         JOIN clientes c ON a.cliente_id = c.id
         JOIN servicos s ON a.servico_id = s.id
@@ -1245,6 +1253,26 @@ def admin_mudar_status(agendamento_id):
         conn.close()
     textos = {'agendado': 'Agendamento reativado.', 'concluido': 'Atendimento concluído!', 'cancelado': 'Agendamento cancelado.'}
     return jsonify({"mensagem": textos[novo]})
+
+
+# --- ADMIN: marcar que o lembrete de um agendamento já foi enviado (ou desmarcar) ---
+@app.route('/api/admin/agendamentos/<int:agendamento_id>/lembrete', methods=['POST'])
+@requer_login_admin
+def admin_marcar_lembrete(agendamento_id):
+    dados = request.get_json(silent=True) or {}
+    enviado = dados.get('enviado')
+    if not isinstance(enviado, bool):
+        return jsonify({"erro": "Opção inválida."}), 400
+    valor = agora_brasil().strftime('%Y-%m-%d %H:%M') if enviado else None
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute("UPDATE agendamentos SET lembrete_em = ? WHERE id = ?", (valor, agendamento_id))
+        conn.commit()
+        if cursor.rowcount == 0:
+            return jsonify({"erro": "Agendamento não encontrado."}), 404
+    finally:
+        conn.close()
+    return jsonify({"lembrete_em": valor})
 
 
 # --- ADMIN: novo agendamento / encaixe feito pelo próprio Mailton ---

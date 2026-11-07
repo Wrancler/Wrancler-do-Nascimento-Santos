@@ -122,6 +122,7 @@ async function carregarServicos() {
         // O aviso "Agenda aberta" só aparece se a cliente realmente tem algum dia para escolher
         const temDia = (mesesAbertos || []).some(m => diasDoMes(m).length > 0);
         $('statusAgenda').classList.toggle('oculto', !temDia);
+        mostrarBoasVindasDeVolta();
     } catch (err) {
         console.error(err);
         lista.innerHTML = `
@@ -175,6 +176,7 @@ function abrirModal(id) {
     mostrarAviso('');
     resetarSelecoes();
     gerarDatasCarrossel();
+    preencherDadosConhecidos();
     irParaPasso('datahora');
 
     $('modalHorario').classList.remove('oculto');
@@ -453,6 +455,7 @@ function mostrarConfirmacao(nome, telefone, token) {
     const linkWhats = `https://api.whatsapp.com/send?phone=${NUMERO_MAILTON}&text=${encodeURIComponent(texto)}`;
     $('btnWhats').href = linkWhats;
     guardarMeuAgendamento({ token, link: linkWhats });
+    guardarCliente({ nome, telefone, servicoId: servicoSelecionadoId, servicoNome: servicoNomeAtual });
 
     mostrarAviso('');
     irParaPasso('ok');
@@ -478,6 +481,58 @@ function prepararEnvioWhatsApp(link) {
     }, ESPERA_WHATSAPP_MS);
 }
 
+// --- RECONHECER QUEM JÁ AGENDOU: nome e WhatsApp ficam só neste aparelho ---
+function lerCliente() {
+    try {
+        const c = JSON.parse(localStorage.getItem('clienteConhecido') || 'null');
+        return c && c.nome && c.telefone ? c : null;
+    } catch (e) { return null; }
+}
+
+function guardarCliente(dados) {
+    try { localStorage.setItem('clienteConhecido', JSON.stringify(dados)); } catch (e) { /* sem armazenamento: tudo bem */ }
+}
+
+function esquecerCliente() {
+    try { localStorage.removeItem('clienteConhecido'); } catch (e) {}
+    $('clienteNome').value = '';
+    $('clienteTelefone').value = '';
+    $('boasVindas').classList.add('oculto');
+    $('voltouCliente').classList.add('oculto');
+}
+
+// Na janela de agendamento: preenche nome e WhatsApp de quem já é conhecida
+function preencherDadosConhecidos() {
+    const cliente = lerCliente();
+    const aviso = $('boasVindas');
+    if (!cliente) { aviso.classList.add('oculto'); return; }
+    if (!$('clienteNome').value) $('clienteNome').value = cliente.nome;
+    if (!$('clienteTelefone').value) { $('clienteTelefone').value = cliente.telefone; mascararTelefone($('clienteTelefone')); }
+    $('boasNome').textContent = cliente.nome.trim().split(/\s+/)[0];
+    aviso.classList.remove('oculto');
+}
+
+// Na página inicial: boas-vindas e atalho para marcar o mesmo serviço de novo
+function mostrarBoasVindasDeVolta() {
+    const cliente = lerCliente();
+    if (!cliente) return;
+    if (!$('meuAgendamento').classList.contains('oculto')) return; // já mostra o horário reservado
+    const servico = servicosCache.find(s => s.id === cliente.servicoId);
+
+    $('voltouNome').textContent = cliente.nome.trim().split(/\s+/)[0];
+    const botao = $('voltouBotao');
+    if (servico) {
+        $('voltouTexto').textContent = `Quer marcar outro ${servico.nome}?`;
+        botao.innerHTML = '<i class="fa-regular fa-calendar-check"></i> Agendar de novo';
+        botao.onclick = () => abrirModal(servico.id);
+    } else {
+        $('voltouTexto').textContent = 'Escolha o serviço abaixo para agendar.';
+        botao.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Ver serviços';
+        botao.onclick = () => $('servicos').scrollIntoView({ behavior: 'smooth' });
+    }
+    $('voltouCliente').classList.remove('oculto');
+}
+
 // Guarda neste aparelho o último horário marcado, para a cliente ver que ficou reservado ao voltar do WhatsApp
 function guardarMeuAgendamento({ token, link }) {
     try { localStorage.setItem('meuAgendamento', JSON.stringify({ token, link })); } catch (e) { /* sem armazenamento: tudo bem */ }
@@ -497,6 +552,7 @@ async function mostrarMeuAgendamento() {
         $('meuWhats').href = guardado.link;
         $('meuCancelar').href = `/cancelar/${encodeURIComponent(guardado.token)}`;
         $('meuAgendamento').classList.remove('oculto');
+        $('voltouCliente').classList.add('oculto');
     } catch (e) { /* sem internet: simplesmente não mostra */ }
 }
 

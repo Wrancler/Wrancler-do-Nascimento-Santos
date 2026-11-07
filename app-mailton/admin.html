@@ -64,6 +64,25 @@
 
         <!-- SEPARADOR 1: AGENDA -->
         <main id="tabAgenda" class="tab-content block px-5 py-6">
+            <!-- Lembretes: um toque abre o WhatsApp da cliente com a mensagem pronta -->
+            <section id="cartaoLembretes" class="mb-6 bg-surface rounded-3xl border border-white/10 p-4">
+                <div class="flex items-center justify-between gap-2">
+                    <button type="button" id="lembAnterior" onclick="mudarDiaLembrete(-1)" aria-label="Dia anterior" class="w-10 h-10 shrink-0 rounded-full bg-white/5 border border-white/10 text-gray-300 flex items-center justify-center disabled:opacity-30">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <div class="text-center min-w-0">
+                        <p class="text-[10px] text-brand-500 font-bold uppercase tracking-wider"><i class="fa-regular fa-bell mr-1"></i>Lembretes</p>
+                        <p id="lembTitulo" class="text-white font-bold text-sm truncate">Amanhã</p>
+                        <p id="lembResumo" class="text-[11px] text-gray-500"></p>
+                    </div>
+                    <button type="button" id="lembProximo" onclick="mudarDiaLembrete(1)" aria-label="Próximo dia" class="w-10 h-10 shrink-0 rounded-full bg-white/5 border border-white/10 text-gray-300 flex items-center justify-center disabled:opacity-30">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                <div id="listaLembretes" class="mt-4 space-y-2"></div>
+                <p id="dicaLembretes" class="hidden text-[11px] text-gray-500 text-center mt-3">Toque em <strong class="text-gray-300">Lembrar</strong>: o WhatsApp abre com a mensagem pronta, é só enviar.</p>
+            </section>
+
             <!-- Navegação de Dias -->
             <div class="flex justify-between items-end mb-4">
                 <h2 class="text-sm font-semibold text-white">Selecione o Dia</h2>
@@ -470,6 +489,25 @@
                 mostrarErroLogin(mensagemSemServidor);
             }
         }
+
+        // Ao reabrir ou recarregar a página (ex.: voltando do WhatsApp), retoma o login que ainda vale (8 horas).
+        // Se a sessão não vale mais, mostra a tela de senha normalmente. "Sair" apaga o login guardado.
+        (async function retomarSessao() {
+            const token = localStorage.getItem('wn_admin_token');
+            if (!token) return;
+            try {
+                const resposta = await fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!resposta.ok) {
+                    if (resposta.status === 401) localStorage.removeItem('wn_admin_token');
+                    return;
+                }
+            } catch (e) { return; }
+            document.getElementById('loginScreen').classList.add('hidden');
+            const app = document.getElementById('mainApp');
+            app.classList.remove('hidden');
+            app.style.opacity = '1';
+            carregarDadosAdmin();
+        })();
 
         function sair() {
             localStorage.removeItem('wn_admin_token');

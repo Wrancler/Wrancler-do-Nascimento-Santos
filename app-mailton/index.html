@@ -54,6 +54,18 @@
             </div>
         </section>
 
+        <!-- QUEM JÁ AGENDOU ANTES NESTE APARELHO: boas-vindas e atalho para repetir o serviço -->
+        <section class="secao oculto" id="voltouCliente">
+            <div class="voltou">
+                <p class="voltou-titulo">Que bom te ver de novo, <strong id="voltouNome"></strong>! 😊</p>
+                <p class="voltou-texto" id="voltouTexto"></p>
+                <div class="meu-horario-botoes">
+                    <button type="button" id="voltouBotao" class="btn-ouro" style="width:auto;min-height:50px;padding:10px 22px;font-size:16px"></button>
+                    <button type="button" class="btn-voltar" style="text-decoration:underline;text-underline-offset:3px;font-size:15px" onclick="esquecerCliente()">Não sou eu</button>
+                </div>
+            </div>
+        </section>
+
         <!-- COMO FUNCIONA (escondido: abre só se a cliente tocar) -->
         <section class="secao ajuda-secao">
             <details class="ajuda">
@@ -165,6 +177,10 @@
                     <div><small>Serviço</small><strong id="resumoServico"></strong></div>
                     <span class="resumo-valor" id="resumoValor"></span>
                 </div>
+            </div>
+            <div id="boasVindas" class="boas-vindas oculto">
+                <span>Que bom te ver de novo, <strong id="boasNome"></strong>! Já deixei seus dados preenchidos.</span>
+                <button type="button" onclick="esquecerCliente()">Não sou eu</button>
             </div>
             <div class="campo">
                 <label for="clienteNome">Seu nome</label>
