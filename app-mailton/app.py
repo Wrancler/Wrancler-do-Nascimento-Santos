@@ -29,6 +29,9 @@ def garantir_estrutura():
         if colunas and 'imagem' not in colunas:
             conn.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
             conn.commit()
+        # Semanas que o Mailton liberou (cada linha = a segunda-feira da semana aberta)
+        conn.execute("CREATE TABLE IF NOT EXISTS semanas_abertas (inicio_semana TEXT PRIMARY KEY)")
+        conn.commit()
     finally:
         conn.close()
 
@@ -52,6 +55,7 @@ MENSAGENS_INDISPONIVEL = {
     'mes_fechado': 'A agenda deste mês ainda não foi aberta.',
     'sem_expediente': 'Não há atendimento neste dia.',
     'dia_bloqueado': 'Este dia não está disponível para agendamento.',
+    'semana_fechada': 'A agenda desta semana ainda não foi aberta.',
 }
 
 def agora_brasil():
@@ -72,6 +76,22 @@ def obter_intervalo(conn):
     except (TypeError, ValueError):
         return 30
     return valor if 5 <= valor <= 240 else 30
+
+def agenda_semanal_ativa(conn):
+    """True quando o Mailton escolheu liberar a agenda semana por semana (além do mês)."""
+    linha = conn.execute("SELECT valor FROM configuracoes WHERE chave = 'agenda_semanal'").fetchone()
+    return bool(linha) and linha['valor'] == '1'
+
+def segunda_da_semana(dia):
+    """Segunda-feira da semana de uma data (objeto date). A semana vai de segunda a domingo."""
+    return dia - timedelta(days=dia.weekday())
+
+def semanas_liberadas(conn, a_partir_de):
+    """Segundas-feiras (YYYY-MM-DD) das semanas abertas, da semana de 'a_partir_de' em diante."""
+    primeira = segunda_da_semana(a_partir_de).isoformat()
+    return [l['inicio_semana'] for l in conn.execute(
+        "SELECT inicio_semana FROM semanas_abertas WHERE inicio_semana >= ? ORDER BY inicio_semana", (primeira,)
+    )]
 
 def dia_da_semana(data):
     """0 = domingo ... 6 = sábado (mesmo padrão do JavaScript)."""
@@ -112,6 +132,12 @@ def calcular_horarios_livres(conn, data, duracao_min):
     mes = conn.execute("SELECT status FROM meses_abertos WHERE ano_mes = ?", (data[:7],)).fetchone()
     if not mes or mes['status'] != 'aberto':
         return [], 'mes_fechado'
+
+    # Se ele libera semana por semana, a semana desse dia também precisa estar aberta
+    if agenda_semanal_ativa(conn):
+        segunda = segunda_da_semana(dia.date()).isoformat()
+        if not conn.execute("SELECT 1 FROM semanas_abertas WHERE inicio_semana = ?", (segunda,)).fetchone():
+            return [], 'semana_fechada'
 
     faixas = obter_faixas_do_dia(conn, dia_da_semana(data))
     if not faixas:
@@ -161,7 +187,10 @@ def calcular_horarios_livres(conn, data, duracao_min):
 # --- ROTAS DE PÁGINAS E ARQUIVOS ESTÁTICOS ---
 def url_base_publica():
     """Endereço público do site (para a prévia do link no WhatsApp)."""
-    return request.host_url.rstrip('/')
+    esquema = request.headers.get('X-Forwarded-Proto', request.scheme)
+    if esquema not in ('http', 'https'):
+        esquema = 'https'
+    return f"{esquema}://{request.host}"
 
 @app.route('/')
 def pagina_cliente():
@@ -417,8 +446,10 @@ def expediente_publico():
     meses = [l['ano_mes'] for l in conn.execute(
         "SELECT ano_mes FROM meses_abertos WHERE status = 'aberto' AND ano_mes >= ? ORDER BY ano_mes", (mes_atual,)
     )]
+    semanal = agenda_semanal_ativa(conn)
+    semanas = semanas_liberadas(conn, agora_brasil().date()) if semanal else []
     conn.close()
-    return jsonify({"dias": dias, "intervalo": intervalo, "meses": meses})
+    return jsonify({"dias": dias, "intervalo": intervalo, "meses": meses, "semanal": semanal, "semanas": semanas})
 
 # --- ROTA 2: Receber e gravar o agendamento ---
 @app.route('/api/agendar', methods=['POST'])
@@ -540,21 +571,28 @@ def admin_dashboard():
 
     # Meses que já foram configurados no banco
     meses = conn.execute('SELECT ano_mes, status FROM meses_abertos').fetchall()
+    semanal = agenda_semanal_ativa(conn)
+    semanas = semanas_liberadas(conn, agora_brasil().date())
 
     conn.close()
     return jsonify({
         "agendamentos": [dict(ag) for ag in agendamentos],
-        "meses": [dict(m) for m in meses]
+        "meses": [dict(m) for m in meses],
+        "semanal": semanal,
+        "semanas": semanas
     })
 
 
 # --- ADMIN: finanças por período ---
-PERIODOS_FINANCEIROS = ('hoje', 'semana', 'mes', 'mes_passado')
+PERIODOS_FINANCEIROS = ('hoje', 'ontem', 'semana', 'mes', 'mes_passado', 'personalizado')
+MAX_DIAS_PERIODO = 366
 
 def intervalo_do_periodo(periodo, hoje):
     """Devolve (primeiro_dia, ultimo_dia) do período. A semana vai de segunda a domingo."""
     if periodo == 'hoje':
         return hoje, hoje
+    if periodo == 'ontem':
+        return hoje - timedelta(days=1), hoje - timedelta(days=1)
     if periodo == 'semana':
         inicio = hoje - timedelta(days=hoje.weekday())
         return inicio, inicio + timedelta(days=6)
@@ -574,7 +612,18 @@ def admin_financeiro():
         return jsonify({"erro": "Período inválido."}), 400
 
     agora = agora_brasil()
-    primeiro, ultimo = intervalo_do_periodo(periodo, agora.date())
+    if periodo == 'personalizado':
+        try:
+            primeiro = datetime.strptime(request.args.get('inicio', ''), '%Y-%m-%d').date()
+            ultimo = datetime.strptime(request.args.get('fim', ''), '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({"erro": "Escolha a data inicial e a data final."}), 400
+        if ultimo < primeiro:
+            return jsonify({"erro": "A data final não pode ser antes da data inicial."}), 400
+        if (ultimo - primeiro).days >= MAX_DIAS_PERIODO:
+            return jsonify({"erro": "Escolha um período de até 1 ano."}), 400
+    else:
+        primeiro, ultimo = intervalo_do_periodo(periodo, agora.date())
     limite_inferior = f"{primeiro.isoformat()} 00:00"
     limite_superior = f"{(ultimo + timedelta(days=1)).isoformat()} 00:00"
     agora_texto = agora.strftime('%Y-%m-%d %H:%M')
@@ -663,6 +712,45 @@ def alternar_mes():
     conn.close()
     
     return jsonify({"mensagem": f"Mês {ano_mes} agora está {status}!"})
+
+# --- ROTA 5B: Liberar a agenda semana por semana ---
+@app.route('/api/admin/modo-semanal', methods=['POST'])
+@requer_login_admin
+def alternar_modo_semanal():
+    dados = request.get_json(silent=True) or {}
+    ativo = dados.get('ativo')
+    if not isinstance(ativo, bool):
+        return jsonify({"erro": "Opção inválida."}), 400
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO configuracoes (chave, valor) VALUES ('agenda_semanal', ?) "
+        "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", ('1' if ativo else '0',)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"mensagem": "Agenda semanal ligada." if ativo else "Agenda semanal desligada."})
+
+@app.route('/api/admin/semana', methods=['POST'])
+@requer_login_admin
+def alternar_semana():
+    dados = request.get_json(silent=True) or {}
+    status = dados.get('status')  # 'aberto' ou 'fechado'
+    try:
+        dia = datetime.strptime(str(dados.get('inicio') or ''), '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"erro": "Semana inválida."}), 400
+    if status not in ('aberto', 'fechado'):
+        return jsonify({"erro": "Status inválido."}), 400
+
+    segunda = segunda_da_semana(dia).isoformat()  # qualquer dia da semana vale; guardamos a segunda
+    conn = get_db_connection()
+    if status == 'aberto':
+        conn.execute("INSERT OR IGNORE INTO semanas_abertas (inicio_semana) VALUES (?)", (segunda,))
+    else:
+        conn.execute("DELETE FROM semanas_abertas WHERE inicio_semana = ?", (segunda,))
+    conn.commit()
+    conn.close()
+    return jsonify({"mensagem": f"Semana de {segunda} agora está {status}!"})
 
 # --- ROTA 6: Listar bloqueios de um mês (Painel Admin) ---
 @app.route('/api/admin/bloqueios/<ano_mes>', methods=['GET'])
@@ -893,7 +981,7 @@ def apagar_arquivo(pasta, nome):
             pass
 
 
-def salvar_foto_enviada(arquivo, pasta, lado_maximo):
+def salvar_foto_enviada(arquivo, pasta, lado_maximo, recorte=None):
     """Confere que é uma foto de verdade, corrige a rotação do celular, reduz e salva em JPEG.
     Devolve (nome_do_arquivo, mensagem_de_erro)."""
     try:
@@ -909,7 +997,11 @@ def salvar_foto_enviada(arquivo, pasta, lado_maximo):
         imagem = fundo
     else:
         imagem = imagem.convert('RGB')
-    imagem.thumbnail((lado_maximo, lado_maximo))
+    if recorte:
+        # Formato fixo (ex.: 4:3). O enquadramento fica um pouco acima do centro para não cortar rostos.
+        imagem = ImageOps.fit(imagem, recorte, Image.LANCZOS, centering=(0.5, 0.2))
+    else:
+        imagem.thumbnail((lado_maximo, lado_maximo))
     os.makedirs(pasta, exist_ok=True)
     nome = f"{int(time.time() * 1000)}-{uuid.uuid4().hex[:6]}.jpg"
     imagem.save(os.path.join(pasta, nome), 'JPEG', quality=85, optimize=True)
@@ -967,7 +1059,7 @@ def admin_enviar_foto_servico(servico_id):
         atual = conn.execute("SELECT imagem FROM servicos WHERE id = ? AND profissional_id = 1", (servico_id,)).fetchone()
         if not atual:
             return jsonify({"erro": "Serviço não encontrado."}), 404
-        nome, erro = salvar_foto_enviada(arquivo, PASTA_SERVICOS, 900)
+        nome, erro = salvar_foto_enviada(arquivo, PASTA_SERVICOS, 900, recorte=(900, 675))
         if erro:
             return jsonify({"erro": erro}), 400
         conn.execute("UPDATE servicos SET imagem = ? WHERE id = ?", (nome, servico_id))
@@ -1269,6 +1361,23 @@ def pagina_cancelamento(token):
         agendamento['data_formatada'] = agendamento['data_hora']
 
     return render_template('cancelar.html', encontrado=True, agendamento=agendamento, token=token)
+
+
+# --- ROTA 8B: A cliente volta ao site e vê se o horário dela continua reservado ---
+@app.route('/api/meu-agendamento/<token>', methods=['GET'])
+def meu_agendamento(token):
+    conn = get_db_connection()
+    ag = conn.execute('''
+        SELECT a.status, a.data_hora, s.nome AS servico
+        FROM agendamentos a JOIN servicos s ON a.servico_id = s.id
+        WHERE a.token_cancelamento = ?
+    ''', (token,)).fetchone()
+    conn.close()
+    agora = agora_brasil().strftime('%Y-%m-%d %H:%M')
+    if not ag or ag['status'] != 'agendado' or ag['data_hora'] < agora:
+        return jsonify({"ativo": False})
+    data, hora = ag['data_hora'].split(' ')
+    return jsonify({"ativo": True, "data": data, "hora": hora, "servico": ag['servico']})
 
 
 # --- ROTA 9: Efetivar o Cancelamento ---

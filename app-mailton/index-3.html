@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Zoom liberado de propósito: muitas clientes precisam ampliar a tela -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
+    <title>Mailton Maia | Sobrancelhas & Micropigmentação</title>
+    <meta name="description" content="Agende seu horário com Mailton Maia: design de sobrancelhas, henna, brow lamination e micropigmentação. Rápido e fácil.">
+
+    <!-- Prévia ao compartilhar o link no WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Mailton Maia | Agende seu horário">
+    <meta property="og:description" content="Sobrancelhas & Micropigmentação. Escolha o serviço, o dia e o horário em poucos toques.">
+    <meta property="og:image" content="__BASE_URL__/img/perfil.jpg">
+    <meta property="og:url" content="__BASE_URL__/">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="pagina">
+    <div class="fundo-tech"></div>
+    <canvas id="particulas" aria-hidden="true"></canvas>
+
+    <div class="conteudo">
+        <!-- CABEÇALHO -->
+        <header class="topo">
+            <div class="avatar-ouro">
+                <img src="img/perfil.jpg" alt="Foto de Mailton Maia"
+                     onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%2317171a%27/%3E%3Ctext x=%2750%27 y=%2766%27 font-size=%2744%27 text-anchor=%27middle%27 fill=%27%23D4AF37%27 font-family=%27Georgia,serif%27%3EMM%3C/text%3E%3C/svg%3E'">
+            </div>
+            <span class="selo">Studio de sobrancelhas</span>
+            <h1 class="titulo-serifa texto-ouro">Mailton Maia</h1>
+            <p class="subtitulo">Sobrancelhas &amp; Micropigmentação</p>
+            <div class="local-pilula"><i class="fa-solid fa-location-dot"></i> Várzea Nova · Santa Rita - PB</div>
+            <a href="#servicos" class="btn-ouro topo-cta"><i class="fa-regular fa-calendar-check"></i> Agendar agora</a>
+        </header>
+
+        <!-- COMO FUNCIONA (escondido: abre só se a cliente tocar) -->
+        <section class="secao ajuda-secao">
+            <details class="ajuda">
+                <summary><i class="fa-regular fa-circle-question"></i> Como agendar? <i class="fa-solid fa-chevron-down seta-ajuda"></i></summary>
+                <div class="passos-explica">
+                    <div class="passo-linha"><div class="passo-num">1</div><div><strong>Escolha o serviço</strong><span>Toque no que você deseja</span></div></div>
+                    <div class="passo-linha"><div class="passo-num">2</div><div><strong>Escolha o dia e a hora</strong><span>Só aparecem horários livres</span></div></div>
+                    <div class="passo-linha"><div class="passo-num">3</div><div><strong>Coloque seu nome e WhatsApp</strong><span>Pronto! Você recebe a confirmação</span></div></div>
+                </div>
+            </details>
+        </section>
+
+        <!-- SERVIÇOS -->
+        <main class="secao revela" id="servicos" aria-labelledby="tServ">
+            <h2 id="tServ" class="secao-titulo titulo-serifa">Escolha o serviço</h2>
+            <div class="regua"></div>
+            <div id="listaServicos" class="grade-servicos">
+                <p class="msg-vazia" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin"></i> Carregando serviços...</p>
+            </div>
+
+            <a class="btn-contorno" style="margin-top:18px;"
+               href="https://wa.me/5583988856096?text=Ol%C3%A1%20Mailton%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio."
+               target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp" style="color:#7BD88F;font-size:26px;"></i>
+                <span>Prefere conversar? Chame no WhatsApp</span>
+            </a>
+        </main>
+
+        <!-- TRABALHOS (aparece sozinha quando houver fotos em img/galeria) -->
+        <section class="secao revela oculto" id="secaoGaleria" aria-labelledby="tGal">
+            <h2 id="tGal" class="secao-titulo titulo-serifa">Trabalhos</h2>
+            <div class="regua"></div>
+            <div class="galeria-grade" id="galeriaGrade"></div>
+        </section>
+
+        <!-- SOBRE + ONDE -->
+        <section class="secao revela" aria-labelledby="tSobre">
+            <h2 id="tSobre" class="secao-titulo titulo-serifa">Sobre o Mailton</h2>
+            <div class="regua"></div>
+            <div class="painel">
+                <p id="textoSobreCliente">Especialista em sobrancelhas e micropigmentação, com atendimento cuidadoso e personalizado para realçar a sua beleza de forma natural.</p>
+                <p style="margin-top:14px"><i class="fa-solid fa-location-dot" style="color:var(--ouro)"></i> Várzea Nova · Santa Rita - PB</p>
+                <a class="btn-contorno" style="margin-top:14px;"
+                   href="https://www.google.com/maps/search/?api=1&query=V%C3%A1rzea+Nova+Santa+Rita+PB"
+                   target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Ver no mapa</a>
+            </div>
+        </section>
+
+        <footer class="rodape">
+            <div class="rodape-links">
+                <a href="https://www.instagram.com/mailton.sobrancelhas" target="_blank" rel="noopener" aria-label="Instagram do Mailton"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://wa.me/5583988856096" target="_blank" rel="noopener" aria-label="WhatsApp do Mailton"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+            <p>© Mailton Maia · Todos os direitos reservados</p>
+            <p class="assinatura">Sistema por WN Systems Lab</p>
+        </footer>
+    </div>
+</div>
+
+<!-- JANELA DE AGENDAMENTO (3 passos) -->
+<div id="modalHorario" class="fundo-modal oculto" role="dialog" aria-modal="true" aria-labelledby="modalServicoNome">
+    <div class="fechar-area" onclick="fecharModal()"></div>
+    <div class="folha hide-scroll">
+        <div class="folha-alca"></div>
+        <div class="folha-topo">
+            <div>
+                <h3 id="modalServicoNome" class="titulo-serifa">Serviço</h3>
+                <p id="modalServicoInfo"></p>
+            </div>
+            <button type="button" class="btn-x" onclick="fecharModal()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="trilha" aria-hidden="true"><span id="trilha1" class="feito"></span><span id="trilha2"></span><span id="trilha3"></span></div>
+        <div id="avisoModal" class="aviso oculto" role="alert"></div>
+
+        <!-- PASSO 2: dia e hora -->
+        <div id="passoDataHora">
+            <p class="rotulo-passo">Passo 2 de 3</p>
+            <h4 class="pergunta titulo-serifa">Qual dia e horário?</h4>
+            <div id="abasMeses" class="abas-meses hide-scroll"></div>
+            <p id="mesAtualLabel" class="rotulo-passo" style="margin-bottom:0"></p>
+            <div id="carrosselDatas" class="carrossel-datas hide-scroll"></div>
+
+            <div id="blocoHorarios" class="bloco-horarios">
+                <div id="gridHorarios">
+                    <p class="msg-vazia">Toque em um dia acima para ver os horários.</p>
+                </div>
+            </div>
+            <button type="button" id="btnContinuar" class="btn-ouro" style="margin-top:20px;" onclick="continuarParaDados()" disabled>
+                Continuar <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- PASSO 3: dados -->
+        <div id="passoDados" class="oculto">
+            <p class="rotulo-passo">Passo 3 de 3</p>
+            <h4 class="pergunta titulo-serifa">Quase lá! Seus dados</h4>
+            <div class="resumo-escolha"><strong id="resumoQuando"></strong><span id="resumoServico"></span></div>
+            <div class="campo">
+                <label for="clienteNome">Seu nome</label>
+                <input type="text" id="clienteNome" autocomplete="name" placeholder="Ex.: Maria da Silva" maxlength="80">
+            </div>
+            <div class="campo">
+                <label for="clienteTelefone">Seu WhatsApp (com DDD)</label>
+                <input type="tel" id="clienteTelefone" inputmode="tel" autocomplete="tel" placeholder="(83) 99999-9999" maxlength="16">
+                <p class="dica">É por ele que o Mailton fala com você.</p>
+            </div>
+            <button type="button" id="btnConfirmar" class="btn-ouro" onclick="enviarAgendamento()">
+                <i class="fa-solid fa-check"></i> Confirmar agendamento
+            </button>
+            <button type="button" class="btn-voltar" onclick="voltarPasso()"><i class="fa-solid fa-arrow-left"></i> Voltar e mudar o horário</button>
+        </div>
+
+        <!-- CONFIRMAÇÃO -->
+        <div id="passoOk" class="oculto">
+            <div class="ok-centro">
+                <div class="ok-selo"><i class="fa-solid fa-check"></i></div>
+                <h3 class="titulo-serifa texto-ouro">Agendado!</h3>
+                <p id="okNome" style="color:var(--texto-suave)"></p>
+            </div>
+            <div class="ok-detalhe">
+                <p><span>Serviço</span><span id="okServico"></span></p>
+                <p><span>Dia</span><span id="okData"></span></p>
+                <p><span>Horário</span><span id="okHora"></span></p>
+            </div>
+            <p class="explica-whats">Toque no botão abaixo para avisar o Mailton pelo WhatsApp. Assim ele já fica sabendo do seu horário.</p>
+            <div class="pilha">
+                <a id="btnWhats" class="btn-ouro" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Avisar o Mailton</a>
+                <button type="button" class="btn-contorno" onclick="copiarLinkCancelamento()"><i class="fa-regular fa-copy"></i> <span id="textoCopiar">Copiar link para cancelar</span></button>
+                <button type="button" class="btn-voltar" style="justify-content:center" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOTO AMPLIADA -->
+<div id="visorFoto" class="visor oculto" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+    <button type="button" class="btn-x" onclick="fecharFoto()" aria-label="Fechar foto"><i class="fa-solid fa-xmark"></i></button>
+    <button type="button" class="seta esq" onclick="mudarFoto(-1)" aria-label="Foto anterior"><i class="fa-solid fa-chevron-left"></i></button>
+    <img id="visorImg" alt="Trabalho do Mailton">
+    <button type="button" class="seta dir" onclick="mudarFoto(1)" aria-label="Próxima foto"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

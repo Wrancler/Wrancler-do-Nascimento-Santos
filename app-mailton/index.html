@@ -41,6 +41,19 @@
             <a href="#servicos" class="btn-ouro btn-brilho topo-cta"><i class="fa-regular fa-calendar-check"></i> Agendar agora</a>
         </header>
 
+        <!-- SEU HORÁRIO RESERVADO (aparece só para quem acabou de agendar neste aparelho) -->
+        <section class="secao oculto" id="meuAgendamento" aria-live="polite">
+            <div class="meu-horario">
+                <div class="meu-horario-topo"><span class="meu-horario-selo"><i class="fa-solid fa-check"></i></span><strong>Seu horário está reservado</strong></div>
+                <p class="meu-horario-quando" id="meuQuando"></p>
+                <p class="meu-horario-servico" id="meuServico"></p>
+                <div class="meu-horario-botoes">
+                    <a id="meuWhats" class="btn-contorno" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" style="color:#7BD88F"></i> Avisar o Mailton</a>
+                    <a id="meuCancelar" class="btn-voltar" href="#">Preciso cancelar</a>
+                </div>
+            </div>
+        </section>
+
         <!-- COMO FUNCIONA (escondido: abre só se a cliente tocar) -->
         <section class="secao ajuda-secao">
             <details class="ajuda">
@@ -138,7 +151,21 @@
         <div id="passoDados" class="oculto">
             <p class="rotulo-passo">Passo 3 de 3</p>
             <h4 class="pergunta titulo-serifa">Quase lá! Seus dados</h4>
-            <div class="resumo-escolha"><strong id="resumoQuando"></strong><span id="resumoServico"></span></div>
+            <div class="resumo-escolha">
+                <div class="resumo-linha">
+                    <span class="resumo-icone"><i class="fa-regular fa-calendar"></i></span>
+                    <div><small>Dia</small><strong id="resumoDia"></strong></div>
+                </div>
+                <div class="resumo-linha">
+                    <span class="resumo-icone"><i class="fa-regular fa-clock"></i></span>
+                    <div><small>Horário</small><strong id="resumoHora"></strong></div>
+                </div>
+                <div class="resumo-linha">
+                    <span class="resumo-icone"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                    <div><small>Serviço</small><strong id="resumoServico"></strong></div>
+                    <span class="resumo-valor" id="resumoValor"></span>
+                </div>
+            </div>
             <div class="campo">
                 <label for="clienteNome">Seu nome</label>
                 <input type="text" id="clienteNome" autocomplete="name" placeholder="Ex.: Maria da Silva" maxlength="80">
@@ -161,14 +188,19 @@
                 <h3 class="titulo-serifa texto-ouro">Agendado!</h3>
                 <p id="okNome" style="color:var(--texto-suave)"></p>
             </div>
+            <div class="envio-whats" id="envioWhats" role="status" aria-live="polite">
+                <p id="envioWhatsTexto"><i class="fa-brands fa-whatsapp"></i> <span>Abrindo o WhatsApp para avisar o Mailton...</span></p>
+                <p class="envio-dica" id="envioWhatsDica">Quando abrir, toque na <strong>setinha de enviar</strong> para a mensagem chegar até ele.</p>
+                <div class="barra-espera" id="barraEspera"><span></span></div>
+            </div>
             <div class="ok-detalhe">
                 <p><span>Serviço</span><span id="okServico"></span></p>
                 <p><span>Dia</span><span id="okData"></span></p>
                 <p><span>Horário</span><span id="okHora"></span></p>
+                <p><span>Valor</span><span id="okValor"></span></p>
             </div>
-            <p class="explica-whats">Toque no botão abaixo para avisar o Mailton pelo WhatsApp. Assim ele já fica sabendo do seu horário.</p>
             <div class="pilha">
-                <a id="btnWhats" class="btn-ouro" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Avisar o Mailton</a>
+                <a id="btnWhats" class="btn-ouro" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Abrir o WhatsApp agora</a>
                 <button type="button" class="btn-contorno" onclick="copiarLinkCancelamento()"><i class="fa-regular fa-copy"></i> <span id="textoCopiar">Copiar link para cancelar</span></button>
                 <button type="button" class="btn-voltar" style="justify-content:center" onclick="fecharModal()">Fechar</button>
             </div>

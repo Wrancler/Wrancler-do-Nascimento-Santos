@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Cancelar Agendamento - Mailton Maia</title>
+
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root{--ouro:#D4AF37;--ouro-claro:#F3DC8A;--linha:rgba(212,175,55,.25)}
+        *{box-sizing:border-box}
+        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#050505 radial-gradient(500px 300px at 50% -40px,rgba(212,175,55,.2),transparent 70%);color:#F5F1E6;font:18px/1.5 'Plus Jakarta Sans',system-ui,sans-serif}
+        .cartao-ouro{width:100%;max-width:420px;text-align:center;padding:30px 24px;border-radius:26px;border:1px solid var(--linha);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));box-shadow:0 0 50px rgba(212,175,55,.1)}
+        h1{font-family:'Playfair Display',Georgia,serif;font-size:28px;margin:6px 0 10px;background:linear-gradient(100deg,#9C7A1E,var(--ouro-claro),var(--ouro));-webkit-background-clip:text;background-clip:text;color:transparent}
+        .icone{font-size:44px;color:var(--ouro)}
+        .suave{color:#B9B3A3;font-size:16px}
+        .dados{text-align:left;margin:18px 0;padding:14px 16px;border-radius:18px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08)}
+        .dados p{display:flex;justify-content:space-between;gap:12px;margin:6px 0;font-size:16px}
+        .dados p span:first-child{color:#8f897a}.dados p span:last-child{font-weight:700;text-align:right}
+        .btn-cancelar{width:100%;min-height:58px;border:0;border-radius:18px;font:800 18px inherit;font-family:inherit;color:#fff;background:#b3261e;cursor:pointer}
+        .btn-cancelar:disabled{opacity:.5}
+        #resultado{margin-top:16px;font-size:17px}
+        a.voltar{display:inline-block;margin-top:18px;color:var(--ouro);font-size:16px}
+    </style>
+</head>
+<body>
+
+    <div class="cartao-ouro">
+
+        {% if not encontrado %}
+            <!-- LINK INVÁLIDO / TOKEN NÃO EXISTE -->
+            <i class="fa-solid fa-triangle-exclamation icone"></i>
+            <h1 >Link inválido</h1>
+            <p class="suave">Não encontramos nenhum agendamento com este link. Ele pode ter sido digitado errado ou já não existe mais.</p>
+
+        {% elif agendamento.status == 'cancelado' %}
+            <!-- JÁ FOI CANCELADO ANTES -->
+            <i class="fa-solid fa-circle-check icone"></i>
+            <h1 >Já cancelado</h1>
+            <p class="suave">Este agendamento já havia sido cancelado anteriormente. Nenhuma ação é necessária.</p>
+
+        {% elif agendamento.status == 'concluido' %}
+            <!-- JÁ FOI CONCLUÍDO, NÃO PODE CANCELAR -->
+            <i class="fa-solid fa-circle-info icone"></i>
+            <h1 >Atendimento concluído</h1>
+            <p class="suave">Este atendimento já foi realizado e não pode mais ser cancelado.</p>
+
+        {% else %}
+            <!-- ESTADO NORMAL: PODE CANCELAR -->
+            <i class="fa-regular fa-calendar-xmark icone"></i>
+            <h1 >Cancelar Agendamento</h1>
+
+            <div class="dados">
+                <p><span>Cliente</span> <span>{{ agendamento.cliente }}</span></p>
+                <p><span>Serviço</span> <span>{{ agendamento.servico }}</span></p>
+                <p><span>Data</span> <span>{{ agendamento.data_formatada }}</span></p>
+            </div>
+
+            <p class="suave" style="margin-bottom:18px">Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.</p>
+
+            <button id="btnCancelar" onclick="confirmarCancelamento()" class="btn-cancelar">
+                Sim, cancelar agendamento
+            </button>
+
+            <div id="resultado" class="hidden" style="display:none"></div>
+
+            <script>
+                const TOKEN = "{{ token }}";
+
+                async function confirmarCancelamento() {
+                    const btn = document.getElementById('btnCancelar');
+                    const resultado = document.getElementById('resultado');
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelando...';
+
+                    try {
+                        const response = await fetch(`/api/cancelar/${TOKEN}`, { method: 'POST' });
+                        const dados = await response.json();
+
+                        resultado.style.display='block';
+
+                        if (response.ok) {
+                            btn.classList.add('hidden');
+                            resultado.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#7BD88F"></i> ${dados.mensagem}`;
+                        } else {
+                            resultado.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#F08A8A"></i> ${dados.erro || 'Erro ao cancelar.'}`;
+                            btn.disabled = false;
+                            btn.innerHTML = 'Sim, cancelar agendamento';
+                        }
+                    } catch (erro) {
+                        resultado.style.display='block';
+                        resultado.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#F08A8A"></i> Erro ao conectar ao servidor.';
+                        btn.disabled = false;
+                        btn.innerHTML = 'Sim, cancelar agendamento';
+                    }
+                }
+            </script>
+        {% endif %}
+
+    </div>
+</body>
+</html>

@@ -9,9 +9,13 @@ let horarioSelecionado = null;
 let servicosCache = [];
 let diasAtendimento = [1, 2, 3, 4, 5, 6]; // 0 = domingo ... 6 = sábado (atualizado pelo servidor)
 let mesesAbertos = null;   // ['2026-11', '2026-12', ...] liberados pelo Mailton; null = ainda não sabemos
+let agendaSemanal = false; // true quando o Mailton libera a agenda semana por semana
+let semanasAbertas = [];   // segundas-feiras ('YYYY-MM-DD') das semanas liberadas
 let mesSelecionado = null;
 let linkCancelamentoAtual = '';
 let enviando = false;
+let temporizadorWhats = null;
+const ESPERA_WHATSAPP_MS = 3500; // tempo para ela ver o "Agendado!" antes de abrir o WhatsApp
 
 const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const SIGLAS_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -104,6 +108,8 @@ async function carregarServicos() {
             const expediente = await respExpediente.json();
             diasAtendimento = expediente.dias;
             mesesAbertos = expediente.meses;
+            agendaSemanal = !!expediente.semanal;
+            semanasAbertas = expediente.semanas || [];
         }
 
         if (servicosCache.length === 0) {
@@ -113,7 +119,9 @@ async function carregarServicos() {
         const comFotos = servicosCache.some(s => s.imagem);
         lista.className = 'grade-servicos' + (comFotos ? ' com-fotos' : '');
         lista.innerHTML = servicosCache.map(s => criarCardServico(s, comFotos)).join('');
-        $('statusAgenda').classList.toggle('oculto', !(mesesAbertos && mesesAbertos.length));
+        // O aviso "Agenda aberta" só aparece se a cliente realmente tem algum dia para escolher
+        const temDia = (mesesAbertos || []).some(m => diasDoMes(m).length > 0);
+        $('statusAgenda').classList.toggle('oculto', !temDia);
     } catch (err) {
         console.error(err);
         lista.innerHTML = `
@@ -159,7 +167,9 @@ function abrirModal(id) {
     const fotoModal = $('modalServicoFoto');
     if (servico.imagem) { fotoModal.src = servico.imagem; fotoModal.classList.remove('oculto'); }
     else { fotoModal.classList.add('oculto'); }
-    $('modalServicoInfo').textContent = `${servicoValorAtual} • ${formatarDuracao(servico.duracao_minutos)}`;
+    $('modalServicoInfo').innerHTML =
+        `<span class="chip-preco">${servicoValorAtual}</span>` +
+        `<span class="chip-duracao"><i class="fa-regular fa-clock"></i> ${formatarDuracao(servico.duracao_minutos)}</span>`;
 
     mesSelecionado = null;
     mostrarAviso('');
@@ -172,6 +182,7 @@ function abrirModal(id) {
 }
 
 function fecharModal() {
+    clearTimeout(temporizadorWhats); // se ela fechou a janela, não abre o WhatsApp sozinho
     $('modalHorario').classList.add('oculto');
     document.body.style.overflow = '';
 }
@@ -181,6 +192,12 @@ function resetarSelecoes() {
     horarioSelecionado = null;
     $('btnContinuar').disabled = true;
     $('gridHorarios').innerHTML = '<p class="msg-vazia">Toque em um dia acima para ver os horários.</p>';
+}
+
+// Segunda-feira da semana de uma data, como 'YYYY-MM-DD' (a semana vai de segunda a domingo)
+function segundaDaSemana(data) {
+    const segunda = new Date(data.getFullYear(), data.getMonth(), data.getDate() - ((data.getDay() + 6) % 7));
+    return `${segunda.getFullYear()}-${String(segunda.getMonth() + 1).padStart(2, '0')}-${String(segunda.getDate()).padStart(2, '0')}`;
 }
 
 // Datas que a cliente pode escolher em um mês: de hoje até o fim, só dias de atendimento
@@ -195,6 +212,7 @@ function diasDoMes(anoMes) {
         const data = new Date(ano, mes - 1, dia);
         if (data < hoje) continue;
         if (!diasAtendimento.includes(data.getDay())) continue;
+        if (agendaSemanal && !semanasAbertas.includes(segundaDaSemana(data))) continue;
         dias.push(data);
     }
     return dias;
@@ -345,8 +363,10 @@ function selecionarHorario(botao, horario) {
 
 function continuarParaDados() {
     if (!dataSelecionada || !horarioSelecionado) return;
-    $('resumoQuando').textContent = `${textoDia(dataSelecionada)}, às ${horarioSelecionado}`;
-    $('resumoServico').textContent = `${servicoNomeAtual} · ${servicoValorAtual}`;
+    $('resumoDia').textContent = textoDia(dataSelecionada);
+    $('resumoHora').textContent = horarioSelecionado;
+    $('resumoServico').textContent = servicoNomeAtual;
+    $('resumoValor').textContent = servicoValorAtual;
     mostrarAviso('');
     irParaPasso('dados');
 }
@@ -426,13 +446,66 @@ function mostrarConfirmacao(nome, telefone, token) {
     $('okServico').textContent = servicoNomeAtual;
     $('okData').textContent = textoDia(dataSelecionada);
     $('okHora').textContent = horarioSelecionado;
+    $('okValor').textContent = servicoValorAtual;
     $('textoCopiar').textContent = 'Copiar link para cancelar';
 
     const texto = `✅ *NOVO AGENDAMENTO SITE!*\n\nOlá Mailton! Acabei de me agendar pelo seu sistema:\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefone}\n✨ *Serviço:* ${servicoNomeAtual} (${servicoValorAtual})\n📅 *Data:* ${dataBR} às ${horarioSelecionado}\n\n🔗 *Meu link para cancelar (caso precise):*\n${linkCancelamentoAtual}`;
-    $('btnWhats').href = `https://api.whatsapp.com/send?phone=${NUMERO_MAILTON}&text=${encodeURIComponent(texto)}`;
+    const linkWhats = `https://api.whatsapp.com/send?phone=${NUMERO_MAILTON}&text=${encodeURIComponent(texto)}`;
+    $('btnWhats').href = linkWhats;
+    guardarMeuAgendamento({ token, link: linkWhats });
 
     mostrarAviso('');
     irParaPasso('ok');
+    prepararEnvioWhatsApp(linkWhats);
+}
+
+// Depois de agendar, abre o WhatsApp do Mailton com a mensagem pronta (a cliente só toca em enviar).
+// O agendamento já está salvo no sistema: o WhatsApp é só o aviso para ele.
+function prepararEnvioWhatsApp(link) {
+    clearTimeout(temporizadorWhats);
+    const caixa = $('envioWhats');
+    caixa.classList.remove('feito');
+    $('envioWhatsTexto').querySelector('span').textContent = 'Abrindo o WhatsApp para avisar o Mailton...';
+    // reinicia a barrinha de espera
+    const barra = $('barraEspera').firstElementChild;
+    barra.style.animation = 'none'; void barra.offsetWidth; barra.style.animation = '';
+    barra.style.animationDuration = `${ESPERA_WHATSAPP_MS}ms`;
+
+    temporizadorWhats = setTimeout(() => {
+        caixa.classList.add('feito');
+        $('envioWhatsTexto').querySelector('span').textContent = 'Se o WhatsApp não abriu, toque no botão abaixo.';
+        abrirWhatsApp(link);
+    }, ESPERA_WHATSAPP_MS);
+}
+
+// Guarda neste aparelho o último horário marcado, para a cliente ver que ficou reservado ao voltar do WhatsApp
+function guardarMeuAgendamento({ token, link }) {
+    try { localStorage.setItem('meuAgendamento', JSON.stringify({ token, link })); } catch (e) { /* sem armazenamento: tudo bem */ }
+}
+
+async function mostrarMeuAgendamento() {
+    let guardado = null;
+    try { guardado = JSON.parse(localStorage.getItem('meuAgendamento') || 'null'); } catch (e) { return; }
+    if (!guardado || !guardado.token) return;
+    try {
+        const resp = await fetch(`/api/meu-agendamento/${encodeURIComponent(guardado.token)}`);
+        if (!resp.ok) return;
+        const ag = await resp.json();
+        if (!ag.ativo) { try { localStorage.removeItem('meuAgendamento'); } catch (e) {} return; }
+        $('meuQuando').textContent = `${textoDia(ag.data)}, às ${ag.hora}`;
+        $('meuServico').textContent = ag.servico;
+        $('meuWhats').href = guardado.link;
+        $('meuCancelar').href = `/cancelar/${encodeURIComponent(guardado.token)}`;
+        $('meuAgendamento').classList.remove('oculto');
+    } catch (e) { /* sem internet: simplesmente não mostra */ }
+}
+
+function abrirWhatsApp(link) {
+    // No celular, vai direto para o app. No computador, abre em outra aba para não perder esta página.
+    const celular = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (celular) { window.location.href = link; return; }
+    const aba = window.open(link, '_blank');
+    if (!aba) window.location.href = link; // bloqueado pelo navegador: abre na mesma aba
 }
 
 async function copiarLinkCancelamento() {
@@ -519,6 +592,7 @@ document.addEventListener('keydown', e => {
 
 document.addEventListener('DOMContentLoaded', () => {
     $('clienteTelefone').addEventListener('input', e => mascararTelefone(e.target));
+    mostrarMeuAgendamento();
 });
 
 async function carregarSobre() {

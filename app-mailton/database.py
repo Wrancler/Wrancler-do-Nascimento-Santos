@@ -118,6 +118,13 @@ def criar_banco():
     )
     ''')
 
+    # 8B. Semanas liberadas (só vale quando o Mailton liga "liberar semana por semana")
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS semanas_abertas (
+        inicio_semana TEXT PRIMARY KEY -- segunda-feira da semana aberta, 'YYYY-MM-DD'
+    )
+    ''')
+
     # 9. Tentativas de login erradas (proteção contra adivinhação de senha)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS tentativas_login (

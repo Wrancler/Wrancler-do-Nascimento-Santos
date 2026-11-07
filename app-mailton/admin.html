@@ -42,7 +42,7 @@
 
     <!-- 2. APLICAÇÃO PRINCIPAL (Escondida até o login) -->
     <div class="fundo-tech-admin"></div>
-    <div id="mainApp" class="max-w-md mx-auto min-h-screen relative shadow-2xl border-x border-white/5 pb-20 hidden opacity-0 transition-opacity duration-500">
+    <div id="mainApp" class="max-w-md md:max-w-3xl mx-auto min-h-screen relative shadow-2xl border-x border-white/5 pb-20 hidden opacity-0 transition-opacity duration-500">
         
         <!-- HEADER DINÂMICO -->
         <header class="pt-10 pb-4 px-6 bg-surface/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-40">
@@ -96,11 +96,29 @@
         <!-- SEPARADOR 2: FINANÇAS -->
         <main id="tabFinancas" class="tab-content hidden px-5 py-6">
             <!-- Filtros de período -->
-            <div id="filtrosFinanceiro" class="grid grid-cols-4 gap-1 p-1 bg-surface rounded-xl mb-6 border border-white/5">
-                <button data-periodo="hoje" onclick="mudarPeriodoFinanceiro('hoje')" class="py-2 text-xs rounded-lg">Hoje</button>
-                <button data-periodo="semana" onclick="mudarPeriodoFinanceiro('semana')" class="py-2 text-xs rounded-lg">Semana</button>
-                <button data-periodo="mes" onclick="mudarPeriodoFinanceiro('mes')" class="py-2 text-xs rounded-lg">Mês</button>
-                <button data-periodo="mes_passado" onclick="mudarPeriodoFinanceiro('mes_passado')" class="py-2 text-xs rounded-lg">Mês passado</button>
+            <div id="filtrosFinanceiro" class="grid grid-cols-3 gap-1 p-1 bg-surface rounded-xl mb-3 border border-white/5">
+                <button data-periodo="hoje" onclick="mudarPeriodoFinanceiro('hoje')" class="py-2.5 text-xs rounded-lg">Hoje</button>
+                <button data-periodo="ontem" onclick="mudarPeriodoFinanceiro('ontem')" class="py-2.5 text-xs rounded-lg">Ontem</button>
+                <button data-periodo="semana" onclick="mudarPeriodoFinanceiro('semana')" class="py-2.5 text-xs rounded-lg">Semana</button>
+                <button data-periodo="mes" onclick="mudarPeriodoFinanceiro('mes')" class="py-2.5 text-xs rounded-lg">Mês</button>
+                <button data-periodo="mes_passado" onclick="mudarPeriodoFinanceiro('mes_passado')" class="py-2.5 text-xs rounded-lg">Mês passado</button>
+                <button data-periodo="personalizado" onclick="mudarPeriodoFinanceiro('personalizado')" class="py-2.5 text-xs rounded-lg"><i class="fa-regular fa-calendar mr-1"></i>Datas</button>
+            </div>
+
+            <!-- Escolher datas (aparece só em "Datas") -->
+            <div id="painelDatasFinanceiro" class="hidden bg-surface rounded-2xl p-4 border border-white/10 mb-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="finDe" class="block text-xs font-semibold text-gray-400 mb-1.5">De</label>
+                        <input type="date" id="finDe" onchange="aplicarDatasFinanceiro()" class="w-full bg-[#09090b] border border-white/10 rounded-xl px-3 py-3 text-base text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label for="finAte" class="block text-xs font-semibold text-gray-400 mb-1.5">Até</label>
+                        <input type="date" id="finAte" onchange="aplicarDatasFinanceiro()" class="w-full bg-[#09090b] border border-white/10 rounded-xl px-3 py-3 text-base text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+                <p id="erroDatasFinanceiro" class="hidden text-xs text-red-400 font-semibold mt-3"></p>
+                <p class="text-[11px] text-gray-500 mt-3">Toque nos campos para escolher no calendário. Para ver um dia só, escolha a mesma data nos dois.</p>
             </div>
 
             <!-- Cartão de Receita -->
@@ -151,6 +169,21 @@
                 <h3 class="text-lg font-semibold text-white mb-3">Liberação de Agenda</h3>
                 <div class="bg-surface rounded-3xl p-2 border border-white/10" id="containerMesesAdmin">
                     <p class="text-xs text-gray-500 text-center py-4">A carregar...</p>
+                </div>
+
+                <!-- Liberar semana por semana (opcional) -->
+                <div class="mt-3 bg-surface rounded-3xl p-4 border border-white/10">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-white">Liberar semana por semana</p>
+                            <p class="text-xs text-gray-500 mt-1">Ligue se você abre a agenda a cada semana. As clientes só veem os dias das semanas que você liberar (o mês também precisa estar aberto).</p>
+                        </div>
+                        <button type="button" id="chaveSemanal" role="switch" aria-checked="false" aria-label="Liberar semana por semana" onclick="alternarModoSemanal()"
+                                class="relative shrink-0 w-14 h-8 rounded-full bg-white/15 transition-colors">
+                            <span id="bolinhaSemanal" class="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform"></span>
+                        </button>
+                    </div>
+                    <div id="containerSemanasAdmin" class="hidden mt-4 space-y-2"></div>
                 </div>
             </section>
 
@@ -300,7 +333,7 @@
                         <label class="block text-xs font-semibold text-gray-400 mb-1.5">Foto do serviço (opcional)</label>
                         <label for="servFoto" class="area-foto" id="areaFotoServ">
                             <img id="servFotoPrevia" alt="" class="hidden">
-                            <span id="servFotoDica"><i class="fa-solid fa-camera text-xl text-brand-500 block mb-1"></i>Toque para escolher uma foto</span>
+                            <span id="servFotoDica" class="px-4"><i class="fa-solid fa-camera text-xl text-brand-500 block mb-1"></i>Toque para escolher uma foto<br><span class="text-[11px] opacity-70">Fica em formato horizontal. Deixe o trabalho no meio da foto.</span></span>
                             <span id="servFotoTroca" class="troca hidden"><i class="fa-solid fa-camera mr-1"></i>Trocar</span>
                         </label>
                         <input type="file" id="servFoto" accept="image/*" class="hidden" onchange="previaFotoServico(this)">
@@ -352,7 +385,7 @@
         </div>
 
         <!-- BARRA DE NAVEGAÇÃO INFERIOR (Bottom Nav) -->
-        <nav class="fixed bottom-0 w-full max-w-md bg-surface/90 backdrop-blur-lg border-t border-white/10 pb-safe pt-2 px-6 z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+        <nav class="fixed bottom-0 w-full max-w-md md:max-w-3xl bg-surface/90 backdrop-blur-lg border-t border-white/10 pb-safe pt-2 px-6 z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
             <div class="flex justify-between items-center pb-2">
                 <!-- Botão Agenda -->
                 <button onclick="mudarAba('Agenda')" class="nav-btn flex flex-col items-center gap-1 w-16 text-brand-500 transition-colors group">

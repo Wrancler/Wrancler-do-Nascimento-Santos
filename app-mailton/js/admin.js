@@ -5,7 +5,8 @@ let dataSelecionadaAdmin = null;
 let agendamentosCache = [];
 let servicosAdmin = [];
 let expedienteEstado = null; // { intervalo: 30, dias: { '0': [], '1': [{inicio, fim}], ... } }
-let periodoFinanceiro = 'hoje'; // hoje | semana | mes | mes_passado
+let periodoFinanceiro = 'hoje'; // hoje | ontem | semana | mes | mes_passado | personalizado
+let intervaloFinanceiro = { inicio: '', fim: '' }; // usado só em 'personalizado'
 
 const NOMES_DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 const ORDEM_DIAS = [1, 2, 3, 4, 5, 6, 0]; // a semana começa na segunda
@@ -132,6 +133,7 @@ async function carregarDashboard() {
 
     const dados = resposta.dados;
     renderizarMesesAdmin(dados.meses);
+    renderizarSemanasAdmin(dados.semanal, dados.semanas, dados.meses);
     agendamentosCache = dados.agendamentos;
     inicializarAgenda();
     await carregarFinanceiro();
@@ -450,6 +452,94 @@ async function alternarMesAdmin(anoMes, statusAtual) {
 }
 
 // ------------------------------------------------------------
+//  CONFIGURAÇÕES: LIBERAÇÃO SEMANA POR SEMANA
+// ------------------------------------------------------------
+let agendaSemanalAdmin = false;
+const SEMANAS_NA_LISTA = 6;
+const DIAS_CURTOS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+function isoLocal(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function renderizarSemanasAdmin(semanal, semanasAbertas, mesesNoBanco) {
+    agendaSemanalAdmin = !!semanal;
+    const chave = document.getElementById('chaveSemanal');
+    chave.setAttribute('aria-checked', String(agendaSemanalAdmin));
+    chave.classList.toggle('bg-brand-500', agendaSemanalAdmin);
+    chave.classList.toggle('bg-white/15', !agendaSemanalAdmin);
+    document.getElementById('bolinhaSemanal').classList.toggle('translate-x-6', agendaSemanalAdmin);
+
+    const container = document.getElementById('containerSemanasAdmin');
+    container.classList.toggle('hidden', !agendaSemanalAdmin);
+    container.innerHTML = '';
+    if (!agendaSemanalAdmin) return;
+
+    const mesAberto = anoMes => (mesesNoBanco.find(m => m.ano_mes === anoMes) || {}).status === 'aberto';
+    const hoje = new Date();
+    const segunda0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - ((hoje.getDay() + 6) % 7));
+
+    for (let i = 0; i < SEMANAS_NA_LISTA; i++) {
+        const segunda = new Date(segunda0.getFullYear(), segunda0.getMonth(), segunda0.getDate() + 7 * i);
+        const domingo = new Date(segunda.getFullYear(), segunda.getMonth(), segunda.getDate() + 6);
+        const inicio = isoLocal(segunda);
+        const aberta = semanasAbertas.includes(inicio);
+        const dm = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        const mesSegunda = inicio.slice(0, 7);
+        const mesDomingo = isoLocal(domingo).slice(0, 7);
+        const semMes = !mesAberto(mesSegunda) && !mesAberto(mesDomingo);
+        const etiqueta = i === 0 ? 'Esta semana' : (i === 1 ? 'Próxima semana' : '');
+
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5';
+        div.innerHTML = `
+            <div class="min-w-0">
+                <p class="text-white font-bold text-sm">${DIAS_CURTOS[1]} ${dm(segunda)} a ${DIAS_CURTOS[0]} ${dm(domingo)}</p>
+                <p class="text-[10px] uppercase font-bold tracking-wider mt-0.5 ${aberta ? 'text-brand-500' : 'text-gray-500'}">
+                    ${aberta ? 'Semana aberta' : 'Semana fechada'}${etiqueta ? ` · ${etiqueta}` : ''}
+                </p>
+                ${aberta && semMes ? '<p class="text-[11px] text-amber-400 mt-1">O mês ainda está fechado. Libere o mês acima.</p>' : ''}
+            </div>
+            <button onclick="alternarSemanaAdmin('${inicio}', '${aberta ? 'aberto' : 'fechado'}')" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all ${aberta ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-brand-500 text-black'}">
+                ${aberta ? 'Fechar' : 'Liberar'}
+            </button>`;
+        container.appendChild(div);
+    }
+}
+
+async function alternarModoSemanal() {
+    const ligando = !agendaSemanalAdmin;
+    try {
+        const resposta = await api('/api/admin/modo-semanal', 'POST', { ativo: ligando });
+        if (!resposta) return;
+        if (!resposta.ok) {
+            mostrarAviso(resposta.dados.erro || 'Não foi possível mudar.', 'erro');
+            return;
+        }
+        mostrarAviso(ligando ? 'Ligado! Agora libere a semana que você quer abrir.' : 'Desligado. O site mostra todos os dias dos meses abertos.');
+        await carregarDashboard();
+    } catch (erro) {
+        mostrarAviso('Não foi possível mudar.', 'erro');
+    }
+}
+
+async function alternarSemanaAdmin(inicio, statusAtual) {
+    const novoStatus = statusAtual === 'aberto' ? 'fechado' : 'aberto';
+    try {
+        const resposta = await api('/api/admin/semana', 'POST', { inicio, status: novoStatus });
+        if (!resposta) return;
+        if (!resposta.ok) {
+            mostrarAviso(resposta.dados.erro || 'Erro ao alterar a semana.', 'erro');
+            return;
+        }
+        await carregarDashboard();
+    } catch (erro) {
+        mostrarAviso('Erro ao alterar a semana.', 'erro');
+    }
+}
+
+// ------------------------------------------------------------
 //  CONFIGURAÇÕES: MEUS SERVIÇOS
 // ------------------------------------------------------------
 function renderizarServicosAdmin() {
@@ -716,6 +806,8 @@ async function salvarExpediente() {
 // ------------------------------------------------------------
 const ROTULOS_PERIODO = {
     hoje: 'Recebido hoje',
+    ontem: 'Recebido ontem',
+    personalizado: 'Recebido no período',
     semana: 'Recebido na semana',
     mes: 'Recebido no mês',
     mes_passado: 'Recebido no mês passado'
@@ -736,9 +828,43 @@ function pluralizar(qtd, singular, plural) {
     return `${qtd} ${qtd === 1 ? singular : plural}`;
 }
 
+function dataISOLocal(data) {
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
+
 function mudarPeriodoFinanceiro(periodo) {
     periodoFinanceiro = periodo;
+    const painel = document.getElementById('painelDatasFinanceiro');
+    painel.classList.toggle('hidden', periodo !== 'personalizado');
+    if (periodo === 'personalizado') {
+        // Sugestão inicial: de ontem até hoje (ele ajusta pelo calendário)
+        const de = document.getElementById('finDe');
+        const ate = document.getElementById('finAte');
+        if (!de.value || !ate.value) {
+            const hoje = new Date();
+            const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
+            de.value = dataISOLocal(ontem);
+            ate.value = dataISOLocal(hoje);
+        }
+        intervaloFinanceiro = { inicio: de.value, fim: ate.value };
+    }
     marcarPeriodoAtivo();
+    carregarFinanceiro();
+}
+
+// Chamado quando ele muda uma das datas no calendário
+function aplicarDatasFinanceiro() {
+    const de = document.getElementById('finDe').value;
+    const ate = document.getElementById('finAte').value;
+    const erro = document.getElementById('erroDatasFinanceiro');
+    erro.classList.add('hidden');
+    if (!de || !ate) return; // espera as duas
+    if (ate < de) {
+        erro.textContent = 'A data final não pode ser antes da data inicial.';
+        erro.classList.remove('hidden');
+        return;
+    }
+    intervaloFinanceiro = { inicio: de, fim: ate };
     carregarFinanceiro();
 }
 
@@ -757,7 +883,9 @@ function marcarPeriodoAtivo() {
 async function carregarFinanceiro() {
     marcarPeriodoAtivo();
     try {
-        const resposta = await api(`/api/admin/financeiro?periodo=${periodoFinanceiro}`);
+        let consulta = `periodo=${periodoFinanceiro}`;
+        if (periodoFinanceiro === 'personalizado') consulta += `&inicio=${intervaloFinanceiro.inicio}&fim=${intervaloFinanceiro.fim}`;
+        const resposta = await api(`/api/admin/financeiro?${consulta}`);
         if (!resposta) return;
         if (!resposta.ok) throw new Error('Falha ao carregar as finanças');
         renderizarFinanceiro(resposta.dados);

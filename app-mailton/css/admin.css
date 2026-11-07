@@ -54,7 +54,7 @@ nav.fixed { border-top-color: rgba(212, 175, 55, 0.3) !important; }
 /* campo de foto do serviço */
 .area-foto {
     position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
-    width: 100%; aspect-ratio: 16 / 10; overflow: hidden; cursor: pointer; border-radius: 18px;
+    width: 100%; aspect-ratio: 4 / 3; overflow: hidden; cursor: pointer; border-radius: 18px;
     border: 1.5px dashed rgba(212, 175, 55, 0.4); background: rgba(212, 175, 55, 0.05); color: #B9B3A3; font-size: 13px;
 }
 .area-foto:hover { background: rgba(212, 175, 55, 0.1); }
@@ -66,3 +66,11 @@ nav.fixed { border-top-color: rgba(212, 175, 55, 0.3) !important; }
 .mini-foto-vazia { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; flex: none; border: 1px dashed rgba(212, 175, 55, 0.4); color: rgba(212, 175, 55, 0.7); background: rgba(212, 175, 55, 0.05); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* computador: a tela mais larga é aproveitada */
+@media (min-width: 768px) {
+    #containerServicosAdmin { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    #gradeGaleriaAdmin { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+    #carrosselDiasAdmin { flex-wrap: wrap; overflow: visible; }
+    .area-foto { max-width: 420px; margin: 0 auto; }
+}
