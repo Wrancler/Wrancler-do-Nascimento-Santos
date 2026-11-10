@@ -164,6 +164,56 @@ dateEnd.addEventListener("change", () => {
 
 
 // ==========================================
+// 🔥 ECONOMIA DE LEITURAS (cota gratuita do Firestore)
+// ==========================================
+// Antes: cada toque em data/barbeiro lia TODOS os agendamentos da barbearia.
+// Agora: lê só o período escolhido e guarda o resultado por 2 minutos,
+// então trocar de barbeiro não gasta nenhuma leitura nova.
+let cachePeriodo = { chave: null, quando: 0, promessa: null };
+const CACHE_MS = 2 * 60 * 1000;
+
+function buscarAgendamentosDoPeriodo(start, end) {
+  const chave = `${tenantId}|${start}|${end}`;
+
+  if (cachePeriodo.promessa && cachePeriodo.chave === chave && (Date.now() - cachePeriodo.quando) < CACHE_MS) {
+    return cachePeriodo.promessa;
+  }
+
+  const promessa = (async () => {
+    let snap;
+    try {
+      // Só o período escolhido (exige o índice composto: tenantId + date)
+      const q = query(
+        collection(db, "appointments"),
+        where("tenantId", "==", tenantId),
+        where("date", ">=", start),
+        where("date", "<=", end)
+      );
+      snap = await getDocs(q);
+    } catch (err) {
+      if (err && err.code !== "failed-precondition") throw err;
+      // Plano B: índice ainda não criado — usa a busca completa para a tela não quebrar.
+      // A mensagem abaixo traz o link para criar o índice com um clique.
+      console.warn("⚠️ Falta o índice (tenantId + date). Crie pelo link:", err.message);
+      const qTudo = query(collection(db, "appointments"), where("tenantId", "==", tenantId));
+      snap = await getDocs(qTudo);
+    }
+    return snap.docs.map(d => d.data());
+  })();
+
+  cachePeriodo = { chave, quando: Date.now(), promessa };
+
+  // Se der erro, não guarda no cache (a próxima tentativa busca de novo)
+  promessa.catch(() => {
+    if (cachePeriodo.promessa === promessa) {
+      cachePeriodo = { chave: null, quando: 0, promessa: null };
+    }
+  });
+
+  return promessa;
+}
+
+// ==========================================
 // 4. MOTOR DE CÁLCULO FINANCEIRO
 // ==========================================
 async function calcularFinancas() {
@@ -177,14 +227,13 @@ async function calcularFinancas() {
   if (!start || !end) return;
 
   try {
-    const q = query(collection(db, "appointments"), where("tenantId", "==", tenantId));
-    const snap = await getDocs(q);
+    // 🔥 ECONOMIA DE LEITURAS: busca só o período escolhido e reaproveita ao trocar de barbeiro
+    const docsDoPeriodo = await buscarAgendamentosDoPeriodo(start, end);
     
     let agendamentosValidos = [];
     let valorAcumulado = 0;
 
-    snap.forEach(d => {
-      const app = d.data();
+    docsDoPeriodo.forEach(app => {
       if (
         app.status === "completed" &&
         app.date >= start &&
