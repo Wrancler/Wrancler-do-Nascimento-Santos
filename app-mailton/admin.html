@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/admin.css">
     <script>
-        tailwind.config = {
+        if (window.tailwind) tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
@@ -304,6 +304,7 @@
                 
                 <h3 class="text-xl font-bold text-white tracking-tight">Bloqueios de Agenda</h3>
                 <p class="text-brand-500 text-sm font-semibold mb-6 mt-1" id="tituloDataBloqueio">Data</p>
+                <p id="avisoBloqueioMarcados" class="hidden text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 -mt-3 mb-5"></p>
 
                 <!-- Ação: Dia Inteiro -->
                 <div class="bg-surfaceHover border border-white/10 rounded-2xl p-4 flex justify-between items-center mb-6">
@@ -400,6 +401,21 @@
                 <p id="erroEncaixe" class="text-red-400 text-xs mt-3 hidden"></p>
                 <button id="btnSalvarEncaixe" onclick="salvarEncaixe()" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-bold text-base py-3.5 rounded-2xl mt-6 active:scale-[0.98] transition-transform">Agendar</button>
                 <button onclick="fecharModalEncaixe()" class="w-full bg-white/10 text-white font-bold text-sm py-3 rounded-xl mt-3 hover:bg-white/20 transition-colors">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- MODAL: ENCAIXE CRIADO (oferece mandar a confirmação no WhatsApp) -->
+        <div id="modalEncaixeOk" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex flex-col justify-end">
+            <div class="flex-1 w-full" onclick="fecharModal('modalEncaixeOk')"></div>
+            <div class="bg-surface w-full max-w-md mx-auto rounded-t-[32px] p-6 border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] text-center">
+                <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6"></div>
+                <div class="w-14 h-14 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-check text-xl"></i></div>
+                <h3 class="text-xl font-bold text-white tracking-tight">Agendamento criado!</h3>
+                <p id="encOkResumo" class="text-sm text-gray-400 mt-1"></p>
+                <a id="encOkWhats" href="#" target="_blank" rel="noopener" onclick="fecharModal('modalEncaixeOk')" class="w-full bg-green-500 text-black font-bold text-base py-3.5 rounded-2xl mt-6 flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Enviar confirmação no WhatsApp
+                </a>
+                <button onclick="fecharModal('modalEncaixeOk')" class="w-full bg-white/10 text-white font-bold text-sm py-3 rounded-xl mt-3 hover:bg-white/20 transition-colors">Agora não</button>
             </div>
         </div>
 

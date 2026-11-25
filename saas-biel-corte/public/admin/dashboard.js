@@ -354,10 +354,45 @@ Digite o novo percentual:`, atual);
             <div><strong>${s.name}</strong> ${badge}<br><span>${metaInfo}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btnEditarServico" data-index="${index}" title="Alterar o valor" style="background:transparent;border:1px solid #444;color:#e0b976;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;">✏️ Valor</button>
           <button class="btnToggleTipo" data-index="${index}" title="${isProduto ? 'Converter para Serviço' : 'Converter para Produto'}" style="background:transparent;border:1px solid #444;color:#888;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;">${isProduto ? "→ Serviço" : "→ Produto"}</button>
           <button class="btnRemoverServico" data-index="${index}" style="background:transparent; border:none; color:#ff5555; cursor:pointer; font-size:18px;">❌</button>
         </div>
       </div>`;
+  });
+
+  document.querySelectorAll(".btnEditarServico").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const index = e.currentTarget.getAttribute("data-index");
+      const s = servicesData[index];
+      if (!s) return;
+
+      const atual = Number(s.price) || 0;
+      const resposta = prompt(`Novo valor de "${s.name}" (R$)\nAtual: R$ ${atual}\n\nDigite o novo valor:`, atual);
+      if (resposta === null) return;
+
+      const texto = String(resposta).trim().replace(",", ".");
+      const novo = Number(texto);
+      if (texto === "" || !isFinite(novo) || novo < 0) {
+        return alert("Valor inválido. Digite apenas números, por exemplo 35 ou 35,50.");
+      }
+      if (novo === atual) return;
+
+      const anterior = s.price;
+      s.price = novo;
+      try {
+        await updateDoc(doc(db, "tenants", tenantId), { services: servicesData });
+        // mantém a lista do "Novo Agendamento" em dia com o novo valor
+        const opt = Array.from(document.getElementById("manualService").options).find(o => o.value === s.id);
+        if (opt) opt.textContent = `${s.name} - R$${novo}`;
+        renderConfigPanel();
+        alert(`✅ Valor de "${s.name}" atualizado para R$ ${novo.toFixed(2).replace(".", ",")}`);
+      } catch (err) {
+        s.price = anterior; // não deixa a tela mostrando um valor que não foi gravado
+        console.error(err);
+        alert("Erro ao gravar o novo valor. Tente novamente.");
+      }
+    });
   });
 
   document.querySelectorAll(".btnToggleTipo").forEach(btn => {

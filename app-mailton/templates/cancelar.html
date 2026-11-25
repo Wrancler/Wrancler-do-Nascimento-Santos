@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- Zoom liberado de propósito: muitas clientes precisam ampliar a tela -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cancelar Agendamento - Mailton Maia</title>
 
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -22,6 +23,8 @@
         .dados p span:first-child{color:#8f897a}.dados p span:last-child{font-weight:700;text-align:right}
         .btn-cancelar{width:100%;min-height:58px;border:0;border-radius:18px;font:800 18px inherit;font-family:inherit;color:#fff;background:#b3261e;cursor:pointer}
         .btn-cancelar:disabled{opacity:.5}
+        .btn-whats{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;margin-top:16px;border-radius:18px;font-weight:800;font-size:18px;color:#0b0b0b;background:linear-gradient(100deg,#9C7A1E,var(--ouro-claro),var(--ouro));text-decoration:none}
+        .oculto{display:none !important}
         #resultado{margin-top:16px;font-size:17px}
         a.voltar{display:inline-block;margin-top:18px;color:var(--ouro);font-size:16px}
     </style>
@@ -48,6 +51,13 @@
             <h1 >Atendimento concluído</h1>
             <p class="suave">Este atendimento já foi realizado e não pode mais ser cancelado.</p>
 
+        {% elif passou %}
+            <!-- O HORÁRIO JÁ PASSOU: QUEM RESOLVE É O MAILTON -->
+            <i class="fa-regular fa-clock icone"></i>
+            <h1 >Horário já passou</h1>
+            <p class="suave">O horário de {{ agendamento.data_formatada }} já passou, então não dá mais para cancelar por aqui. Se precisar, fale com o Mailton.</p>
+            <a class="btn-whats" href="{{ link_mailton }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Falar com o Mailton</a>
+
         {% else %}
             <!-- ESTADO NORMAL: PODE CANCELAR -->
             <i class="fa-regular fa-calendar-xmark icone"></i>
@@ -59,13 +69,18 @@
                 <p><span>Data</span> <span>{{ agendamento.data_formatada }}</span></p>
             </div>
 
-            <p class="suave" style="margin-bottom:18px">Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.</p>
+            <p class="suave" id="pergunta" style="margin-bottom:18px">Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.</p>
 
             <button id="btnCancelar" onclick="confirmarCancelamento()" class="btn-cancelar">
                 Sim, cancelar agendamento
             </button>
 
-            <div id="resultado" class="hidden" style="display:none"></div>
+            <div id="resultado" class="oculto"></div>
+
+            <!-- Depois de cancelar: avisa o Mailton com a mensagem pronta -->
+            <a id="btnAvisar" class="btn-whats oculto" href="{{ link_aviso }}" target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp"></i> Avisar o Mailton
+            </a>
 
             <script>
                 const TOKEN = "{{ token }}";
@@ -81,18 +96,20 @@
                         const response = await fetch(`/api/cancelar/${TOKEN}`, { method: 'POST' });
                         const dados = await response.json();
 
-                        resultado.style.display='block';
+                        resultado.classList.remove('oculto');
 
                         if (response.ok) {
-                            btn.classList.add('hidden');
-                            resultado.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#7BD88F"></i> ${dados.mensagem}`;
+                            btn.classList.add('oculto');
+                            document.getElementById('pergunta').classList.add('oculto');
+                            document.getElementById('btnAvisar').classList.remove('oculto');
+                            resultado.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#7BD88F"></i> ${dados.mensagem}<br><span class="suave">Toque abaixo para avisar o Mailton.</span>`;
                         } else {
                             resultado.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#F08A8A"></i> ${dados.erro || 'Erro ao cancelar.'}`;
                             btn.disabled = false;
                             btn.innerHTML = 'Sim, cancelar agendamento';
                         }
                     } catch (erro) {
-                        resultado.style.display='block';
+                        resultado.classList.remove('oculto');
                         resultado.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#F08A8A"></i> Erro ao conectar ao servidor.';
                         btn.disabled = false;
                         btn.innerHTML = 'Sim, cancelar agendamento';

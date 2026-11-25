@@ -127,12 +127,17 @@ function fecharModal(id) { document.getElementById(id).classList.add('hidden'); 
 // ------------------------------------------------------------
 
 // Atualiza só o que muda com agendamentos (agenda, faturamento e meses)
+let mesesCache = [];
+let ultimaAtualizacao = 0;
+
 async function carregarDashboard() {
+    ultimaAtualizacao = Date.now();
     const resposta = await api('/api/admin/dashboard');
     if (!resposta) return;
     if (!resposta.ok) throw new Error('Falha ao carregar o painel');
 
     const dados = resposta.dados;
+    mesesCache = dados.meses || [];
     renderizarMesesAdmin(dados.meses);
     renderizarSemanasAdmin(dados.semanal, dados.semanas, dados.meses);
     agendamentosCache = dados.agendamentos;
@@ -140,6 +145,22 @@ async function carregarDashboard() {
     renderizarLembretes();
     await carregarFinanceiro();
 }
+
+// O painel costuma ficar aberto no celular. Ao voltar para ele (por exemplo, depois de ler a
+// mensagem de uma cliente no WhatsApp), busca de novo os agendamentos para mostrar os novos.
+function painelAberto() {
+    const app = document.getElementById('mainApp');
+    return !!(app && !app.classList.contains('hidden') && localStorage.getItem('wn_admin_token'));
+}
+
+async function atualizarSePrecisar(intervaloMinimoMs) {
+    if (document.visibilityState !== 'visible' || !painelAberto()) return;
+    if (Date.now() - ultimaAtualizacao < intervaloMinimoMs) return;
+    try { await carregarDashboard(); } catch (e) { /* sem internet agora: tenta de novo depois */ }
+}
+
+document.addEventListener('visibilitychange', () => atualizarSePrecisar(15 * 1000));
+setInterval(() => atualizarSePrecisar(110 * 1000), 120 * 1000);
 
 // Carrega tudo: agenda, serviços e horários de atendimento (roda depois do login)
 async function carregarDadosAdmin() {
@@ -178,8 +199,15 @@ function inicializarAgenda() {
     const hoje = new Date();
     const mesesMostrados = [];
 
-    // 30 dias a partir de hoje
-    for (let i = 0; i < 30; i++) {
+    // Quantos agendamentos valendo (não cancelados) cada dia tem: vira um pontinho no dia
+    const porDia = {};
+    agendamentosCache.forEach(ag => {
+        if (ag.status === 'cancelado') return;
+        const dia = ag.data_hora.slice(0, 10);
+        porDia[dia] = (porDia[dia] || 0) + 1;
+    });
+
+    for (let i = 0; i < diasNaAgenda(hoje); i++) {
         const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
         const dataIso = dataParaIso(data);
         const nomeMes = nomesMeses[data.getMonth()];
@@ -188,20 +216,46 @@ function inicializarAgenda() {
         const btn = document.createElement('button');
         btn.className = 'btn-dia-admin flex-none snap-start flex flex-col items-center justify-center p-3 rounded-xl min-w-[65px] border border-white/10 bg-surfaceHover text-gray-400 transition hover:border-brand-500';
         btn.dataset.data = dataIso;
+        const qtd = porDia[dataIso] || 0;
+        btn.title = qtd ? pluralizar(qtd, 'agendamento', 'agendamentos') : 'Sem agendamentos';
         btn.innerHTML = `
             <span class="text-[10px] font-medium mb-1">${diasSemana[data.getDay()]}</span>
             <span class="text-lg font-bold">${String(data.getDate()).padStart(2, '0')}</span>
+            <span class="ponto-dia mt-1 w-1.5 h-1.5 rounded-full bg-brand-500 ${qtd ? '' : 'opacity-0'}"></span>
         `;
         btn.onclick = () => selecionarDiaAdmin(dataIso);
         carrossel.appendChild(btn);
     }
 
     const rotuloMes = document.getElementById('mesAtualAgenda');
-    if (rotuloMes) rotuloMes.textContent = mesesMostrados.join(' / ');
+    if (rotuloMes) {
+        rotuloMes.textContent = mesesMostrados.length > 2
+            ? `${mesesMostrados[0]} a ${mesesMostrados[mesesMostrados.length - 1]}`
+            : mesesMostrados.join(' / ');
+    }
 
     // Mantém o dia que estava aberto; se não houver, abre hoje
     const existe = dataSelecionadaAdmin && carrossel.querySelector(`[data-data="${dataSelecionadaAdmin}"]`);
     selecionarDiaAdmin(existe ? dataSelecionadaAdmin : dataParaIso(hoje));
+}
+
+// A agenda mostra pelo menos 30 dias. Se o Mailton liberou um mês mais adiante, ou alguém
+// já marcou para depois disso, ela vai até lá (no máximo uns 6 meses), para nada ficar escondido.
+function diasNaAgenda(hoje) {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    let ultimo = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 29);
+    mesesCache.filter(m => m.status === 'aberto').forEach(m => {
+        const [a, mes] = m.ano_mes.split('-').map(Number);
+        const fimDoMes = new Date(a, mes, 0);
+        if (fimDoMes > ultimo) ultimo = fimDoMes;
+    });
+    agendamentosCache.forEach(ag => {
+        if (ag.status === 'cancelado') return;
+        const [a, mes, d] = ag.data_hora.slice(0, 10).split('-').map(Number);
+        const dia = new Date(a, mes - 1, d);
+        if (dia > ultimo) ultimo = dia;
+    });
+    return Math.min(Math.round((ultimo - inicio) / 86400000) + 1, 186);
 }
 
 function selecionarDiaAdmin(dataIso) {
@@ -215,6 +269,11 @@ function selecionarDiaAdmin(dataIso) {
         b.classList.toggle('bg-surfaceHover', !ativo);
         b.classList.toggle('text-gray-400', !ativo);
         b.classList.toggle('border-white/10', !ativo);
+        const ponto = b.querySelector('.ponto-dia');
+        if (ponto) {
+            ponto.classList.toggle('bg-black', ativo);
+            ponto.classList.toggle('bg-brand-500', !ativo);
+        }
     });
 
     renderizarAgendaDoDia();
@@ -514,20 +573,23 @@ async function salvarEncaixe(forcar = false) {
         }
 
         fecharModalEncaixe();
-        mostrarAviso('Agendamento criado!');
         dataSelecionadaAdmin = data;
         await carregarDashboard();
 
-        // Oferece avisar o cliente pelo WhatsApp, já com o link para cancelar
+        // Oferece avisar o cliente pelo WhatsApp, já com o link para cancelar.
+        // É um botão de verdade (e não uma janela aberta sozinha), porque o celular bloquearia.
         const servico = servicosAdmin.find(s => s.id === servicoId);
-        if (confirm(`Enviar a confirmação para ${nome} pelo WhatsApp?`)) {
-            const dataBr = data.split('-').reverse().join('/');
-            const link = `${window.location.origin}/cancelar/${resposta.dados.token_cancelamento}`;
-            const texto = `Olá, ${nome}! Seu horário com o Mailton está confirmado:\n\n` +
-                `✨ ${servico ? servico.nome : 'Atendimento'}\n📅 ${dataBr} às ${hora}\n\n` +
-                `Se precisar cancelar, é só abrir este link:\n${link}`;
-            window.open(`https://wa.me/${telefoneWhats(resposta.dados.telefone)}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
-        }
+        const nomeServico = servico ? servico.nome : 'Atendimento';
+        const dataBr = data.split('-').reverse().join('/');
+        const primeiroNome = nome.split(/\s+/)[0];
+        const link = `${window.location.origin}/cancelar/${resposta.dados.token_cancelamento}`;
+        const texto = `Olá, ${primeiroNome}! Aqui é o Mailton 😊\n\n` +
+            `Seu horário está confirmado:\n✨ ${nomeServico}\n📅 ${dataBr} às ${hora}\n\n` +
+            `Se precisar cancelar, é só abrir este link:\n${link}`;
+        document.getElementById('encOkResumo').textContent = `${nome} · ${nomeServico} · ${dataBr} às ${hora}`;
+        document.getElementById('encOkWhats').href =
+            `https://wa.me/${telefoneWhats(resposta.dados.telefone)}?text=${encodeURIComponent(texto)}`;
+        abrirModal('modalEncaixeOk');
     } catch (e) {
         erro.textContent = 'Erro de conexão com o servidor.';
         erro.classList.remove('hidden');
@@ -1181,6 +1243,14 @@ function abrirModalBloqueios() {
     // Formata a data para exibir bonito (ex: 24/09/2026)
     const partes = dataSelecionadaAdmin.split('-');
     document.getElementById('tituloDataBloqueio').textContent = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+    // Bloquear não desmarca ninguém: avisa quando o dia já tem clientes marcados
+    const marcados = agendamentosCache.filter(ag => ag.status === 'agendado' && ag.data_hora.startsWith(dataSelecionadaAdmin)).length;
+    const aviso = document.getElementById('avisoBloqueioMarcados');
+    aviso.textContent = marcados
+        ? `Este dia já tem ${pluralizar(marcados, 'cliente marcado', 'clientes marcados')}. O bloqueio só impede novos agendamentos: quem já marcou continua na agenda.`
+        : '';
+    aviso.classList.toggle('hidden', !marcados);
 
     document.getElementById('modalBloqueios').classList.remove('hidden');
 

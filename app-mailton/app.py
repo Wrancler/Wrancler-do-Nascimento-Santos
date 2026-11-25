@@ -34,6 +34,10 @@ def garantir_estrutura():
         if colunas_ag and 'lembrete_em' not in colunas_ag:
             conn.execute("ALTER TABLE agendamentos ADD COLUMN lembrete_em TEXT")
             conn.commit()
+        # Nome digitado em cada agendamento (a filha pode marcar para a mãe usando o mesmo WhatsApp)
+        if colunas_ag and 'nome_cliente' not in colunas_ag:
+            conn.execute("ALTER TABLE agendamentos ADD COLUMN nome_cliente TEXT")
+            conn.commit()
         # Semanas que o Mailton liberou (cada linha = a segunda-feira da semana aberta)
         conn.execute("CREATE TABLE IF NOT EXISTS semanas_abertas (inicio_semana TEXT PRIMARY KEY)")
         conn.commit()
@@ -76,6 +80,35 @@ def backup_automatico_do_dia():
         garantir_backup_do_dia()
     except Exception:
         app.logger.exception('Falha ao criar o backup automático do dia')
+
+
+@app.after_request
+def cabecalhos_de_seguranca(resposta):
+    """Proteções básicas do navegador: não 'adivinhar' tipo de arquivo e não abrir o site dentro de outro."""
+    resposta.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    resposta.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+    resposta.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    return resposta
+
+
+def ler_texto(valor, limite):
+    """Texto vindo do formulário, sem espaços nas pontas (aceita número ou vazio sem quebrar)."""
+    return str(valor if valor is not None else '').strip()[:limite]
+
+
+def normalizar_telefone(bruto):
+    """Só os dígitos, sem o 55 do Brasil e sem zero na frente.
+    '(83) 98888-1111', '+55 83 98888-1111' e '083 98888-1111' viram o mesmo número: '83988881111'.
+    Devolve '' quando não é um número com DDD (10 ou 11 dígitos)."""
+    digitos = re.sub(r'\D', '', str(bruto or '')).lstrip('0')
+    if len(digitos) in (12, 13) and digitos.startswith('55'):
+        digitos = digitos[2:]
+    return digitos if 10 <= len(digitos) <= 11 else ''
+
+
+def telefone_do_mailton(conn):
+    linha = conn.execute("SELECT telefone FROM profissionais WHERE id = 1").fetchone()
+    return re.sub(r'\D', '', linha['telefone']) if linha and linha['telefone'] else '5583988856096'
 
 # --- REGRAS DA AGENDA ---
 FUSO_BRASIL = timezone(timedelta(hours=-3))  # o servidor do PythonAnywhere roda em UTC
@@ -487,19 +520,19 @@ def expediente_publico():
 def criar_agendamento():
     dados = request.get_json(silent=True) or {}
 
-    nome_cliente = (dados.get('nome_cliente') or '').strip()[:80]
-    telefone_cliente = re.sub(r'\D', '', str(dados.get('telefone_cliente') or ''))
+    nome_cliente = ler_texto(dados.get('nome_cliente'), 80)
+    telefone_cliente = normalizar_telefone(dados.get('telefone_cliente'))
     servico_id = dados.get('servico_id')
-    data_hora = (dados.get('data_hora') or '').strip()
+    data_hora = ler_texto(dados.get('data_hora'), 16)
 
-    if not all([nome_cliente, telefone_cliente, servico_id, data_hora]):
+    if not all([nome_cliente, servico_id, data_hora]):
         return jsonify({"erro": "Faltam dados obrigatórios"}), 400
     if len(nome_cliente) < 2:
         return jsonify({"erro": "Informe seu nome completo."}), 400
-    if not 10 <= len(telefone_cliente) <= 13:
+    if not telefone_cliente:
         return jsonify({"erro": "Informe um WhatsApp válido, com DDD."}), 400
     try:
-        datetime.strptime(data_hora, '%Y-%m-%d %H:%M')
+        data_hora = datetime.strptime(data_hora, '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
     except ValueError:
         return jsonify({"erro": "Data ou horário inválido."}), 400
 
@@ -533,8 +566,8 @@ def criar_agendamento():
 
         token = str(uuid.uuid4())
         cursor.execute(
-            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor) VALUES (?, ?, ?, ?, ?, ?)",
-            (cliente_id, servico['id'], f"{data} {hora}", token, servico['duracao_minutos'], servico['valor'])
+            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor, nome_cliente) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (cliente_id, servico['id'], f"{data} {hora}", token, servico['duracao_minutos'], servico['valor'], nome_cliente)
         )
         conn.commit()
     finally:
@@ -589,7 +622,7 @@ def admin_dashboard():
     # A agenda mostra de hoje em diante; o que já passou aparece na aba Finanças
     inicio_hoje = agora_brasil().strftime('%Y-%m-%d') + ' 00:00'
     agendamentos = conn.execute('''
-        SELECT a.id, c.nome as cliente, c.telefone, s.nome as servico,
+        SELECT a.id, COALESCE(a.nome_cliente, c.nome) as cliente, c.telefone, s.nome as servico,
                COALESCE(a.valor, s.valor) AS valor,
                COALESCE(a.duracao_minutos, s.duracao_minutos) AS duracao_minutos,
                a.data_hora, a.status, a.lembrete_em,
@@ -664,7 +697,7 @@ def admin_financeiro():
 
     conn = get_db_connection()
     linhas = conn.execute('''
-        SELECT a.id, c.nome AS cliente, s.nome AS servico, a.data_hora, a.status,
+        SELECT a.id, COALESCE(a.nome_cliente, c.nome) AS cliente, s.nome AS servico, a.data_hora, a.status,
                COALESCE(a.valor, s.valor) AS valor
         FROM agendamentos a
         JOIN clientes c ON a.cliente_id = c.id
@@ -1306,20 +1339,21 @@ def admin_marcar_lembrete(agendamento_id):
 @requer_login_admin
 def admin_agendar():
     dados = request.get_json(silent=True) or {}
-    nome_cliente = (dados.get('nome_cliente') or '').strip()[:80]
-    telefone = re.sub(r'\D', '', str(dados.get('telefone_cliente') or ''))
+    nome_cliente = ler_texto(dados.get('nome_cliente'), 80)
+    telefone = normalizar_telefone(dados.get('telefone_cliente'))
     servico_id = dados.get('servico_id')
-    data_hora = (dados.get('data_hora') or '').strip()
+    data_hora = ler_texto(dados.get('data_hora'), 16)
     forcar = bool(dados.get('forcar'))
 
     if len(nome_cliente) < 2:
         return jsonify({"erro": "Informe o nome do cliente."}), 400
-    if not 10 <= len(telefone) <= 13:
+    if not telefone:
         return jsonify({"erro": "Informe um WhatsApp válido, com DDD."}), 400
     try:
         momento = datetime.strptime(data_hora, '%Y-%m-%d %H:%M')
     except ValueError:
         return jsonify({"erro": "Data ou horário inválido."}), 400
+    data_hora = momento.strftime('%Y-%m-%d %H:%M')  # '9:00' vira '09:00' (a agenda ordena por texto)
     data, hora = data_hora.split(' ')
     inicio = hora_para_minutos(hora)
 
@@ -1372,8 +1406,8 @@ def admin_agendar():
 
         token = str(uuid.uuid4())
         cursor.execute(
-            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor) VALUES (?, ?, ?, ?, ?, ?)",
-            (cliente_id, servico['id'], f"{data} {hora}", token, duracao, servico['valor'])
+            "INSERT INTO agendamentos (cliente_id, servico_id, data_hora, token_cancelamento, duracao_minutos, valor, nome_cliente) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (cliente_id, servico['id'], f"{data} {hora}", token, duracao, servico['valor'], nome_cliente)
         )
         novo_id = cursor.lastrowid
         conn.commit()
@@ -1393,12 +1427,14 @@ def admin_agendar():
 def pagina_cancelamento(token):
     conn = get_db_connection()
     agendamento = conn.execute('''
-        SELECT a.status, a.data_hora, c.nome as cliente, s.nome as servico, s.valor
+        SELECT a.status, a.data_hora, COALESCE(a.nome_cliente, c.nome) as cliente, s.nome as servico,
+               COALESCE(a.valor, s.valor) AS valor
         FROM agendamentos a
         JOIN clientes c ON a.cliente_id = c.id
         JOIN servicos s ON a.servico_id = s.id
         WHERE a.token_cancelamento = ?
     ''', (token,)).fetchone()
+    numero_mailton = telefone_do_mailton(conn)
     conn.close()
 
     if not agendamento:
@@ -1414,7 +1450,15 @@ def pagina_cancelamento(token):
     except (ValueError, KeyError):
         agendamento['data_formatada'] = agendamento['data_hora']
 
-    return render_template('cancelar.html', encontrado=True, agendamento=agendamento, token=token)
+    # Depois de cancelar, a cliente avisa o Mailton com um toque (a mensagem já vai pronta)
+    aviso = (f"Olá, Mailton! Precisei cancelar o meu horário de {agendamento['data_formatada']} "
+             f"({agendamento['servico']}).")
+    link_aviso = f"https://wa.me/{numero_mailton}?text={quote(aviso)}"
+    passou = agendamento['data_hora'] <= agora_brasil().strftime('%Y-%m-%d %H:%M')
+
+    return render_template('cancelar.html', encontrado=True, agendamento=agendamento, token=token,
+                           passou=passou, link_aviso=link_aviso,
+                           link_mailton=f"https://wa.me/{numero_mailton}")
 
 
 # --- ROTA 8B: A cliente volta ao site e vê se o horário dela continua reservado ---
@@ -1439,7 +1483,7 @@ def meu_agendamento(token):
 def cancelar_agendamento(token):
     conn = get_db_connection()
     agendamento = conn.execute(
-        "SELECT id, status FROM agendamentos WHERE token_cancelamento = ?", (token,)
+        "SELECT id, status, data_hora FROM agendamentos WHERE token_cancelamento = ?", (token,)
     ).fetchone()
 
     if not agendamento:
@@ -1453,6 +1497,11 @@ def cancelar_agendamento(token):
     if agendamento['status'] == 'concluido':
         conn.close()
         return jsonify({"erro": "Este atendimento já foi concluído e não pode ser cancelado."}), 400
+
+    # Depois do horário marcado, quem resolve é o Mailton (senão o atendimento some do financeiro)
+    if agendamento['data_hora'] <= agora_brasil().strftime('%Y-%m-%d %H:%M'):
+        conn.close()
+        return jsonify({"erro": "O horário deste agendamento já passou. Se precisar, fale com o Mailton pelo WhatsApp."}), 400
 
     conn.execute("UPDATE agendamentos SET status = 'cancelado' WHERE id = ?", (agendamento['id'],))
     conn.commit()

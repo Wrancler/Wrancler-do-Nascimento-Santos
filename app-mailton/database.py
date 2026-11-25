@@ -160,6 +160,10 @@ def criar_banco():
     if 'lembrete_em' not in colunas(cursor, 'agendamentos'):
         cursor.execute("ALTER TABLE agendamentos ADD COLUMN lembrete_em TEXT")
 
+    # Nome digitado em cada agendamento (a filha pode marcar para a mãe usando o mesmo WhatsApp)
+    if 'nome_cliente' not in colunas(cursor, 'agendamentos'):
+        cursor.execute("ALTER TABLE agendamentos ADD COLUMN nome_cliente TEXT")
+
     # --- VALORES INICIAIS ---
     # Abre por padrão o mês atual e o próximo (o Mailton controla o resto pelo painel)
     hoje = datetime.now(timezone(timedelta(hours=-3)))

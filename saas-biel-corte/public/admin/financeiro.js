@@ -10,6 +10,9 @@ function getParam(name) {
 const tenantId = getParam("tenant") || "biel-do-corte";
 let profSelecionadoAtual = "todos";
 let configProfissionais = []; // 🔥 Guarda os profissionais com comissão
+let timerPeriodo = null;          // espera ao digitar datas no "Período Personalizado"
+let buscaAtual = 0;               // identifica a busca mais recente (descarta respostas antigas)
+const DATA_MINIMA = "2020-01-01"; // ignora anos parciais enquanto digita (ex.: 0002, 0202)
 
 // ==========================================
 // 1. NAVEGAÇÃO E INÍCIO DIRETO
@@ -88,6 +91,7 @@ async function initFinanceiro() {
 // 3. ROLETA DE DATAS (SLIDER PREMIUM)
 // ==========================================
 function definirFiltro(inicio, fim) {
+  clearTimeout(timerPeriodo); // cancela espera pendente de datas digitadas
   dateStart.value = inicio;
   dateEnd.value = fim;
   calcularFinancas();
@@ -153,14 +157,31 @@ function renderFinanceDateCards() {
 }
 
 // Atualiza ao usar as datas personalizadas
-dateStart.addEventListener("change", () => { 
+// 🔥 ECONOMIA DE LEITURAS: ao digitar o ano no PC, o navegador dispara "change" a cada dígito
+// (0002, 0020, 0202, 2026). Cada um virava uma busca enorme. Agora espera a digitação
+// terminar e ignora datas inválidas ou anteriores a 2020.
+function aoMudarPeriodoPersonalizado() {
   document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
-  calcularFinancas(); 
-});
-dateEnd.addEventListener("change", () => { 
-  document.querySelectorAll("#financeDateSlider .date-card").forEach(c => c.classList.remove("is-selected"));
-  calcularFinancas(); 
-});
+  clearTimeout(timerPeriodo);
+  timerPeriodo = setTimeout(() => {
+    const ini = dateStart.value;
+    const fim = dateEnd.value;
+    if (!ini || !fim) return; // ainda preenchendo
+
+    if (ini < DATA_MINIMA || fim < DATA_MINIMA || ini > fim) {
+      buscaAtual++; // descarta qualquer busca em andamento
+      totCortes.textContent = "—";
+      totValor.textContent = "—";
+      const cardComissaoEl = document.getElementById("cardComissao");
+      if (cardComissaoEl) cardComissaoEl.style.display = "none";
+      financeList.innerHTML = "<p style='color: #888; text-align: center; padding: 40px 20px;'>Período inválido. Use datas a partir de 2020, com o início antes do fim.</p>";
+      return;
+    }
+    calcularFinancas();
+  }, 700);
+}
+dateStart.addEventListener("change", aoMudarPeriodoPersonalizado);
+dateEnd.addEventListener("change", aoMudarPeriodoPersonalizado);
 
 
 // ==========================================
@@ -217,6 +238,7 @@ function buscarAgendamentosDoPeriodo(start, end) {
 // 4. MOTOR DE CÁLCULO FINANCEIRO
 // ==========================================
 async function calcularFinancas() {
+  const minhaBusca = ++buscaAtual; // só a busca mais recente pode atualizar a tela
   financeList.innerHTML = "<p style='color: #888; text-align: center; padding: 20px;'>A calcular finanças...</p>";
   totCortes.textContent = "...";
   totValor.textContent = "...";
@@ -229,6 +251,7 @@ async function calcularFinancas() {
   try {
     // 🔥 ECONOMIA DE LEITURAS: busca só o período escolhido e reaproveita ao trocar de barbeiro
     const docsDoPeriodo = await buscarAgendamentosDoPeriodo(start, end);
+    if (minhaBusca !== buscaAtual) return; // chegou uma busca mais nova: descarta esta
     
     let agendamentosValidos = [];
     let valorAcumulado = 0;
@@ -317,6 +340,7 @@ async function calcularFinancas() {
     });
 
   } catch (error) {
+    if (minhaBusca !== buscaAtual) return;
     console.error("Erro ao buscar dados financeiros:", error);
     financeList.innerHTML = `<p style='color: #ff5555; text-align: center;'>Erro: ${error.message}</p>`;
   }

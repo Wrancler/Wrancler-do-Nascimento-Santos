@@ -315,8 +315,12 @@ async function selecionarData(botao, dataFormatoSQL) {
         grid.innerHTML = '';
 
         if (horarios.length === 0) {
-            // O servidor diz o motivo (mês fechado, dia bloqueado...). Sem motivo = dia lotado.
-            const mensagem = resultado.mensagem || 'Agenda lotada neste dia. Tente outro dia.';
+            // O servidor diz o motivo (mês fechado, dia bloqueado...). Sem motivo = dia lotado
+            // (ou, se for hoje, os horários do dia já passaram).
+            const hoje = new Date();
+            const ehHoje = dataFormatoSQL === `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+            const mensagem = resultado.mensagem ||
+                (ehHoje ? 'Não há mais horários livres hoje. Escolha outro dia.' : 'Agenda lotada neste dia. Tente outro dia.');
             grid.innerHTML = `<p class="msg-vazia erro"><i class="fa-regular fa-calendar-xmark"></i> ${escaparHtml(mensagem)}</p>`;
             return;
         }
@@ -374,8 +378,12 @@ function continuarParaDados() {
 }
 
 // Máscara (83) 99999-9999
+// O preenchimento automático do celular costuma colocar "+55 83 9..." ou "083 9...":
+// o 55 do Brasil e o zero da frente saem, senão o número ficaria cortado e errado.
 function mascararTelefone(el) {
-    let n = el.value.replace(/\D/g, '').slice(0, 11);
+    let n = el.value.replace(/\D/g, '').replace(/^0+/, '');
+    if (n.length > 11 && n.startsWith('55')) n = n.slice(2);
+    n = n.slice(0, 11);
     if (n.length > 6) {
         const fim = n.length > 10 ? 7 : 6;
         el.value = `(${n.slice(0, 2)}) ${n.slice(2, fim)}-${n.slice(fim)}`;
