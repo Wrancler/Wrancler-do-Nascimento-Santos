@@ -336,6 +336,94 @@ def arquivos_js(nome_arquivo):
 def arquivos_img(nome_arquivo):
     return send_from_directory(os.path.join(BASE_DIR, 'img'), nome_arquivo)
 
+
+# --- ÍCONE DA TELA DE INÍCIO (iPhone e Android) ---
+# Feito na hora a partir da foto do perfil (img/perfil.jpg): trocou a foto, o ícone acompanha.
+# O recorte pega o rosto (parte de cima, no meio). Sem foto, vira um "MM" dourado.
+TAMANHOS_ICONE = (180, 192, 512)
+_icones_prontos = {}
+
+
+def gerar_icone(tamanho):
+    caminho = os.path.join(BASE_DIR, 'img', 'perfil.jpg')
+    try:
+        versao = os.path.getmtime(caminho)
+    except OSError:
+        versao = None
+    chave = (tamanho, versao)
+    if chave in _icones_prontos:
+        return _icones_prontos[chave]
+
+    icone = None
+    if versao is not None:
+        try:
+            with Image.open(caminho) as foto:
+                foto = ImageOps.exif_transpose(foto).convert('RGB')
+                largura, altura = foto.size
+                lado = int(min(largura, altura) * 0.72)
+                esquerda = (largura - lado) // 2
+                topo = int((altura - lado) * 0.1)
+                icone = foto.crop((esquerda, topo, esquerda + lado, topo + lado)).resize((tamanho, tamanho), Image.LANCZOS)
+        except Exception:
+            app.logger.exception('Não foi possível montar o ícone a partir da foto do perfil')
+    if icone is None:
+        from PIL import ImageDraw, ImageFont
+        icone = Image.new('RGB', (tamanho, tamanho), (11, 11, 11))
+        desenho = ImageDraw.Draw(icone)
+        margem = int(tamanho * 0.12)
+        desenho.ellipse([margem, margem, tamanho - margem, tamanho - margem], outline=(212, 175, 55), width=max(3, tamanho // 40))
+        try:
+            fonte = ImageFont.truetype('DejaVuSerif-Bold.ttf', int(tamanho * 0.3))
+            desenho.text((tamanho / 2, tamanho / 2), 'MM', fill=(212, 175, 55), font=fonte, anchor='mm')
+        except Exception:
+            pass
+
+    from io import BytesIO
+    saida = BytesIO()
+    icone.save(saida, format='PNG', optimize=True)
+    if len(_icones_prontos) > 12:  # foto trocada várias vezes: descarta os antigos
+        _icones_prontos.clear()
+    _icones_prontos[chave] = saida.getvalue()
+    return _icones_prontos[chave]
+
+
+@app.route('/icone-<int:tamanho>.png')
+def icone_app(tamanho):
+    if tamanho not in TAMANHOS_ICONE:
+        return "Não encontrado", 404
+    resposta = Response(gerar_icone(tamanho), mimetype='image/png')
+    resposta.headers['Cache-Control'] = 'public, max-age=3600'
+    return resposta
+
+
+# O iPhone procura esses nomes sozinho, mesmo sem a página indicar
+@app.route('/apple-touch-icon.png')
+@app.route('/apple-touch-icon-precomposed.png')
+def icone_iphone():
+    return icone_app(180)
+
+
+def manifesto(nome, nome_curto, inicio):
+    """Dados que o Android usa ao 'Adicionar à tela inicial' (nome e ícone).
+    display=browser: o atalho abre no navegador normal, e o WhatsApp abre sem complicação."""
+    import json
+    corpo = {
+        "name": nome, "short_name": nome_curto, "start_url": inicio, "scope": "/",
+        "display": "browser", "background_color": "#050505", "theme_color": "#050505",
+        "icons": [{"src": f"/icone-{t}.png", "sizes": f"{t}x{t}", "type": "image/png"} for t in (192, 512)],
+    }
+    return Response(json.dumps(corpo, ensure_ascii=False), mimetype='application/manifest+json')
+
+
+@app.route('/manifest.webmanifest')
+def manifesto_site():
+    return manifesto("Mailton Maia | Sobrancelhas & Micropigmentação", "Mailton Maia", "/")
+
+
+@app.route('/manifest-admin.webmanifest')
+def manifesto_admin():
+    return manifesto("Minha Agenda · Mailton Maia", "Minha Agenda", "/admin")
+
 # --- CONFIGURAÇÃO DE SEGURANÇA DO PAINEL ADMIN ---
 # IMPORTANTE: em produção, defina estas variáveis de ambiente ANTES de rodar o servidor
 # (nunca deixe a senha real em texto puro no código).
