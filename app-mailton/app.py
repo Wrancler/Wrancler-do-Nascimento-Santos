@@ -120,6 +120,7 @@ MENSAGENS_INDISPONIVEL = {
     'sem_expediente': 'Não há atendimento neste dia.',
     'dia_bloqueado': 'Este dia não está disponível para agendamento.',
     'semana_fechada': 'A agenda desta semana ainda não foi aberta.',
+    'antecedencia': 'Para este dia não dá mais para marcar pelo site. Escolha outro dia.',
 }
 
 def agora_brasil():
@@ -140,6 +141,19 @@ def obter_intervalo(conn):
     except (TypeError, ValueError):
         return 30
     return valor if 5 <= valor <= 240 else 30
+
+# Antecedência mínima para a cliente marcar pelo site (em minutos). 1440 = 1 dia.
+# O encaixe feito pelo Mailton no painel não segue essa regra.
+ANTECEDENCIAS_PERMITIDAS = (0, 30, 60, 120, 180, 1440)
+ANTECEDENCIA_PADRAO = 30
+
+def obter_antecedencia(conn):
+    linha = conn.execute("SELECT valor FROM configuracoes WHERE chave = 'antecedencia_min'").fetchone()
+    try:
+        valor = int(linha['valor'])
+    except (TypeError, ValueError):
+        return ANTECEDENCIA_PADRAO
+    return valor if valor in ANTECEDENCIAS_PERMITIDAS else ANTECEDENCIA_PADRAO
 
 def agenda_semanal_ativa(conn):
     """True quando o Mailton escolheu liberar a agenda semana por semana (além do mês)."""
@@ -234,15 +248,25 @@ def calcular_horarios_livres(conn, data, duracao_min):
         inicio = hora_para_minutos(ag['hora'])
         ocupados.append((inicio, inicio + ag['duracao']))
 
-    # Se for hoje, horários que já passaram não aparecem
-    minutos_agora = agora.hour * 60 + agora.minute if dia.date() == agora.date() else -1
+    # Antecedência mínima: só aparecem horários a partir de "agora + antecedência"
+    # (com 30 min, às 14:10 o primeiro horário possível é 14:40). Sem antecedência,
+    # só some o que já passou.
+    antecedencia = obter_antecedencia(conn)
+    limite = agora + timedelta(minutes=antecedencia)
+    if dia.date() < limite.date():
+        return [], 'antecedencia'  # ex.: 1 dia de antecedência e a cliente olhando o dia de hoje
+    if dia.date() == limite.date():
+        minutos_limite = limite.hour * 60 + limite.minute
+        primeiro_inicio = minutos_limite if antecedencia else minutos_limite + 1
+    else:
+        primeiro_inicio = 0
 
     livres = []
     for faixa_inicio, faixa_fim in faixas:
         t = faixa_inicio
         while t + duracao_min <= faixa_fim:
             fim_servico = t + duracao_min
-            if t > minutos_agora and not any(t < o_fim and o_inicio < fim_servico for o_inicio, o_fim in ocupados):
+            if t >= primeiro_inicio and not any(t < o_fim and o_inicio < fim_servico for o_inicio, o_fim in ocupados):
                 livres.append(minutos_para_hora(t))
             t += intervalo
     return livres, None
@@ -1215,8 +1239,9 @@ def admin_ver_expediente():
     for l in conn.execute("SELECT dia_semana, inicio, fim FROM expediente ORDER BY dia_semana, inicio"):
         dias[str(l['dia_semana'])].append({"inicio": l['inicio'], "fim": l['fim']})
     intervalo = obter_intervalo(conn)
+    antecedencia = obter_antecedencia(conn)
     conn.close()
-    return jsonify({"intervalo": intervalo, "dias": dias})
+    return jsonify({"intervalo": intervalo, "antecedencia": antecedencia, "dias": dias})
 
 
 # --- ADMIN: salvar o expediente ---
@@ -1231,6 +1256,16 @@ def admin_salvar_expediente():
         return jsonify({"erro": "Escolha o intervalo entre os horários."}), 400
     if intervalo not in (15, 20, 30, 45, 60):
         return jsonify({"erro": "Intervalo inválido."}), 400
+
+    # Antecedência é opcional aqui (se não vier, fica como estava)
+    antecedencia = dados.get('antecedencia')
+    if antecedencia is not None:
+        try:
+            antecedencia = int(antecedencia)
+        except (TypeError, ValueError):
+            antecedencia = -1
+        if antecedencia not in ANTECEDENCIAS_PERMITIDAS:
+            return jsonify({"erro": "Antecedência inválida."}), 400
 
     dias = dados.get('dias')
     if not isinstance(dias, dict):
@@ -1272,6 +1307,11 @@ def admin_salvar_expediente():
             "INSERT INTO configuracoes (chave, valor) VALUES ('intervalo_min', ?) "
             "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", (str(intervalo),)
         )
+        if antecedencia is not None:
+            conn.execute(
+                "INSERT INTO configuracoes (chave, valor) VALUES ('antecedencia_min', ?) "
+                "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", (str(antecedencia),)
+            )
         conn.commit()
     finally:
         conn.close()

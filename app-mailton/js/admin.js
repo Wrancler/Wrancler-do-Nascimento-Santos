@@ -913,6 +913,8 @@ async function excluirServico() {
 function renderizarExpedienteAdmin() {
     if (!expedienteEstado) return;
     document.getElementById('selIntervalo').value = String(expedienteEstado.intervalo);
+    const selAntecedencia = document.getElementById('selAntecedencia');
+    if (selAntecedencia) selAntecedencia.value = String(expedienteEstado.antecedencia ?? 30);
 
     const campoHora = 'bg-[#09090b] border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-brand-500 min-w-0 flex-1';
     const container = document.getElementById('containerExpedienteAdmin');
@@ -976,6 +978,10 @@ function mudarIntervalo(valor) {
     expedienteEstado.intervalo = Number(valor);
 }
 
+function mudarAntecedencia(valor) {
+    expedienteEstado.antecedencia = Number(valor);
+}
+
 async function salvarExpediente() {
     if (!expedienteEstado) return;
     const botao = document.getElementById('btnSalvarExpediente');
@@ -983,6 +989,7 @@ async function salvarExpediente() {
     try {
         const resposta = await api('/api/admin/expediente', 'PUT', {
             intervalo: expedienteEstado.intervalo,
+            antecedencia: expedienteEstado.antecedencia ?? 30,
             dias: expedienteEstado.dias
         });
         if (!resposta) return;

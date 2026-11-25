@@ -221,6 +221,17 @@
                             <option value="60">1 hora</option>
                         </select>
                     </div>
+                    <div class="flex items-center justify-between gap-3 px-1">
+                        <label for="selAntecedencia" class="text-sm text-white font-semibold leading-tight">Antecedência mínima<br><span class="text-[11px] text-gray-500 font-normal">para a cliente marcar pelo site</span></label>
+                        <select id="selAntecedencia" onchange="mudarAntecedencia(this.value)" class="bg-[#09090b] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                            <option value="0">Sem mínimo</option>
+                            <option value="30">30 min</option>
+                            <option value="60">1 hora</option>
+                            <option value="120">2 horas</option>
+                            <option value="180">3 horas</option>
+                            <option value="1440">1 dia</option>
+                        </select>
+                    </div>
                     <div id="containerExpedienteAdmin" class="space-y-2">
                         <p class="text-xs text-gray-500 text-center py-4">A carregar...</p>
                     </div>
