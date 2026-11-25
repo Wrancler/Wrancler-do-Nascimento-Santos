@@ -338,9 +338,11 @@ def arquivos_img(nome_arquivo):
 
 
 # --- ÍCONE DA TELA DE INÍCIO (iPhone e Android) ---
-# Feito na hora a partir da foto do perfil (img/perfil.jpg): trocou a foto, o ícone acompanha.
-# O recorte pega o rosto (parte de cima, no meio). Sem foto, vira um "MM" dourado.
+# Cada atalho tem a sua foto: o site das clientes usa img/icone-site-<tamanho>.png e o
+# painel do Mailton usa img/icone-painel-<tamanho>.png. Se esses arquivos faltarem, o ícone
+# é feito na hora a partir da foto do perfil (img/perfil.jpg); sem foto, vira um "MM" dourado.
 TAMANHOS_ICONE = (180, 192, 512)
+TIPOS_ICONE = ('site', 'painel')
 _icones_prontos = {}
 
 
@@ -387,42 +389,47 @@ def gerar_icone(tamanho):
     return _icones_prontos[chave]
 
 
-@app.route('/icone-<int:tamanho>.png')
-def icone_app(tamanho):
-    if tamanho not in TAMANHOS_ICONE:
+@app.route('/icone-<tipo>-<int:tamanho>.png')
+def icone_app(tipo, tamanho):
+    if tipo not in TIPOS_ICONE or tamanho not in TAMANHOS_ICONE:
         return "Não encontrado", 404
-    resposta = Response(gerar_icone(tamanho), mimetype='image/png')
+    arquivo = os.path.join(BASE_DIR, 'img', f'icone-{tipo}-{tamanho}.png')
+    if os.path.isfile(arquivo):
+        resposta = send_from_directory(os.path.join(BASE_DIR, 'img'), f'icone-{tipo}-{tamanho}.png')
+    else:
+        resposta = Response(gerar_icone(tamanho), mimetype='image/png')
     resposta.headers['Cache-Control'] = 'public, max-age=3600'
     return resposta
 
 
-# O iPhone procura esses nomes sozinho, mesmo sem a página indicar
+# O iPhone procura esses nomes sozinho, mesmo sem a página indicar (usa o ícone do site)
 @app.route('/apple-touch-icon.png')
 @app.route('/apple-touch-icon-precomposed.png')
-def icone_iphone():
-    return icone_app(180)
+@app.route('/icone-<int:tamanho>.png')
+def icone_iphone(tamanho=180):
+    return icone_app('site', tamanho)
 
 
-def manifesto(nome, nome_curto, inicio):
+def manifesto(nome, nome_curto, inicio, tipo_icone):
     """Dados que o Android usa ao 'Adicionar à tela inicial' (nome e ícone).
     display=browser: o atalho abre no navegador normal, e o WhatsApp abre sem complicação."""
     import json
     corpo = {
         "name": nome, "short_name": nome_curto, "start_url": inicio, "scope": "/",
         "display": "browser", "background_color": "#050505", "theme_color": "#050505",
-        "icons": [{"src": f"/icone-{t}.png", "sizes": f"{t}x{t}", "type": "image/png"} for t in (192, 512)],
+        "icons": [{"src": f"/icone-{tipo_icone}-{t}.png", "sizes": f"{t}x{t}", "type": "image/png"} for t in (192, 512)],
     }
     return Response(json.dumps(corpo, ensure_ascii=False), mimetype='application/manifest+json')
 
 
 @app.route('/manifest.webmanifest')
 def manifesto_site():
-    return manifesto("Mailton Maia | Sobrancelhas & Micropigmentação", "Mailton Maia", "/")
+    return manifesto("Mailton Maia | Sobrancelhas & Micropigmentação", "Mailton Maia", "/", 'site')
 
 
 @app.route('/manifest-admin.webmanifest')
 def manifesto_admin():
-    return manifesto("Minha Agenda · Mailton Maia", "Minha Agenda", "/admin")
+    return manifesto("Minha Agenda · Mailton Maia", "Minha Agenda", "/admin", 'painel')
 
 # --- CONFIGURAÇÃO DE SEGURANÇA DO PAINEL ADMIN ---
 # IMPORTANTE: em produção, defina estas variáveis de ambiente ANTES de rodar o servidor
