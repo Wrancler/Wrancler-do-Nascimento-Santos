@@ -51,6 +51,32 @@ try:
 except sqlite3.Error:
     pass
 
+# --- BACKUP AUTOMÁTICO DIÁRIO ---
+# O plano gratuito do PythonAnywhere não tem tarefas agendadas, então o próprio site tira a cópia:
+# na primeira visita de cada dia, se ainda não existe backup de hoje, cria um (leva milissegundos).
+# Se o backup.py faltar ou falhar, o site continua funcionando normalmente.
+try:
+    from backup import garantir_backup_do_dia
+except ImportError:
+    garantir_backup_do_dia = None
+
+_dia_do_ultimo_backup = None
+
+
+@app.before_request
+def backup_automatico_do_dia():
+    global _dia_do_ultimo_backup
+    if garantir_backup_do_dia is None:
+        return
+    hoje = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y%m%d')
+    if _dia_do_ultimo_backup == hoje:
+        return
+    _dia_do_ultimo_backup = hoje  # marca antes: se falhar, não tenta de novo a cada visita
+    try:
+        garantir_backup_do_dia()
+    except Exception:
+        app.logger.exception('Falha ao criar o backup automático do dia')
+
 # --- REGRAS DA AGENDA ---
 FUSO_BRASIL = timezone(timedelta(hours=-3))  # o servidor do PythonAnywhere roda em UTC
 
