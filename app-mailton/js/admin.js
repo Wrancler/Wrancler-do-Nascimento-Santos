@@ -1199,6 +1199,25 @@ async function acaoNoFinanceiro(id, novoStatus) {
 // ------------------------------------------------------------
 //  SEGURANÇA: TROCAR A SENHA
 // ------------------------------------------------------------
+// A senha é só de números, então o celular abre o teclado numérico. Se um dia ela tiver
+// letras, este botão troca para o teclado normal (e volta, se tocar de novo).
+function alternarTecladoSenha(ids, botao) {
+    const campos = ids.map(id => document.getElementById(id));
+    const usarLetras = campos[0].getAttribute('inputmode') === 'numeric';
+    campos.forEach(campo => {
+        if (usarLetras) {
+            campo.setAttribute('inputmode', 'text');
+            campo.removeAttribute('pattern');
+        } else {
+            campo.setAttribute('inputmode', 'numeric');
+            campo.setAttribute('pattern', '[0-9]*');
+        }
+    });
+    botao.textContent = usarLetras ? 'Minha senha é só de números' : 'Minha senha tem letras';
+    campos[0].blur();
+    campos[0].focus();  // reabre o teclado já no modo novo
+}
+
 function alternarVisibilidadeSenhas(mostrar) {
     ['senhaAtual', 'senhaNova', 'senhaNova2'].forEach(id => {
         document.getElementById(id).type = mostrar ? 'text' : 'password';
