@@ -1,6 +1,14 @@
 // Página do cliente — Mailton Maia
 const NUMERO_MAILTON = '5583988856096';
 
+// A página sempre abre no topo, com a foto e o nome do Mailton. Antes, depois de tocar em
+// "Agendar agora" o endereço ficava com #servicos, e ao recarregar (ou abrir de novo) o
+// navegador pulava direto para os serviços. Também não deixa o navegador "lembrar" a rolagem.
+try {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+} catch (e) { /* navegador antigo: segue normal */ }
+
 let servicoSelecionadoId = null;
 let servicoNomeAtual = '';
 let servicoValorAtual = '';
@@ -655,6 +663,14 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    window.scrollTo(0, 0);
+    // "Agendar agora" rola até os serviços sem colocar #servicos no endereço
+    document.querySelectorAll('a[href="#servicos"]').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            $('servicos').scrollIntoView({ behavior: 'smooth' });
+        });
+    });
     $('clienteTelefone').addEventListener('input', e => mascararTelefone(e.target));
     mostrarMeuAgendamento();
 });
