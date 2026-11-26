@@ -385,10 +385,10 @@ a { color: inherit; }
 
 /* ---------- cartão com foto (estilo vitrine) ---------- */
 .grade-servicos.com-fotos .cartao { padding: 0; min-height: 0; overflow: hidden; justify-content: flex-start; }
-.cartao-midia { position: relative; width: 100%; aspect-ratio: 4 / 3; background: #121214; overflow: hidden; }
-.cartao-midia img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; transition: transform .5s; }
+.cartao-midia { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #121214; overflow: hidden; }
+.cartao-midia img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; transition: transform .5s; }
 .cartao:hover .cartao-midia img { transform: scale(1.06); }
-.cartao-midia::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.78)); pointer-events: none; }
+.cartao-midia::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 70%, rgba(0, 0, 0, 0.35)); pointer-events: none; }
 .cartao-midia::before {
     content: ''; position: absolute; top: 8px; left: 8px; width: 16px; height: 16px; z-index: 2;
     border-top: 2px solid var(--ouro); border-left: 2px solid var(--ouro); border-radius: 4px 0 0 0; opacity: .85;
@@ -405,7 +405,8 @@ a { color: inherit; }
     background: rgba(0, 0, 0, 0.62); border: 1px solid var(--linha);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
-.cartao-corpo { padding: 10px 12px 12px; }
+.cartao-corpo { padding: 11px 12px 12px; }
+.preco-card { display: block; margin-top: 4px; font-size: 16px; font-weight: 800; color: var(--ouro-claro); font-variant-numeric: tabular-nums; }
 .cartao-corpo h3 { font-size: 16px; line-height: 1.25; }
 .linha-info { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
 .linha-info .duracao { margin-top: 0; font-size: 14px; }

@@ -70,15 +70,16 @@ function nomeComHifen(nome) {
 
 function criarCardServico(s, comFotos) {
     if (comFotos) {
-        // Estilo vitrine: foto grande, preço em selo, nome e tempo embaixo
+        // Estilo vitrine: foto inteira em cima (o preço não cobre mais a foto); nome, preço e tempo embaixo
         const midia = s.imagem
             ? `<img src="${escaparHtml(s.imagem)}" alt="" loading="lazy">`
             : '<div class="cartao-vazio"><span class="titulo-serifa texto-ouro">MM</span></div>';
         return `
         <button type="button" class="cartao" onclick="abrirModal(${Number(s.id)})">
-            <div class="cartao-midia">${midia}<span class="preco-selo">${formatarValorCurto(s.valor)}</span></div>
+            <div class="cartao-midia">${midia}</div>
             <div class="cartao-corpo">
                 <h3>${nomeComHifen(s.nome)}</h3>
+                <span class="preco-card">${formatarValorCurto(s.valor)}</span>
                 <div class="linha-info">
                     <span class="duracao"><i class="fa-regular fa-clock"></i> ${formatarDuracao(s.duracao_minutos)}</span>
                     <span class="agendar-chip"><i class="fa-solid fa-chevron-right"></i></span>
