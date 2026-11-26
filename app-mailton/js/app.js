@@ -68,11 +68,17 @@ function nomeComHifen(nome) {
     return escaparHtml(nome).replace(/micropigmenta/gi, m => m.slice(0, 5) + '&shy;' + m.slice(5));
 }
 
+// Parte da foto que aparece no cartão quadrado (o Mailton escolhe no painel: em cima, meio ou embaixo)
+function posicaoFoto(foco) {
+    const n = Number(foco);
+    return foco === null || foco === undefined || !Number.isFinite(n) ? 40 : Math.min(100, Math.max(0, n));
+}
+
 function criarCardServico(s, comFotos) {
     if (comFotos) {
         // Estilo vitrine: foto inteira em cima (o preço não cobre mais a foto); nome, preço e tempo embaixo
         const midia = s.imagem
-            ? `<img src="${escaparHtml(s.imagem)}" alt="" loading="lazy">`
+            ? `<img src="${escaparHtml(s.imagem)}" alt="" loading="lazy" style="object-position: 50% ${posicaoFoto(s.foco)}%">`
             : '<div class="cartao-vazio"><span class="titulo-serifa texto-ouro">MM</span></div>';
         return `
         <button type="button" class="cartao" onclick="abrirModal(${Number(s.id)})">

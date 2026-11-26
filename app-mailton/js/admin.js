@@ -815,6 +815,7 @@ function abrirModalServico(id = null) {
     preencherOpcoesDuracao(servico ? servico.duracao_minutos : 60);
     document.getElementById('btnExcluirServico').classList.toggle('hidden', !servico);
     document.getElementById('servFoto').value = '';
+    focoServico = servico && servico.foco !== null && servico.foco !== undefined ? servico.foco : 40;
     mostrarPreviaServico(servico && servico.imagem_url ? servico.imagem_url : null);
     document.getElementById('btnRemoverFotoServ').classList.toggle('hidden', !(servico && servico.imagem_url));
     document.getElementById('erroServico').classList.add('hidden');
@@ -831,7 +832,8 @@ async function salvarServico() {
     const corpo = {
         nome: document.getElementById('servNome').value.trim(),
         duracao_minutos: Number(document.getElementById('servDuracao').value),
-        valor: document.getElementById('servValor').value.trim()
+        valor: document.getElementById('servValor').value.trim(),
+        foco: focoServico
     };
     if (!corpo.nome || corpo.valor === '') {
         erro.textContent = 'Preencha o nome e o valor do serviço.';
@@ -1374,11 +1376,39 @@ async function alternarBloqueioServidor(hora_bloqueio, isJaBloqueado) {
 }
 
 
+// Qual parte da foto aparece no cartão do site (0 = em cima, 100 = embaixo)
+let focoServico = 40;
+
+function escolherFoco(valor) {
+    focoServico = valor;
+    document.getElementById('servFotoPrevia').style.objectPosition = `50% ${valor}%`;
+    document.querySelectorAll('.btn-foco').forEach(b => {
+        const ativo = Number(b.dataset.foco) === valor;
+        b.classList.toggle('bg-brand-500', ativo);
+        b.classList.toggle('text-black', ativo);
+        b.classList.toggle('border-brand-500', ativo);
+        b.classList.toggle('bg-[#09090b]', !ativo);
+        b.classList.toggle('text-gray-300', !ativo);
+    });
+}
+
 // Mostra a foto no campo (ou o convite para escolher uma)
 function mostrarPreviaServico(url) {
     const previa = document.getElementById('servFotoPrevia');
     if (url) previa.src = url;
     previa.classList.toggle('hidden', !url);
+    document.getElementById('escolhaFoco').classList.toggle('hidden', !url);
+    previa.style.objectPosition = `50% ${focoServico}%`;
+    // O botão escolhido fica marcado (40, o padrão antigo, conta como "No meio")
+    const marcado = focoServico <= 25 ? 10 : focoServico >= 70 ? 90 : 45;
+    document.querySelectorAll('.btn-foco').forEach(b => {
+        const ativo = Number(b.dataset.foco) === marcado;
+        b.classList.toggle('bg-brand-500', ativo);
+        b.classList.toggle('text-black', ativo);
+        b.classList.toggle('border-brand-500', ativo);
+        b.classList.toggle('bg-[#09090b]', !ativo);
+        b.classList.toggle('text-gray-300', !ativo);
+    });
     document.getElementById('servFotoDica').classList.toggle('hidden', !!url);
     document.getElementById('servFotoTroca').classList.toggle('hidden', !url);
 }

@@ -156,6 +156,10 @@ def criar_banco():
     if 'imagem' not in colunas(cursor, 'servicos'):
         cursor.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
 
+    # Qual parte da foto aparece no cartão (0 = em cima, 50 = meio, 100 = embaixo)
+    if 'foco' not in colunas(cursor, 'servicos'):
+        cursor.execute("ALTER TABLE servicos ADD COLUMN foco INTEGER")
+
     # Quando o lembrete do agendamento foi enviado (vazio = ainda não lembrou)
     if 'lembrete_em' not in colunas(cursor, 'agendamentos'):
         cursor.execute("ALTER TABLE agendamentos ADD COLUMN lembrete_em TEXT")

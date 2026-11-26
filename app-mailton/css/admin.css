@@ -54,7 +54,7 @@ nav.fixed { border-top-color: rgba(212, 175, 55, 0.3) !important; }
 /* campo de foto do serviço */
 .area-foto {
     position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
-    width: 100%; aspect-ratio: 4 / 3; overflow: hidden; cursor: pointer; border-radius: 18px;
+    width: 100%; max-width: 260px; margin: 0 auto; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; border-radius: 18px;
     border: 1.5px dashed rgba(212, 175, 55, 0.4); background: rgba(212, 175, 55, 0.05); color: #B9B3A3; font-size: 13px;
 }
 .area-foto:hover { background: rgba(212, 175, 55, 0.1); }

@@ -29,6 +29,10 @@ def garantir_estrutura():
         if colunas and 'imagem' not in colunas:
             conn.execute("ALTER TABLE servicos ADD COLUMN imagem TEXT")
             conn.commit()
+        # Qual parte da foto aparece no cartão (0 = em cima, 50 = meio, 100 = embaixo)
+        if colunas and 'foco' not in colunas:
+            conn.execute("ALTER TABLE servicos ADD COLUMN foco INTEGER")
+            conn.commit()
         # Quando o lembrete do agendamento foi enviado (vazio = ainda não lembrou)
         colunas_ag = {l[1] for l in conn.execute("PRAGMA table_info(agendamentos)")}
         if colunas_ag and 'lembrete_em' not in colunas_ag:
@@ -608,7 +612,7 @@ def admin_trocar_senha():
 def listar_servicos():
     conn = get_db_connection()
     servicos = conn.execute(
-        'SELECT id, nome, duracao_minutos, valor, imagem FROM servicos WHERE profissional_id = 1 AND ativo = 1 ORDER BY ordem, id'
+        'SELECT id, nome, duracao_minutos, valor, imagem, foco FROM servicos WHERE profissional_id = 1 AND ativo = 1 ORDER BY ordem, id'
     ).fetchall()
     conn.close()
     resultado = []
@@ -1048,13 +1052,26 @@ def ler_dados_servico(dados):
     return {'nome': nome, 'duracao_minutos': duracao, 'valor': valor}, None
 
 
+def ler_foco(valor):
+    """Parte da foto que aparece no cartão: 0 (em cima) a 100 (embaixo). Vazio = padrão."""
+    if valor is None or valor == '':
+        return None, None
+    try:
+        foco = int(valor)
+    except (TypeError, ValueError):
+        return None, "Enquadramento inválido."
+    if not 0 <= foco <= 100:
+        return None, "Enquadramento inválido."
+    return foco, None
+
+
 # --- ADMIN: listar serviços (inclusive os ocultos) ---
 @app.route('/api/admin/servicos', methods=['GET'])
 @requer_login_admin
 def admin_listar_servicos():
     conn = get_db_connection()
     linhas = conn.execute('''
-        SELECT s.id, s.nome, s.duracao_minutos, s.valor, s.ativo, s.ordem, s.imagem,
+        SELECT s.id, s.nome, s.duracao_minutos, s.valor, s.ativo, s.ordem, s.imagem, s.foco,
                (SELECT COUNT(*) FROM agendamentos a WHERE a.servico_id = s.id) AS qtd_agendamentos
         FROM servicos s
         WHERE s.profissional_id = 1
@@ -1073,7 +1090,11 @@ def admin_listar_servicos():
 @app.route('/api/admin/servicos', methods=['POST'])
 @requer_login_admin
 def admin_criar_servico():
-    campos, erro = ler_dados_servico(request.get_json(silent=True) or {})
+    dados = request.get_json(silent=True) or {}
+    campos, erro = ler_dados_servico(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
+    foco, erro = ler_foco(dados.get('foco'))
     if erro:
         return jsonify({"erro": erro}), 400
     conn = get_db_connection()
@@ -1082,8 +1103,8 @@ def admin_criar_servico():
             "SELECT COALESCE(MAX(ordem), 0) + 1 FROM servicos WHERE profissional_id = 1"
         ).fetchone()[0]
         cursor = conn.execute(
-            "INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor, ordem, ativo) VALUES (1, ?, ?, ?, ?, 1)",
-            (campos['nome'], campos['duracao_minutos'], campos['valor'], proxima)
+            "INSERT INTO servicos (profissional_id, nome, duracao_minutos, valor, ordem, ativo, foco) VALUES (1, ?, ?, ?, ?, 1, ?)",
+            (campos['nome'], campos['duracao_minutos'], campos['valor'], proxima, foco)
         )
         conn.commit()
         novo_id = cursor.lastrowid
@@ -1119,6 +1140,11 @@ def admin_editar_servico(servico_id):
             "UPDATE servicos SET nome = ?, duracao_minutos = ?, valor = ?, ativo = ? WHERE id = ?",
             (campos['nome'], campos['duracao_minutos'], campos['valor'], ativo, servico_id)
         )
+        if 'foco' in dados:
+            foco, erro = ler_foco(dados['foco'])
+            if erro:
+                return jsonify({"erro": erro}), 400
+            conn.execute("UPDATE servicos SET foco = ? WHERE id = ?", (foco, servico_id))
         conn.commit()
     finally:
         conn.close()

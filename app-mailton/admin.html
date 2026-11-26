@@ -373,10 +373,18 @@
                         <label class="block text-xs font-semibold text-gray-400 mb-1.5">Foto do serviço (opcional)</label>
                         <label for="servFoto" class="area-foto" id="areaFotoServ">
                             <img id="servFotoPrevia" alt="" class="hidden">
-                            <span id="servFotoDica" class="px-4"><i class="fa-solid fa-camera text-xl text-brand-500 block mb-1"></i>Toque para escolher uma foto<br><span class="text-[11px] opacity-70">Fica em formato horizontal. Deixe o trabalho no meio da foto.</span></span>
+                            <span id="servFotoDica" class="px-4"><i class="fa-solid fa-camera text-xl text-brand-500 block mb-1"></i>Toque para escolher uma foto<br><span class="text-[11px] opacity-70">No site ela aparece quadrada, como aqui.</span></span>
                             <span id="servFotoTroca" class="troca hidden"><i class="fa-solid fa-camera mr-1"></i>Trocar</span>
                         </label>
                         <input type="file" id="servFoto" accept="image/*" class="hidden" onchange="previaFotoServico(this)">
+                        <div id="escolhaFoco" class="hidden mt-3">
+                            <p class="text-xs font-semibold text-gray-400 mb-1.5">Qual parte da foto aparece no site?</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" data-foco="10" onclick="escolherFoco(10)" class="btn-foco py-2.5 rounded-xl text-sm font-bold border border-white/10 bg-[#09090b] text-gray-300">Em cima</button>
+                                <button type="button" data-foco="45" onclick="escolherFoco(45)" class="btn-foco py-2.5 rounded-xl text-sm font-bold border border-white/10 bg-[#09090b] text-gray-300">No meio</button>
+                                <button type="button" data-foco="90" onclick="escolherFoco(90)" class="btn-foco py-2.5 rounded-xl text-sm font-bold border border-white/10 bg-[#09090b] text-gray-300">Embaixo</button>
+                            </div>
+                        </div>
                         <button type="button" id="btnRemoverFotoServ" onclick="removerFotoServico()" class="hidden mt-2 text-xs text-red-400 font-bold">Remover foto atual</button>
                     </div>
                 </div>
